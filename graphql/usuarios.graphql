@@ -1,0 +1,19 @@
+type Usuario {
+    id: ID!
+    nombre: String!
+    email: String!
+    # otros campos...
+}
+
+extend type Query {
+    usuarios: [Usuario!]! @all(model: "App\\Models\\Usuario")
+    usuario(id: ID!): Usuario @find(model: "App\\Models\\Usuario")
+}
+
+extend type Mutation {
+    createUsuario(nombre: String!, email: String!): Usuario
+        @create(model: "App\\Models\\Usuario")
+    updateUsuario(id: ID!, nombre: String, email: String): Usuario
+        @update(model: "App\\Models\\Usuario")
+    deleteUsuario(id: ID!): Boolean @delete(model: "App\\Models\\Usuario")
+}

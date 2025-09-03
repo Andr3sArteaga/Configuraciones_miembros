@@ -12,7 +12,7 @@ use Illuminate\Database\Eloquent\Model;
 /**
  * Class MiembrosEquipo
  * 
- * @property uuid $id
+ * @property string $id
  * @property uuid|null $id_equipo
  * @property uuid|null $id_usuario
  * @property Carbon|null $fecha_ingreso
@@ -29,7 +29,7 @@ class MiembrosEquipo extends Model
 	public $timestamps = false;
 
 	protected $casts = [
-		'id' => 'uuid',
+		'id' => 'string',
 		'id_equipo' => 'uuid',
 		'id_usuario' => 'uuid',
 		'fecha_ingreso' => 'datetime'

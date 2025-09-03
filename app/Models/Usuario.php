@@ -13,7 +13,7 @@ use Illuminate\Database\Eloquent\Model;
 /**
  * Class Usuario
  * 
- * @property uuid $id
+ * @property string $id
  * @property string $nombre
  * @property string $apellido
  * @property string $ci
@@ -46,7 +46,7 @@ class Usuario extends Model
 	public $timestamps = false;
 
 	protected $casts = [
-		'id' => 'uuid',
+		'id' => 'string',
 		'fecha_nacimiento' => 'datetime',
 		'debe_cambiar_password' => 'bool',
 		'reset_token_expires' => 'datetime',

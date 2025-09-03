@@ -1,3 +1,5 @@
-type Query {
-    helo: String! @field(resolver: "App\\GraphQL\\Queries\\Hello@resolve")
-}
+#import usuarios.graphql
+#import reportes.graphql
+#import focosCalor.graphql
+
+

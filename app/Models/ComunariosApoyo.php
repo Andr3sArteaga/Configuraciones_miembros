@@ -12,7 +12,7 @@ use Illuminate\Database\Eloquent\Model;
 /**
  * Class ComunariosApoyo
  * 
- * @property uuid $id
+ * @property string $id
  * @property string $nombre
  * @property int|null $edad
  * @property string|null $entidad_perteneciente
@@ -30,9 +30,9 @@ class ComunariosApoyo extends Model
 	public $timestamps = false;
 
 	protected $casts = [
-		'id' => 'uuid',
+		'id' => 'string',
 		'edad' => 'int',
-		'equipoid' => 'uuid',
+		'equipoid' => 'string',
 		'creado' => 'datetime'
 	];
 

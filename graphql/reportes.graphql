@@ -1,0 +1,16 @@
+type Reporte {
+    id: ID!
+    titulo: String!
+    descripcion: String!
+    fecha: String!
+}
+extend type Query {
+    reportes: [Reporte!]! @all(model: "App\\Models\\Reporte")
+}
+extend type Mutation {
+    crearReporte(
+        titulo: String!
+        descripcion: String!
+        fecha: String!
+    ): Reporte! @field(resolver: "App\\GraphQL\\Mutations\\Reporte@create")
+}

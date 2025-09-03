@@ -13,9 +13,9 @@ use Illuminate\Database\Eloquent\Model;
 /**
  * Class Equipo
  * 
- * @property uuid $id
+ * @property string $id
  * @property string $nombre_equipo
- * @property USER-DEFINED|null $ubicacion
+ * @property array|null $ubicacion
  * @property int|null $cantidad_integrantes
  * @property uuid|null $id_lider_equipo
  * @property string|null $estado
@@ -36,8 +36,8 @@ class Equipo extends Model
 	public $timestamps = false;
 
 	protected $casts = [
-		'id' => 'uuid',
-		'ubicacion' => 'USER-DEFINED',
+		'id' => 'string',
+		'ubicacion' => \App\Casts\PostgisPointCast::class,
 		'cantidad_integrantes' => 'int',
 		'id_lider_equipo' => 'uuid',
 		'creado' => 'datetime',

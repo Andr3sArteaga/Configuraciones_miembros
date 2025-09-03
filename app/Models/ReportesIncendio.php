@@ -12,7 +12,7 @@ use Illuminate\Database\Eloquent\Model;
 /**
  * Class ReportesIncendio
  * 
- * @property uuid $id
+ * @property string $id
  * @property string $nombre_incidente
  * @property bool|null $controlado
  * @property float|null $extension
@@ -36,13 +36,13 @@ class ReportesIncendio extends Model
 	public $timestamps = false;
 
 	protected $casts = [
-		'id' => 'uuid',
+		'id' => 'string',
 		'controlado' => 'bool',
 		'extension' => 'float',
 		'numero_bomberos' => 'int',
 		'necesita_mas_bomberos' => 'bool',
 		'fecha_creacion' => 'datetime',
-		'id_usuario_creador' => 'uuid'
+		'id_usuario_creador' => 'string',  // Asegúrate de que el campo `id_usuario_creador` sea tratado como cadena.
 	];
 
 	protected $fillable = [

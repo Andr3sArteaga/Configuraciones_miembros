@@ -12,7 +12,7 @@ use Illuminate\Database\Eloquent\Model;
 /**
  * Class Recurso
  * 
- * @property uuid $id
+ * @property string $id
  * @property string|null $codigo
  * @property string $descripcion
  * @property Carbon|null $fecha_pedido
@@ -34,11 +34,11 @@ class Recurso extends Model
 	public $timestamps = false;
 
 	protected $casts = [
-		'id' => 'uuid',
+		'id' => 'string',
 		'fecha_pedido' => 'datetime',
 		'lat' => 'float',
 		'lng' => 'float',
-		'equipoid' => 'uuid',
+		'equipoid' => 'string',
 		'creado' => 'datetime',
 		'actualizado' => 'datetime'
 	];

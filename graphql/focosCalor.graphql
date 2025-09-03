@@ -1,0 +1,18 @@
+type FocoCalor {
+    id: ID!
+    ubicacion: String!
+    latitude: Float!
+    longitude: Float!
+    fecha: String!
+}
+extend type Query {
+    focosCalor: [FocoCalor!]! @all(model: "App\\Models\\FocosCalor")
+}
+extend type Mutation {
+    crearFocoCalor(
+        ubicacion: String!
+        latitud: Float!
+        longitud: Float!
+        fecha: String!
+    ): FocoCalor! @field(resolver: "App\\GraphQL\\Mutations\\FocosCalor@create")
+}

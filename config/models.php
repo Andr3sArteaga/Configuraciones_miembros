@@ -229,7 +229,9 @@ return [
         */
 
         'hidden' => [
-            '*secret*', '*password', '*token',
+            '*secret*',
+            '*password',
+            '*token',
         ],
 
         /*
@@ -265,6 +267,15 @@ return [
 
         'casts' => [
             '*_json' => 'json',
+            '*' => function ($model) {
+                $casts = [];
+                foreach ($model->getAttributes() as $key => $value) {
+                    if (strpos($key, 'uuid') !== false) {
+                        $casts[$key] = 'string';
+                    }
+                }
+                return $casts;
+            },
         ],
 
         /*
@@ -341,9 +352,7 @@ return [
         |     'billing_invoices' => 'Invoice',
         */
 
-        'model_names' => [
-
-        ],
+        'model_names' => [],
 
         /*
         |--------------------------------------------------------------------------
@@ -426,9 +435,7 @@ return [
         | You can enable pluralization for certain tables
         |
         */
-        'override_pluralize_for' => [
-
-        ],
+        'override_pluralize_for' => [],
 
         /*
         |--------------------------------------------------------------------------
@@ -517,18 +524,18 @@ return [
     |
     */
 
-//    'connections' => [
-//        'read_only_external' => [
-//            'parent' => \App\Models\ReadOnlyModel::class,
-//            'connection' => true,
-//            'users' => [
-//                'connection' => false,
-//            ],
-//            'my_other_database' => [
-//                'password_resets' => [
-//                    'connection' => false,
-//                ]
-//            ]
-//        ],
-//    ],
+    //    'connections' => [
+    //        'read_only_external' => [
+    //            'parent' => \App\Models\ReadOnlyModel::class,
+    //            'connection' => true,
+    //            'users' => [
+    //                'connection' => false,
+    //            ],
+    //            'my_other_database' => [
+    //                'password_resets' => [
+    //                    'connection' => false,
+    //                ]
+    //            ]
+    //        ],
+    //    ],
 ];

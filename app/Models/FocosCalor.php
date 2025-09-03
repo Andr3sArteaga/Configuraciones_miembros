@@ -8,11 +8,12 @@ namespace App\Models;
 
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Str;
 
 /**
  * Class FocosCalor
  * 
- * @property uuid $id
+ * @property string $id
  * @property float $latitude
  * @property float $longitude
  * @property int|null $confidence
@@ -32,12 +33,12 @@ class FocosCalor extends Model
 	public $timestamps = false;
 
 	protected $casts = [
-		'id' => 'uuid',
+		'id' => 'string',
 		'latitude' => 'float',
 		'longitude' => 'float',
 		'confidence' => 'int',
 		'acq_date' => 'datetime',
-		'acq_time' => 'time without time zone',
+		'acq_time' => 'datetime:H:i:s',
 		'bright_ti4' => 'float',
 		'bright_ti5' => 'float',
 		'frp' => 'float',
@@ -55,4 +56,27 @@ class FocosCalor extends Model
 		'frp',
 		'creado'
 	];
+
+	/**
+	 * Get the route key for the model.
+	 */
+	public function getRouteKeyName(): string
+	{
+		return 'id';
+	}
+
+	/**
+	 * Boot the model.
+	 */
+	protected static function boot()
+	{
+		parent::boot();
+
+		// Generate UUID for new records
+		static::creating(function ($model) {
+			if (empty($model->id)) {
+				$model->id = (string) \Illuminate\Support\Str::uuid();
+			}
+		});
+	}
 }

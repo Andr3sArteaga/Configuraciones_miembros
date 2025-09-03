@@ -12,12 +12,12 @@ use Illuminate\Database\Eloquent\Model;
 /**
  * Class Reporte
  * 
- * @property uuid $id
+ * @property string $id
  * @property string $nombre_reportante
  * @property string|null $telefono_contacto
  * @property Carbon $fecha_hora
  * @property string|null $nombre_lugar
- * @property USER-DEFINED|null $ubicacion
+ * @property array|null $ubicacion
  * @property string|null $tipo_incendio
  * @property string|null $gravedad_incendio
  * @property string|null $comentario_adicional
@@ -37,9 +37,9 @@ class Reporte extends Model
 	public $timestamps = false;
 
 	protected $casts = [
-		'id' => 'uuid',
+		'id' => 'string',
 		'fecha_hora' => 'datetime',
-		'ubicacion' => 'USER-DEFINED',
+		'ubicacion' => \App\Casts\PostgisPointCast::class,
 		'cant_bomberos' => 'int',
 		'cant_paramedicos' => 'int',
 		'cant_veterinarios' => 'int',
