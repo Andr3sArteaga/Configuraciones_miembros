@@ -42,14 +42,14 @@ class ReporteIncendioController extends Controller
         ReportesIncendio::create($validated);
         return redirect()->route('reportes_incendio.index')->with('success', 'Reporte de incendio creado');
     }
-    public function edit(ReportesIncendio $reporte_incendio)
+    public function edit(ReportesIncendio $reportes_incendio)
     {
         return view(
             'reportes_incendio.edit',
-            compact('reporte_incendio')
+            compact('reportes_incendio')
         );
     }
-    public function update(Request $request, ReportesIncendio $reporte_incendio)
+    public function update(Request $request, ReportesIncendio $reportes_incendio)
     {
         $validated = $request->validate([
             'nombre_incidente' => 'required|string|max:255',
@@ -68,17 +68,17 @@ class ReporteIncendioController extends Controller
         $validated['controlado'] = (bool) ($request->boolean('controlado'));
         $validated['necesita_mas_bomberos'] = (bool) ($request->boolean('necesita_mas_bomberos'));
 
-        $reporte_incendio->update($validated);
+        $reportes_incendio->update($validated);
         return redirect()->route('reportes_incendio.index');
     }
-    public function show(ReportesIncendio $reporte_incendio)
+    public function show(ReportesIncendio $reportes_incendio)
     {
-        return view('reportes_incendio.show', compact('reporte_incendio'));
+        return view('reportes_incendio.show', compact('reportes_incendio'));
     }
 
-    public function destroy(ReportesIncendio $reporte_incendio)
+    public function destroy(ReportesIncendio $reportes_incendio)
     {
-        $reporte_incendio->delete();
+        $reportes_incendio->delete();
         return redirect()->route('reportes_incendio.index')->with('success', 'Reporte de incendio eliminado');
     }
 }

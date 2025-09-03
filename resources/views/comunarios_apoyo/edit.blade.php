@@ -15,7 +15,8 @@
                     <x-adminlte-input name="nombre" label="Nombre" value="{{ old('nombre', $comunario->nombre) }}" required />
                 </div>
                 <div class="col-md-6 mb-3">
-                    <x-adminlte-input name="entidad_perteneciente" label="Entidad perteneciente" value="{{ old('entidad_perteneciente', $comunario->entidad_perteneciente) }}" required />
+                    <x-adminlte-input name="entidad_perteneciente" label="Entidad perteneciente"
+                        value="{{ old('entidad_perteneciente', $comunario->entidad_perteneciente) }}" required />
                 </div>
             </div>
 
@@ -30,5 +31,3 @@
         </form>
     </x-adminlte-card>
 @stop
-
-

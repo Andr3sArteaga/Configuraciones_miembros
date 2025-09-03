@@ -23,6 +23,7 @@ class UsuarioController extends Controller
     {
         $data = $request->validate([
             'nombre' => 'required|string|max:255',
+            'apellido' => 'required|string|max:255',
             'email' => 'required|email|unique:usuarios,email',
             'telefono' => 'nullable|string|max:255',
             'password' => 'nullable|string|min:6',

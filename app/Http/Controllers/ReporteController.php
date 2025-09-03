@@ -71,4 +71,10 @@ class ReporteController extends Controller
     {
         return view('reportes.show', compact('reporte'));
     }
+
+    public function destroy(Reporte $reporte)
+    {
+        $reporte->delete();
+        return redirect()->route('reportes.index')->with('success', 'Reporte eliminado exitosamente.');
+    }
 }

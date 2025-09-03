@@ -20,11 +20,23 @@
 
             <div class="row">
                 <div class="col-md-4 mb-3">
-                    <x-adminlte-input name="fecha_pedido" type="date" label="Fecha de pedido" value="{{ old('fecha_pedido') }}" />
+                    <x-adminlte-input name="fecha_pedido" type="date" label="Fecha de pedido"
+                        value="{{ old('fecha_pedido') }}" />
                 </div>
                 <div class="col-md-4 mb-3">
-                    <x-adminlte-input name="estado_del_pedido" label="Estado del pedido" value="{{ old('estado_del_pedido') }}" />
+                    <x-adminlte-select name="estado_del_pedido" label="Estado del pedido" required>
+                        <option value="">Seleccione estado</option>
+                        <option value="APROBADO" {{ old('estado_del_pedido') == 'APROBADO' ? 'selected' : '' }}>Aprobado
+                        </option>
+                        <option value="RECHAZADO" {{ old('estado_del_pedido') == 'RECHAZADO' ? 'selected' : '' }}>Rechazado
+                        </option>
+                        <option value="ENTREGADO" {{ old('estado_del_pedido') == 'ENTREGADO' ? 'selected' : '' }}>Entregado
+                        </option>
+                        <option value="PENDIENTE" {{ old('estado_del_pedido') == 'PENDIENTE' ? 'selected' : '' }}>Pendiente
+                        </option>
+                    </x-adminlte-select>
                 </div>
+
                 <div class="col-md-4 mb-3">
                     <x-adminlte-input name="equipoid" label="Equipo ID" value="{{ old('equipoid') }}" />
                 </div>
@@ -32,10 +44,12 @@
 
             <div class="row">
                 <div class="col-md-6 mb-3">
-                    <x-adminlte-input name="lat" type="number" step="any" label="Latitud" value="{{ old('lat') }}" />
+                    <x-adminlte-input name="lat" type="number" step="any" label="Latitud"
+                        value="{{ old('lat') }}" />
                 </div>
                 <div class="col-md-6 mb-3">
-                    <x-adminlte-input name="lng" type="number" step="any" label="Longitud" value="{{ old('lng') }}" />
+                    <x-adminlte-input name="lng" type="number" step="any" label="Longitud"
+                        value="{{ old('lng') }}" />
                 </div>
             </div>
 
@@ -50,5 +64,3 @@
         </form>
     </x-adminlte-card>
 @stop
-
-

@@ -10,9 +10,9 @@
             <div class="col-md-8">
                 <dl class="row">
                     <dt class="col-sm-4">Nombre</dt>
-                    <dd class="col-sm-8">{{ $comunario->nombre }}</dd>
+                    <dd class="col-sm-8">{{ $comunarios_apoyo->nombre }}</dd>
                     <dt class="col-sm-4">Entidad perteneciente</dt>
-                    <dd class="col-sm-8">{{ $comunario->entidad_perteneciente }}</dd>
+                    <dd class="col-sm-8">{{ $comunarios_apoyo->entidad_perteneciente }}</dd>
                 </dl>
             </div>
         </div>
@@ -21,11 +21,9 @@
             <a href="{{ route('comunarios_apoyo.index') }}" class="btn btn-secondary">
                 <i class="fas fa-arrow-left"></i> Volver
             </a>
-            <a href="{{ route('comunarios_apoyo.edit', $comunario) }}" class="btn btn-primary">
+            <a href="{{ route('comunarios_apoyo.edit', $comunarios_apoyo) }}" class="btn btn-primary">
                 <i class="fas fa-edit"></i> Editar
             </a>
         </div>
     </x-adminlte-card>
 @stop
-
-

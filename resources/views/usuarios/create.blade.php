@@ -10,10 +10,13 @@
             @csrf
 
             <div class="row">
-                <div class="col-md-6 mb-3">
+                <div class="col-md-4 mb-3">
                     <x-adminlte-input name="nombre" label="Nombre" value="{{ old('nombre') }}" required />
                 </div>
-                <div class="col-md-6 mb-3">
+                <div class="col-md-4 mb-3">
+                    <x-adminlte-input name="apellido" label="Apellido" value="{{ old('apellido') }}" required />
+                </div>
+                <div class="col-md-4 mb-3">
                     <x-adminlte-input name="email" type="email" label="Email" value="{{ old('email') }}" required />
                 </div>
             </div>
@@ -38,5 +41,3 @@
         </form>
     </x-adminlte-card>
 @stop
-
-
