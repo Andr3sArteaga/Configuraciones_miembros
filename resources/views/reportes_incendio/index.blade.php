@@ -5,7 +5,7 @@
 @section('content_header_subtitle', 'Listado')
 
 @section('content_body')
-    <x-adminlte-card title="Reportes de Incendio" theme="primary" icon="fas fa-users">
+    <x-adminlte-card title="Reportes de Incendio" theme="orange" icon="fas fa-fire">
         <a href="{{ route('reportes_incendio.create') }}" class="btn btn-success mb-3">
             <i class="fas fa-plus"></i> Nuevo Reporte de Incendio
         </a>

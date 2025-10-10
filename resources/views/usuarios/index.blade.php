@@ -5,7 +5,7 @@
 @section('content_header_subtitle', 'Listado')
 
 @section('content_body')
-    <x-adminlte-card title="Usuarios" theme="primary" icon="fas fa-users">
+    <x-adminlte-card title="Usuarios" theme="orange" icon="fas fa-users">
         <a href="{{ route('usuarios.create') }}" class="btn btn-success mb-3">
             <i class="fas fa-plus"></i> Nuevo Usuario
         </a>

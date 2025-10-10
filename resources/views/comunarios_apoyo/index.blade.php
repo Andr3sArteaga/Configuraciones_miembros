@@ -5,7 +5,7 @@
 @section('content_header_subtitle', 'Listado')
 
 @section('content_body')
-    <x-adminlte-card title="Comunarios de Apoyo" theme="primary" icon="fas fa-users">
+    <x-adminlte-card title="Comunarios de Apoyo" theme="orange" icon="fas fa-hands-helping">
         <a href="{{ route('comunarios_apoyo.create') }}" class="btn btn-success mb-3">
             <i class="fas fa-plus"></i> Nuevo Comunario de Apoyo
         </a>

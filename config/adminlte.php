@@ -63,9 +63,9 @@ return [
     |
     */
 
-    'logo' => '<b>Admin</b>LTE',
-    'logo_img' => 'vendor/adminlte/dist/img/AdminLTELogo.png',
-    'logo_img_class' => 'brand-image img-circle elevation-3',
+    'logo' => '<b>Alas Chiquitanas</b>',
+    'logo_img' => 'vendor/adminlte/dist/img/fire2.png',
+    'logo_img_class' => 'brand-image custom-logo',
     'logo_img_xl' => null,
     'logo_img_xl_class' => 'brand-image-xs',
     'logo_img_alt' => 'Admin Logo',
@@ -154,7 +154,7 @@ return [
 
     'layout_topnav' => null,
     'layout_boxed' => null,
-    'layout_fixed_sidebar' => null,
+    'layout_fixed_sidebar' => true,
     'layout_fixed_navbar' => null,
     'layout_fixed_footer' => null,
     'layout_dark_mode' => null,
@@ -196,7 +196,7 @@ return [
     'classes_content_wrapper' => '',
     'classes_content_header' => '',
     'classes_content' => '',
-    'classes_sidebar' => 'sidebar-dark-primary elevation-4',
+    'classes_sidebar' => 'sidebar-white-primary elevation-4',
     'classes_sidebar_nav' => '',
     'classes_topnav' => 'navbar-white navbar-light',
     'classes_topnav_nav' => 'navbar-expand',
@@ -309,6 +309,10 @@ return [
             'type' => 'fullscreen-widget',
             'topnav_right' => true,
         ],
+        [
+            'type' => 'darkmode-widget',
+            'topnav_right' => true,
+        ],
 
         // Sidebar items:
         [
@@ -351,6 +355,12 @@ return [
             'icon' => 'fas fa-fire',
         ],
 
+        // * Mensajes Guardados
+        [
+            'text' => 'Mensajes Guardados',
+            'url'  => 'mensajes_guardados',
+            'icon' => 'fas fa-envelope',
+        ],
         [
             'text' => 'blog',
             'url' => 'admin/blog',
@@ -366,7 +376,7 @@ return [
         ['header' => 'account_settings'],
         [
             'text' => 'profile',
-            'url' => 'admin/settings',
+            'url' => 'admin/profile',
             'icon' => 'fas fa-fw fa-user',
         ],
         [
@@ -428,6 +438,12 @@ return [
             'icon_color' => 'cyan',
             'url' => '#',
         ],
+        ['header' => 'Informacion Adicional'],
+        [
+            'text' => 'Que es esto?',
+            'icon_color' => 'cyan',
+            'url' => '/',
+        ]
     ],
 
     /*

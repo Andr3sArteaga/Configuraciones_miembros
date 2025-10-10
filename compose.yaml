@@ -1,0 +1,58 @@
+services:
+  php-app:
+    build:
+      context: .
+    container_name: php-app
+    restart: unless-stopped
+    init: true
+    # Expose PHP-FPM port (for use with a web server like nginx or for debugging)
+    ports:
+      - "9000:9000"
+    # Use the .env file if present for Laravel configuration
+    env_file:
+      - ./.env
+    # If you use a database, uncomment the depends_on line and configure the DB connection in your .env
+    # depends_on:
+    #   - mysql-db
+    networks:
+      - appnet
+
+  # Example MySQL service for Laravel (uncomment if your .env or config/database.php uses MySQL)
+  # mysql-db:
+  #   image: mysql:latest
+  #   container_name: mysql-db
+  #   restart: unless-stopped
+  #   environment:
+  #     MYSQL_DATABASE: laravel
+  #     MYSQL_USER: laravel
+  #     MYSQL_PASSWORD: secret
+  #     MYSQL_ROOT_PASSWORD: rootsecret
+  #   ports:
+  #     - "3306:3306"
+  #   volumes:
+  #     - mysql-data:/var/lib/mysql
+  #   healthcheck:
+  #     test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+  #     interval: 10s
+  #     timeout: 5s
+  #     retries: 5
+  #   networks:
+  #     - appnet
+
+  # Example Redis service for Laravel cache/queue (uncomment if your .env or config uses Redis)
+  # redis:
+  #   image: redis:latest
+  #   container_name: redis
+  #   restart: unless-stopped
+  #   ports:
+  #     - "6379:6379"
+  #   networks:
+  #     - appnet
+
+networks:
+  appnet:
+    driver: bridge
+
+# Uncomment the following if you enable MySQL or other services with persistent data
+#volumes:
+#  mysql-data:
