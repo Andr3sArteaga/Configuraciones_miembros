@@ -3,6 +3,7 @@
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\ComunarioApoyoController;
 use App\Http\Controllers\Controller;
+use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\RecursoController;
 use App\Http\Controllers\ReporteController;
 use App\Http\Controllers\ReporteIncendio;
@@ -60,13 +61,14 @@ Route::prefix('donaciones')->group(function () {
     Route::get('/', fn() => "Lista de donaciones")->name('donaciones.index');
 });
 
-// ------------------ Rutas Dark Mode -----------------
+Route::get('notifications/show', [NotificationController::class, 'show'])
+    ->name('notifications.show')
+    ->middleware('auth');
 
+Route::get('notifications/get', [NotificationController::class, 'get'])
+    ->name('notifications.get')
+    ->middleware('auth');
 
-// routes/web.php
-// Route::get('/toggle-darkmode', function () {
-//     $current = session('dark_mode', false);
-//     session(['dark_mode' => !$current]);
-
-//     return redirect()->back(); // Redirecciona a la página anterior
-// })->name('toggle.darkmode');
+Route::get('notifications/fake', [NotificationController::class, 'fake'])
+    ->name('notifications.fake')
+    ->middleware('auth');

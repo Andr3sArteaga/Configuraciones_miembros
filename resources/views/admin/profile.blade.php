@@ -1,4 +1,4 @@
-@extends('adminlte::page')
+@extends('layouts.app')
 
 @section('title', 'Perfil de usuario')
 
@@ -11,11 +11,13 @@
     </div>
 @stop
 
-@section('content')
+@section('content_body')
     <div class="row">
         <div class="col-md-8">
             <div class="card">
-                <div class="card-header"><h3 class="card-title">Información de la cuenta</h3></div>
+                <div class="card-header">
+                    <h3 class="card-title">Información de la cuenta</h3>
+                </div>
                 <div class="card-body">
                     <p><strong>Nombre:</strong> {{ $user->name }}</p>
                     <p><strong>Correo:</strong> {{ $user->email }}</p>
@@ -41,7 +43,8 @@
     </div>
 
     <!-- Modal editar perfil -->
-    <div class="modal fade" id="modalEditarPerfil" tabindex="-1" role="dialog" aria-labelledby="modalEditarPerfilLabel" aria-hidden="true">
+    <div class="modal fade" id="modalEditarPerfil" tabindex="-1" role="dialog" aria-labelledby="modalEditarPerfilLabel"
+        aria-hidden="true">
         <div class="modal-dialog" role="document">
             <div class="modal-content">
                 <div class="modal-header">
@@ -56,7 +59,9 @@
                     <div class="modal-body">
                         <div class="form-group">
                             <label for="name">Nombre</label>
-                            <input type="text" name="name" id="name" class="form-control @error('name') is-invalid @enderror" value="{{ old('name', $user->name) }}" required>
+                            <input type="text" name="name" id="name"
+                                class="form-control @error('name') is-invalid @enderror"
+                                value="{{ old('name', $user->name) }}" required>
                             @error('name')
                                 <span class="invalid-feedback" role="alert"><strong>{{ $message }}</strong></span>
                             @enderror
@@ -64,7 +69,9 @@
 
                         <div class="form-group">
                             <label for="email">Correo</label>
-                            <input type="email" name="email" id="email" class="form-control @error('email') is-invalid @enderror" value="{{ old('email', $user->email) }}" required>
+                            <input type="email" name="email" id="email"
+                                class="form-control @error('email') is-invalid @enderror"
+                                value="{{ old('email', $user->email) }}" required>
                             @error('email')
                                 <span class="invalid-feedback" role="alert"><strong>{{ $message }}</strong></span>
                             @enderror
@@ -72,7 +79,8 @@
 
                         <div class="form-group">
                             <label for="password">Contraseña (opcional)</label>
-                            <input type="password" name="password" id="password" class="form-control @error('password') is-invalid @enderror">
+                            <input type="password" name="password" id="password"
+                                class="form-control @error('password') is-invalid @enderror">
                             @error('password')
                                 <span class="invalid-feedback" role="alert"><strong>{{ $message }}</strong></span>
                             @enderror
@@ -80,7 +88,8 @@
 
                         <div class="form-group">
                             <label for="password_confirmation">Confirmar contraseña</label>
-                            <input type="password" name="password_confirmation" id="password_confirmation" class="form-control">
+                            <input type="password" name="password_confirmation" id="password_confirmation"
+                                class="form-control">
                         </div>
                     </div>
                     <div class="modal-footer">

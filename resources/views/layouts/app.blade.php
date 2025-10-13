@@ -46,6 +46,13 @@
     <script>
         $(function() {
             console.log("JS global cargado desde layout con sidebar 🚀");
+
+            // Inicializar componentes de AdminLTE
+            if (typeof $.fn.dropdown !== 'undefined') {
+                $('.dropdown-toggle').dropdown();
+            }
+
+
         });
     </script>
 @endpush
@@ -96,6 +103,51 @@
 
         .dark-mode .main-header .navbar-brand {
             color: #ffffff !important;
+        }
+
+        /* Estilos específicos para el logo en modo oscuro - SIDEBAR */
+        .dark-mode .brand-link .brand-text {
+            color: #ff6b35 !important;
+            /* Color naranja para el texto del logo */
+            transition: color 0.3s ease !important;
+        }
+
+        .dark-mode .brand-link:hover .brand-text {
+            color: #ff8c42 !important;
+            /* Color naranja más claro en hover */
+        }
+
+        /* Estilos para el logo en modo claro también - SIDEBAR */
+        .brand-link .brand-text {
+            color: #007bff !important;
+            /* Color azul por defecto */
+            transition: color 0.3s ease !important;
+        }
+
+        .brand-link:hover .brand-text {
+            color: #0056b3 !important;
+            /* Color azul más oscuro en hover */
+        }
+
+        .dark-mode .input-group {
+            border-color: #6c757d !important;
+            border-bottom: 1px solid
+        }
+
+        .dark-mode .input-group-append .btn .fa-fw {
+            color: #ffffff !important;
+        }
+
+        .dark-mode .input-group {
+            border-radius: 5px;
+            border-color: #f8f9fa !important;
+            border: 1px solid;
+        }
+
+        .input-group {
+            border-radius: 5px;
+            border-color: #ced4da !important;
+            border: 1px solid;
         }
 
         .dark-mode .main-header .navbar-toggler {

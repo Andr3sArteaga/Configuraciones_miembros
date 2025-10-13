@@ -267,15 +267,7 @@ return [
 
         'casts' => [
             '*_json' => 'json',
-            '*' => function ($model) {
-                $casts = [];
-                foreach ($model->getAttributes() as $key => $value) {
-                    if (strpos($key, 'uuid') !== false) {
-                        $casts[$key] = 'string';
-                    }
-                }
-                return $casts;
-            },
+            '*_uuid' => 'string',
         ],
 
         /*
