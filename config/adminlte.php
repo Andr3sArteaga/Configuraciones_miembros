@@ -362,6 +362,26 @@ return [
             'text' => 'Reportes',
             'url'  => 'reportes',
             'icon' => 'fas fa-chart-bar',
+            'submenu' => [
+                [
+                    'text' => 'Reporte Rapido',
+                    'url'  => 'reportes/reporte_rapido',
+                    'icon' => 'fas fa-bolt',
+                ],
+                [
+                    'text' => 'Reporte de Usurio',
+                    'url'  => 'reportes/reporte_usuario',
+                    'icon' => 'fas fa-user',
+                ],
+            ],
+            
+        ],
+
+        //* Mapa de Incendios
+        [
+            'text' => 'Mapa de Incendios',
+            'url'  => 'mapa_incendios',
+            'icon' => 'fas fa-map-marked-alt',
         ],
 
         // * Recursos
@@ -384,6 +404,14 @@ return [
             'url'  => 'reportes_incendio',
             'icon' => 'fas fa-fire',
         ],
+
+        // * Brigadas
+        [
+            'text' => 'Brigadas',
+            'url'  => 'brigadas',
+            'icon' => 'fas fa-shield-alt',
+        ],
+
 
         // * Mensajes Guardados
         [

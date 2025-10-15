@@ -3,11 +3,13 @@
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Auth;
 use App\Http\Controllers\AdminController;
-use App\Http\Controllers\UsuarioController;
-use App\Http\Controllers\ReporteController;
-use App\Http\Controllers\RecursoController;
 use App\Http\Controllers\ComunarioApoyoController;
+use App\Http\Controllers\RecursoController;
+use App\Http\Controllers\ReporteController;
 use App\Http\Controllers\ReporteIncendioController;
+use App\Http\Controllers\UsuarioController;
+use App\Http\Controllers\MapaController;
+use App\Http\Controllers\BrigadasController;
 use App\Http\Controllers\NotificationController;
 
 // ------------------ Autenticación ------------------
@@ -38,6 +40,10 @@ Route::middleware(['auth'])->group(function () {
         'comunarios_apoyo' => ComunarioApoyoController::class,
         'reportes_incendio' => ReporteIncendioController::class,
     ]);
+
+    // ------------------ Mapa de incendios y brigadas ------------------
+    Route::resource('mapa_incendios', MapaController::class);
+    Route::resource('brigadas', BrigadasController::class);
 
     // ------------------ Donaciones ------------------
     Route::prefix('donaciones')->group(function () {
