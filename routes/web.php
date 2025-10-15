@@ -8,6 +8,8 @@ use App\Http\Controllers\ReporteController;
 use App\Http\Controllers\ReporteIncendio;
 use App\Http\Controllers\ReporteIncendioController;
 use App\Http\Controllers\UsuarioController;
+use App\Http\Controllers\MapaController;
+use App\Http\Controllers\BrigadasController;
 
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Auth;
@@ -53,6 +55,10 @@ Route::resource('recursos', RecursoController::class);
 Route::resource('comunarios_apoyo', ComunarioApoyoController::class);
 
 Route::resource('reportes_incendio', ReporteIncendioController::class);
+
+Route::resource('mapa_incendios', MapaController::class);
+
+Route::resource('brigadas', BrigadasController::class);
 
 // ------------------ Rutas Donaciones -----------------
 

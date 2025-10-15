@@ -30,6 +30,20 @@
                 </div>
             </div>
 
+            {{-- Campo agregado: Tipo de Usuario --}}
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <x-adminlte-select name="tipo_usuario" label="Tipo de Usuario" required>
+                        <option value="">-- Seleccione una opción --</option>
+                        <option value="Admin">Admin</option>
+                        <option value="Voluntario - Bombero">Voluntario (Bombero)</option>
+                        <option value="Voluntario - Policía">Voluntario (Policía)</option>
+                        <option value="Voluntario - Rescatista">Voluntario (Rescatista)</option>
+                        <option value="Voluntario - Servicios Médicos">Voluntario (Servicios Médicos)</option>
+                    </x-adminlte-select>
+                </div>
+            </div>
+
             <div class="d-flex gap-2">
                 <a href="{{ route('usuarios.index') }}" class="btn btn-secondary">
                     <i class="fas fa-arrow-left"></i> Volver
