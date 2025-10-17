@@ -4,6 +4,17 @@
 @section('content_header_title', 'Dashboard')
 
 @section('content_body')
+    <div class="col-lg-6 col-6">
+        <x-adminlte-profile-widget name="{{ $nameUser }}" desc="Administrator" theme="red"
+            img="https://picsum.photos/id/1/100" layout-type="classic">
+            <x-adminlte-profile-row-item icon="fas fa-fw fa-user-friends" title="Equipos" text="125" url="#"
+                badge="teal" />
+            <x-adminlte-profile-row-item icon="fas fa-fw fa-bell fa-flip-horizontal" title="Notificaciones" text="243"
+                url="#" badge="lightblue" />
+            <x-adminlte-profile-row-item icon="fas fa-fw fa-flag" title="Reportes" text="37" url="#"
+                badge="navy" />
+        </x-adminlte-profile-widget>
+    </div>
     <div class="row">
         <div class="col-lg-3 col-6">
             <div class="small-box bg-info">

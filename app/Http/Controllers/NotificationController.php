@@ -3,48 +3,55 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use App\Models\Notification; // tu modelo de notificaciones
+use Illuminate\Notifications\DatabaseNotification as Notification;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Str;
+use App\Models\User;
 
 class NotificationController extends Controller
 {
-
-
     public function fake()
     {
+        /** @var User|null $user */
         $user = Auth::user();
-        if (! $user) {
+        if (!$user) {
             return redirect()->back()->with('error', 'Debes estar autenticado para generar notificaciones de prueba.');
         }
 
         $n = rand(3, 7);
+
         for ($i = 0; $i < $n; $i++) {
-            Notification::create([
-                'user_id' => $user->id,
-                'message' => \Faker\Factory::create()->sentence(),
-                'read' => false,
-                'created_at' => now()->subMinutes(rand(0, 600)),
-            ]);
+            $user->notify(new \App\Notifications\TestNotification());
         }
 
         return redirect()->route('notifications.show')->with('success', "$n notificaciones de prueba creadas.");
     }
-    // Muestra todas las notificaciones
+
     public function show()
     {
-        $notifications = Notification::where('user_id', Auth::id())
+        /** @var User|null $user */
+        $user = Auth::user();
+
+        $notifications = Notification::where('notifiable_type', get_class($user))
+            ->where('notifiable_id', $user->getKey())
             ->orderBy('created_at', 'desc')
             ->get();
+
+        // Marcar todas como leídas
+        Notification::where('notifiable_type', get_class($user))
+            ->where('notifiable_id', $user->getKey())
+            ->whereNull('read_at')
+            ->update(['read_at' => now()]);
 
         return view('notifications.index', compact('notifications'));
     }
 
-    // Devuelve las nuevas notificaciones en JSON (para el navbar)
     public function get()
     {
-        $notifications = Notification::where('user_id', Auth::id())
-            ->where('read', false)  // <- Esta línea debe estar presente
+        /** @var User|null $user */
+        $user = Auth::user();
+        $notifications = Notification::where('notifiable_type', get_class($user))
+            ->where('notifiable_id', $user->getKey())
+            ->whereNull('read_at')  // para las no leídas
             ->orderBy('created_at', 'desc')
             ->take(5)
             ->get();

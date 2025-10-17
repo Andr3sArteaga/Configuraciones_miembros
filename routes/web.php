@@ -1,74 +1,56 @@
 <?php
 
-use App\Http\Controllers\AdminController;
-use App\Http\Controllers\ComunarioApoyoController;
-use App\Http\Controllers\Controller;
-use App\Http\Controllers\NotificationController;
-use App\Http\Controllers\RecursoController;
-use App\Http\Controllers\ReporteController;
-use App\Http\Controllers\ReporteIncendio;
-use App\Http\Controllers\ReporteIncendioController;
-use App\Http\Controllers\UsuarioController;
-
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Session;
-use Illuminate\Http\Request;
+use App\Http\Controllers\AdminController;
+use App\Http\Controllers\UsuarioController;
+use App\Http\Controllers\ReporteController;
+use App\Http\Controllers\RecursoController;
+use App\Http\Controllers\ComunarioApoyoController;
+use App\Http\Controllers\ReporteIncendioController;
+use App\Http\Controllers\NotificationController;
 
-use App\Models\ComunariosApoyo;
-
-//* ------------------ RUTAS WEB -----------------
-// -----------------   Bienvenida   --------------------
-
-Route::get('/#', function () {
-    return view('welcome'); // Asegúrate de tener resources/views/welcome.blade.php
-})->middleware(['auth'])->name('dashboard');
-
-// -----------------   Admin  ------------------
-
-Route::get('/admin/dashboard', [AdminController::class, 'dashboard'])->name('admin.dashboard');
-Route::get('/admin/profile', [AdminController::class, 'profile'])->name('admin.profile');
-Route::put('/admin/profile', [AdminController::class, 'updateProfile'])->name('admin.profile.update');
-Route::get('/admin/settings', [AdminController::class, 'settings'])->name('admin.settings');
-
-// ------------------ Contenido -----------------
-
-Route::get('/', function () {
-    return view('welcome'); // Asegúrate de tener resources/views/welcome.blade.php
-})->middleware(['auth'])->name('dashboard');
-
-Route::get('/dashboard', function () {
-    return view('dashboard'); // Asegúrate de tener resources/views/dashboard.blade.php
-})->middleware(['auth'])->name('dashboard');
+// ------------------ Autenticación ------------------
 
 Auth::routes();
 
-Route::get('/home', [App\Http\Controllers\HomeController::class, 'index'])->name('home');
+// ------------------ Middleware Auth ------------------
 
-Route::resource('usuarios', UsuarioController::class);
+Route::middleware(['auth'])->group(function () {
 
-Route::resource('reportes', ReporteController::class);
+    // ------------------ Página principal ------------------
+    Route::get('/', fn() => view('welcome'))->name('dashboard');
+    Route::get('/dashboard', fn() => view('dashboard'))->name('dashboard');
 
-Route::resource('recursos', RecursoController::class);
+    // ------------------ Admin ------------------
+    Route::prefix('admin')->group(function () {
+        Route::get('/dashboard', [AdminController::class, 'dashboard'])->name('admin.dashboard');
+        Route::get('/profile', [AdminController::class, 'profile'])->name('admin.profile');
+        Route::put('/profile', [AdminController::class, 'updateProfile'])->name('admin.profile.update');
+        Route::get('/settings', [AdminController::class, 'settings'])->name('admin.settings');
+    });
 
-Route::resource('comunarios_apoyo', ComunarioApoyoController::class);
+    // ------------------ CRUD principales ------------------
+    Route::resources([
+        'usuarios' => UsuarioController::class,
+        'reportes' => ReporteController::class,
+        'recursos' => RecursoController::class,
+        'comunarios_apoyo' => ComunarioApoyoController::class,
+        'reportes_incendio' => ReporteIncendioController::class,
+    ]);
 
-Route::resource('reportes_incendio', ReporteIncendioController::class);
+    // ------------------ Donaciones ------------------
+    Route::prefix('donaciones')->group(function () {
+        Route::get('/', fn() => "Lista de donaciones")->name('donaciones.index');
+    });
 
-// ------------------ Rutas Donaciones -----------------
-
-Route::prefix('donaciones')->group(function () {
-    Route::get('/', fn() => "Lista de donaciones")->name('donaciones.index');
+    // ------------------ Notificaciones ------------------
+    Route::prefix('notifications')->group(function () {
+        Route::get('/show', [NotificationController::class, 'show'])->name('notifications.show');
+        Route::get('/get', [NotificationController::class, 'get'])->name('notifications.get');
+        Route::get('/fake', [NotificationController::class, 'fake'])->name('notifications.fake');
+    });
 });
 
-Route::get('notifications/show', [NotificationController::class, 'show'])
-    ->name('notifications.show')
-    ->middleware('auth');
-
-Route::get('notifications/get', [NotificationController::class, 'get'])
-    ->name('notifications.get')
-    ->middleware('auth');
-
-Route::get('notifications/fake', [NotificationController::class, 'fake'])
-    ->name('notifications.fake')
-    ->middleware('auth');
+// ------------------ Home (redirige tras login) ------------------
+Route::get('/home', [App\Http\Controllers\HomeController::class, 'index'])->name('home');

@@ -8,6 +8,7 @@ use App\Models\ReportesIncendio;
 use App\Models\Recurso;
 use App\Models\Usuario;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Auth;
 
 class HomeController extends Controller
 {
@@ -28,6 +29,7 @@ class HomeController extends Controller
      */
     public function index()
     {
+        $nameUser = Auth::user()->name;
         $totalReportes = Reporte::count();
         $totalIncendios = ReportesIncendio::count();
         $totalRecursos = Recurso::count();
@@ -86,6 +88,7 @@ class HomeController extends Controller
         ];
 
         return view('home', compact(
+            'nameUser',
             'totalReportes',
             'totalIncendios',
             'totalRecursos',

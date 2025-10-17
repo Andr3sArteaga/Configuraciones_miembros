@@ -311,6 +311,20 @@ return [
             'topnav_right' => true,                   // Or "topnav => true" to place on the left (required).
             'dropdown_mode' => true,                  // Enables the dropdown mode (optional).
             'dropdown_flabel' => 'All notifications', // The label for the dropdown footer link (optional).
+            'dropdown_items' => [
+                [
+                    'text' => 'Esto es una notificacion de prueba',
+                    'url' => '#',
+                    'icon' => 'fas fa-fire text-danger',
+                    'time' => 'ahora'
+                ],
+                [
+                    'text' => 'Esta es otra notificacion',
+                    'url' => '#',
+                    'icon' => 'fas fa-truck text-info',
+                    'time' => 'hace 5 min'
+                ],
+            ],
             'update_cfg' => [
                 'url' => 'notifications/get',         // The url to periodically fetch new data (optional).
                 'period' => 30,                       // The update period for get new data (in seconds, optional).

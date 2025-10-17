@@ -10,22 +10,32 @@
             @csrf
 
             <div class="row">
-                <div class="col-md-4 mb-3">
+                <div class="col-md-6 mb-3">
                     <x-adminlte-input name="nombre" label="Nombre" value="{{ old('nombre') }}" required />
                 </div>
-                <div class="col-md-4 mb-3">
+                <div class="col-md-6 mb-3">
                     <x-adminlte-input name="apellido" label="Apellido" value="{{ old('apellido') }}" required />
-                </div>
-                <div class="col-md-4 mb-3">
-                    <x-adminlte-input name="email" type="email" label="Email" value="{{ old('email') }}" required />
                 </div>
             </div>
 
             <div class="row">
                 <div class="col-md-6 mb-3">
-                    <x-adminlte-input name="telefono" label="Teléfono" value="{{ old('telefono') }}" />
+                    <x-adminlte-input name="ci" label="CI" value="{{ old('ci') }}" required />
                 </div>
                 <div class="col-md-6 mb-3">
+                    <x-adminlte-input name="email" type="email" label="Email" value="{{ old('email') }}" required />
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-4 mb-3">
+                    <x-adminlte-input name="fecha_nacimiento" type="date" label="Fecha de Nacimiento"
+                        value="{{ old('fecha_nacimiento') }}" required />
+                </div>
+                <div class="col-md-4 mb-3">
+                    <x-adminlte-input name="telefono" label="Teléfono" value="{{ old('telefono') }}" />
+                </div>
+                <div class="col-md-4 mb-3">
                     <x-adminlte-input name="password" type="password" label="Password" />
                 </div>
             </div>

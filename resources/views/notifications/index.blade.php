@@ -7,12 +7,21 @@
 @stop
 
 @section('content')
-    <ul class="list-group">
-        @foreach ($notifications as $notification)
-            <li class="list-group-item d-flex justify-content-between align-items-center">
-                {{ $notification->message }}
-                <small>{{ $notification->created_at->diffForHumans() }}</small>
-            </li>
-        @endforeach
-    </ul>
-@stop
+    @foreach ($notifications as $notification)
+        @php
+            $title = $notification->data['title'] ?? 'Notificación sin título';
+            $message = $notification->data['message'] ?? 'Sin descripción disponible.';
+            $time = $notification->created_at->diffForHumans();
+            $antiguedad = $notification->created_at > now()->subDay() ? 'Nueva notificación' : 'Notificación Pasada';
+            $icono =
+                $notification->created_at > now()->subDay() ? 'fas fa-bell text-warning' : 'fas fa-bell text-muted';
+        @endphp
+
+        <x-adminlte-card title="{{ $title }}" theme="blue" icon="{{ $icono }}">
+            <!-- contenido de la tarjeta -->
+            <b style=" {{ $antiguedad == 'Nueva notificación' ? 'color: #e9ca03' : '' }}"> <i>{{ $antiguedad }}</i></b>
+            <p>{{ $message }}</p>
+            <small class="text-muted">{{ $time }}</small>
+        </x-adminlte-card>
+    @endforeach
+@endsection
