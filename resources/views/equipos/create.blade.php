@@ -103,6 +103,9 @@
                                                 <i class="fas fa-trash"></i> Eliminar Marcador
                                             </button>
                                         </div>
+                                        <!-- Campos ocultos para las coordenadas -->
+                                        <input type="hidden" id="latitud" name="latitud" value="{{ old('latitud') }}">
+                                        <input type="hidden" id="longitud" name="longitud" value="{{ old('longitud') }}">
                                     </div>
                                 </div>
                             </div>
