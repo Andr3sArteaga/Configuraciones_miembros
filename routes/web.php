@@ -10,7 +10,7 @@ use App\Http\Controllers\ReporteIncendioController;
 use App\Http\Controllers\FocoCalorController;
 use App\Http\Controllers\RecursoController;
 use App\Http\Controllers\NoticiaController;
-use App\Http\Controllers\CursosController;
+
 
 // ... (existing imports)
 use App\Http\Controllers\RoleController;
@@ -85,7 +85,45 @@ Route::middleware(['auth'])->group(function () {
     Route::resource('noticias', NoticiaController::class);
 
     // Cursos
-    Route::resource('cursos', CursosController::class);
+    Route::get('cursos', function () {
+        $cursos = [
+            (object) [
+                'id' => '1',
+                'titulo' => 'Curso de Primeros Auxilios',
+                'descripcion' => 'Curso básico de primeros auxilios para bomberos voluntarios.',
+                'inscritos' => 15,
+                'fecha_inicio' => \Carbon\Carbon::now()->addDays(5),
+            ],
+            (object) [
+                'id' => '2',
+                'titulo' => 'Manejo de Extintores',
+                'descripcion' => 'Capacitación práctica sobre el uso correcto de extintores.',
+                'inscritos' => 8,
+                'fecha_inicio' => \Carbon\Carbon::now()->addDays(10),
+            ],
+            (object) [
+                'id' => '3',
+                'titulo' => 'Rescate Vehicular',
+                'descripcion' => 'Técnicas avanzadas de rescate en accidentes de tránsito.',
+                'inscritos' => 20,
+                'fecha_inicio' => \Carbon\Carbon::now()->addDays(15),
+            ],
+        ];
+        // Mock pagination
+        $cursos = new \Illuminate\Pagination\LengthAwarePaginator(
+            $cursos, 
+            count($cursos), 
+            20, 
+            1, 
+            ['path' => url('cursos')]
+        );
+        
+        return view('cursos.index', compact('cursos'));
+    })->name('cursos.index');
+
+    Route::post('cursos', function () {
+        return redirect()->route('cursos.index')->with('success', 'Curso creado exitosamente (Simulado).');
+    })->name('cursos.store');
 
     // ========== CATÁLOGOS ==========
 
