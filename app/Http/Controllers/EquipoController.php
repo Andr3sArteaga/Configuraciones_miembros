@@ -20,7 +20,13 @@ class EquipoController extends Controller
             ->orderBy('creado', 'desc')
             ->paginate(20);
 
-        return view('equipos.index', compact('equipos'));
+        // Get estados for the create modal
+        $estados = EstadosSistema::where('tabla', 'equipos')
+            ->where('activo', true)
+            ->orderBy('orden')
+            ->get();
+
+        return view('equipos.index', compact('equipos', 'estados'));
     }
 
     /**
