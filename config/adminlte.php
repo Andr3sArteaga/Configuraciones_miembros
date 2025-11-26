@@ -370,9 +370,15 @@ return [
         // Información
         ['header' => 'INFORMACIÓN'],
         [
-            'text' => 'Noticias y Cursos',
+            'text' => 'Noticias',
             'url' => 'noticias',
             'icon' => 'fas fa-fw fa-newspaper',
+            'icon_color' => 'white',
+        ],
+        [
+            'text' => 'Cursos',
+            'url' => 'cursos',
+            'icon' => 'fas fa-fw fa-graduation-cap',
             'icon_color' => 'white',
         ],
 

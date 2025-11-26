@@ -10,6 +10,9 @@ use App\Http\Controllers\ReporteIncendioController;
 use App\Http\Controllers\FocoCalorController;
 use App\Http\Controllers\RecursoController;
 use App\Http\Controllers\NoticiaController;
+use App\Http\Controllers\CursosController;
+
+// ... (existing imports)
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\GeneroController;
 use App\Http\Controllers\TipoSangreController;
@@ -80,6 +83,9 @@ Route::middleware(['auth'])->group(function () {
 
     // Noticias
     Route::resource('noticias', NoticiaController::class);
+
+    // Cursos
+    Route::resource('cursos', CursosController::class);
 
     // ========== CATÁLOGOS ==========
 
