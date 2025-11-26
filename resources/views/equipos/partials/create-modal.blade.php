@@ -437,9 +437,9 @@
     });
 
     function initializeMap() {
-        const defaultLat = {{ $isEditMode && $equipo->latitud ? $equipo->latitud : -16.5000 }};
-        const defaultLng = {{ $isEditMode && $equipo->longitud ? $equipo->longitud : -64.5000 }};
-        const defaultZoom = {{ $isEditMode && $equipo->latitud ? 13 : 6 }};
+        const defaultLat = {{ ($isEditMode && isset($equipo) && $equipo->latitud) ? $equipo->latitud : -16.5000 }};
+        const defaultLng = {{ ($isEditMode && isset($equipo) && $equipo->longitud) ? $equipo->longitud : -64.5000 }};
+        const defaultZoom = {{ ($isEditMode && isset($equipo) && $equipo->latitud) ? 13 : 6 }};
 
         map = L.map('map-' + modalId).setView([defaultLat, defaultLng], defaultZoom);
 
@@ -449,7 +449,7 @@
         }).addTo(map);
 
         // Add existing marker if in edit mode
-        @if($isEditMode && $equipo->latitud && $equipo->longitud)
+        @if($isEditMode && isset($equipo) && $equipo->latitud && $equipo->longitud)
         marker = L.marker([defaultLat, defaultLng], { draggable: true }).addTo(map);
         marker.on('dragend', function(e) {
             const position = marker.getLatLng();
