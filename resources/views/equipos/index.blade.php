@@ -38,9 +38,9 @@
                             Listado de Equipos
                         </h3>
                         <div class="card-tools">
-                            <a href="{{ route('equipos.create') }}" class="btn btn-sm btn-primary">
+                            <button type="button" class="btn btn-sm btn-primary" data-toggle="modal" data-target="#createTeamModal">
                                 <i class="fas fa-plus"></i> Nuevo Equipo
-                            </a>
+                            </button>
                         </div>
                     </div>
                     <div class="card-body p-0">
@@ -105,7 +105,7 @@
                                         </tr>
                                     @empty
                                         <tr>
-                                            <td colspan="4" class="text-center text-muted py-3">
+                                            <td colspan="5" class="text-center text-muted py-3">
                                                 No hay equipos registrados
                                             </td>
                                         </tr>
@@ -126,4 +126,6 @@
             </div>
         @endif
     </div>
+
+    @include('equipos.partials.create-modal', ['equipo' => null])
 @stop
