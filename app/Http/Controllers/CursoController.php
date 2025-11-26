@@ -1,0 +1,296 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Models\Curso;
+use App\Models\CursoAsignado;
+use App\Models\Usuario;
+use App\Models\ComunariosApoyo;
+use Illuminate\Http\Request;
+use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Log;
+
+class CursoController extends Controller
+{
+    /**
+     * Display a listing of the resource.
+     */
+    public function index()
+    {
+        $cursos = Curso::withCount(['cursos_asignados'])
+            ->orderBy('creado', 'desc')
+            ->paginate(10);
+
+        return view('cursos.index', compact('cursos'));
+    }
+
+    /**
+     * Show the form for creating a new resource.
+     */
+    public function create()
+    {
+        return view('cursos.create');
+    }
+
+    /**
+     * Store a newly created resource in storage.
+     */
+    public function store(Request $request)
+    {
+        $validated = $request->validate([
+            'nombre' => 'required|string|max:200',
+            'descripcion' => 'nullable|string',
+        ], [
+            'nombre.required' => 'El nombre del curso es obligatorio.',
+            'nombre.max' => 'El nombre no puede superar los 200 caracteres.',
+        ]);
+
+        try {
+            Curso::create([
+                'id' => Str::uuid()->toString(),
+                'nombre' => $validated['nombre'],
+                'descripcion' => $validated['descripcion'] ?? null,
+            ]);
+
+            return redirect()->route('cursos.index')
+                ->with('success', 'Curso creado exitosamente.');
+        } catch (\Exception $e) {
+            return redirect()->route('cursos.index')
+                ->with('error', 'Error al crear el curso: ' . $e->getMessage())
+                ->withInput();
+        }
+    }
+
+    /**
+     * Display the specified resource.
+     */
+    public function show(string $id)
+    {
+        $curso = Curso::findOrFail($id);
+
+        // Obtener asignaciones sin relaciones eager loaded
+        // Las cargaremos dinámicamente en la vista
+        $asignaciones = CursoAsignado::where('curso_id', $id)
+            ->orderBy('fecha_asignacion', 'desc')
+            ->paginate(15);
+
+        // Procesar asignaciones para cargar las entidades correctas
+        $asignaciones->getCollection()->transform(function ($asignacion) {
+            if ($asignacion->entidad_tipo === 'usuario') {
+                $asignacion->entidad = Usuario::find($asignacion->entidad_id);
+            } else {
+                $asignacion->entidad = ComunariosApoyo::find($asignacion->entidad_id);
+            }
+            return $asignacion;
+        });
+
+        return view('cursos.show', compact('curso', 'asignaciones'));
+    }
+
+    /**
+     * Show the form for editing the specified resource.
+     */
+    public function edit(string $id)
+    {
+        $curso = Curso::findOrFail($id);
+        return view('cursos.edit', compact('curso'));
+    }
+
+    /**
+     * Update the specified resource in storage.
+     */
+    public function update(Request $request, string $id)
+    {
+        $curso = Curso::findOrFail($id);
+
+        $request->validate([
+            'nombre' => 'required|string|max:200',
+            'descripcion' => 'nullable|string',
+        ]);
+
+        $curso->update([
+            'nombre' => $request->nombre,
+            'descripcion' => $request->descripcion,
+        ]);
+
+        return redirect()->route('cursos.index')
+            ->with('success', 'Curso actualizado exitosamente.');
+    }
+
+    /**
+     * Remove the specified resource from storage.
+     */
+    public function destroy(string $id)
+    {
+        try {
+            $curso = Curso::findOrFail($id);
+
+            // Las asignaciones se eliminan en cascada por la FK
+            $curso->delete();
+
+            return redirect()->route('cursos.index')
+                ->with('success', 'Curso eliminado exitosamente.');
+        } catch (\Exception $e) {
+            return redirect()->route('cursos.index')
+                ->with('error', 'Error al eliminar el curso: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Mostrar formulario para asignar curso
+     */
+    public function asignar(string $id)
+    {
+        $curso = Curso::findOrFail($id);
+
+        // Obtener usuarios activos
+        $usuarios = Usuario::whereHas('estados_sistema', function ($query) {
+            $query->where('codigo', 'ACTIVO');
+        })
+            ->orderBy('nombre')
+            ->orderBy('apellido')
+            ->get();
+
+        // Obtener comunarios
+        $comunarios = ComunariosApoyo::orderBy('nombre')->get();
+
+        // Obtener IDs ya asignados
+        $usuariosAsignados = CursoAsignado::where('curso_id', $id)
+            ->where('entidad_tipo', 'usuario')
+            ->pluck('entidad_id')
+            ->toArray();
+
+        $comunariosAsignados = CursoAsignado::where('curso_id', $id)
+            ->where('entidad_tipo', 'comunario')
+            ->pluck('entidad_id')
+            ->toArray();
+
+        return view('cursos.asignar', compact(
+            'curso',
+            'usuarios',
+            'comunarios',
+            'usuariosAsignados',
+            'comunariosAsignados'
+        ));
+    }
+
+    /**
+     * Asignar curso a una entidad (usuario o comunario)
+     */
+    public function storeAsignacion(Request $request, string $id)
+    {
+        $curso = Curso::findOrFail($id);
+
+        $request->validate([
+            'entidad_tipo' => 'required|in:usuario,comunario',
+            'entidad_id' => 'required|uuid',
+        ]);
+
+        // Verificar que no exista ya la asignación
+        $existe = CursoAsignado::where('curso_id', $id)
+            ->where('entidad_tipo', $request->entidad_tipo)
+            ->where('entidad_id', $request->entidad_id)
+            ->exists();
+
+        if ($existe) {
+            return redirect()->back()
+                ->with('error', 'Esta entidad ya tiene asignado este curso.');
+        }
+
+        // Validar que la entidad exista
+        if ($request->entidad_tipo === 'usuario') {
+            $entidad = Usuario::find($request->entidad_id);
+        } else {
+            $entidad = ComunariosApoyo::find($request->entidad_id);
+        }
+
+        if (!$entidad) {
+            return redirect()->back()
+                ->with('error', 'La entidad seleccionada no existe.');
+        }
+
+        CursoAsignado::create([
+            'id' => Str::uuid()->toString(),
+            'curso_id' => $id,
+            'entidad_tipo' => $request->entidad_tipo,
+            'entidad_id' => $request->entidad_id,
+        ]);
+
+        return redirect()->route('cursos.asignar', $id)
+            ->with('success', 'Curso asignado exitosamente.');
+    }
+
+    /**
+     * Remover asignación de curso
+     */
+    public function removerAsignacion(string $cursoId, string $asignacionId)
+    {
+        Log::info('Intentando remover asignación', [
+            'curso_id' => $cursoId,
+            'asignacion_id' => $asignacionId
+        ]);
+
+        try {
+            $asignacion = CursoAsignado::where('id', $asignacionId)
+                ->where('curso_id', $cursoId)
+                ->first();
+
+            if (!$asignacion) {
+                Log::warning('Asignación no encontrada');
+                return redirect()->back()
+                    ->with('error', 'Asignación no encontrada.');
+            }
+
+            Log::info('Asignación encontrada, eliminando...', [
+                'asignacion' => $asignacion->toArray()
+            ]);
+
+            $asignacion->delete();
+
+            Log::info('Asignación eliminada exitosamente');
+
+            return redirect()->route('cursos.show', $cursoId)
+                ->with('success', 'Asignación removida exitosamente.');
+        } catch (\Exception $e) {
+            Log::error('Error al remover asignación', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            return redirect()->back()
+                ->with('error', 'Error al remover la asignación: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Ver cursos de un usuario específico
+     */
+    public function cursosUsuario(string $usuarioId)
+    {
+        $usuario = Usuario::findOrFail($usuarioId);
+
+        $cursosAsignados = CursoAsignado::where('entidad_tipo', 'usuario')
+            ->where('entidad_id', $usuarioId)
+            ->with('curso')
+            ->orderBy('fecha_asignacion', 'desc')
+            ->paginate(10);
+
+        return view('cursos.usuario', compact('usuario', 'cursosAsignados'));
+    }
+
+    /**
+     * Ver cursos de un comunario específico
+     */
+    public function cursosComunario(string $comunarioId)
+    {
+        $comunario = ComunariosApoyo::findOrFail($comunarioId);
+
+        $cursosAsignados = CursoAsignado::where('entidad_tipo', 'comunario')
+            ->where('entidad_id', $comunarioId)
+            ->with('curso')
+            ->orderBy('fecha_asignacion', 'desc')
+            ->paginate(10);
+
+        return view('cursos.comunario', compact('comunario', 'cursosAsignados'));
+    }
+}

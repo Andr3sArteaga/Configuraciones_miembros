@@ -177,14 +177,14 @@
                 Swal.fire({
                     title: '¿Está seguro?',
                     text: "Esta acción no se puede revertir",
-                    type: 'warning',
+                    icon: 'warning',
                     showCancelButton: true,
                     confirmButtonColor: '#3085d6',
                     cancelButtonColor: '#d33',
                     confirmButtonText: 'Sí, eliminar',
                     cancelButtonText: 'Cancelar'
                 }).then((result) => {
-                    if (result.value) {
+                    if (result.isConfirmed) {
                         form.submit();
                     }
                 });

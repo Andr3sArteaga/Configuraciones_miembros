@@ -75,6 +75,25 @@ class Equipo extends Model
     }
 
     /**
+     * Relación many-to-many con usuarios a través de miembros_equipo
+     */
+    public function usuarios()
+    {
+        return $this->belongsToMany(Usuario::class, 'miembros_equipo', 'id_equipo', 'id_usuario')
+            ->withPivot('es_lider', 'fecha_ingreso');
+    }
+
+    /**
+     * Obtener el líder del equipo
+     */
+    public function lider()
+    {
+        return $this->belongsToMany(Usuario::class, 'miembros_equipo', 'id_equipo', 'id_usuario')
+            ->wherePivot('es_lider', true)
+            ->first();
+    }
+
+    /**
      * Accessor/Mutator para la columna PostGIS 'ubicacion'.
      *
      * - Get: Convierte geometría PostGIS a array GeoJSON.

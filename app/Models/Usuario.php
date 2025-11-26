@@ -40,6 +40,7 @@ use Illuminate\Database\Eloquent\Model;
  * @property EstadosSistema|null $estados_sistema
  * @property Collection|ReportesIncendio[] $reportes_incendios
  * @property Collection|MiembrosEquipo[] $miembros_equipos
+ * @property Collection|CursoAsignado[] $cursos_asignados
  *
  * @package App\Models
  */
@@ -126,5 +127,16 @@ class Usuario extends Model
 	public function miembros_equipos()
 	{
 		return $this->hasMany(MiembrosEquipo::class, 'id_usuario');
+	}
+
+	public function cursos_asignados()
+	{
+		return $this->hasMany(CursoAsignado::class, 'entidad_id')
+			->where('entidad_tipo', 'usuario');
+	}
+
+	public function cursos()
+	{
+		return $this->cursos_asignados()->with('curso');
 	}
 }

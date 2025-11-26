@@ -23,9 +23,24 @@
                 </button>
             </div>
             <div class="modal-body">
+                <!-- Alert para errores de validación -->
+                @if ($errors->any() && !$isEditMode)
+                    <div class="alert alert-danger alert-dismissible fade show">
+                        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                        <h6><i class="icon fas fa-ban"></i> Error en la validación</h6>
+                        <ul class="mb-0 pl-3">
+                            @foreach ($errors->all() as $error)
+                                <li>{{ $error }}</li>
+                            @endforeach
+                        </ul>
+                    </div>
+                @endif
+
                 <!-- Progress Bar -->
                 <div class="progress mb-4" style="height: 25px;">
-                    <div class="progress-bar progress-bar-striped progress-bar-animated bg-primary" role="progressbar" 
+                    <div class="progress-bar progress-bar-striped progress-bar-animated bg-primary" role="progressbar"
                          id="progressBar-{{ $modalId }}" style="width: 20%;" aria-valuenow="20" aria-valuemin="0" aria-valuemax="100">
                         Paso 1 de 5
                     </div>
@@ -185,42 +200,43 @@
                                             </tr>
                                         </thead>
                                         <tbody id="members-tbody-{{ $modalId }}">
-                                            <!-- Datos de ejemplo - estos vendrían de la base de datos -->
-                                            <tr class="member-row" data-entidad="bomberos" data-nivel="avanzado">
-                                                <td><input type="checkbox" class="member-checkbox" value="1"></td>
-                                                <td>Juan Pérez García</td>
-                                                <td><span class="badge badge-danger">Bomberos</span></td>
-                                                <td><span class="badge badge-success">Avanzado</span></td>
-                                                <td><span class="badge badge-success">Disponible</span></td>
-                                            </tr>
-                                            <tr class="member-row" data-entidad="policia" data-nivel="intermedio">
-                                                <td><input type="checkbox" class="member-checkbox" value="2"></td>
-                                                <td>María López Fernández</td>
-                                                <td><span class="badge badge-primary">Policía</span></td>
-                                                <td><span class="badge badge-info">Intermedio</span></td>
-                                                <td><span class="badge badge-success">Disponible</span></td>
-                                            </tr>
-                                            <tr class="member-row" data-entidad="defensa_civil" data-nivel="experto">
-                                                <td><input type="checkbox" class="member-checkbox" value="3"></td>
-                                                <td>Carlos Rodríguez Sánchez</td>
-                                                <td><span class="badge badge-warning">Defensa Civil</span></td>
-                                                <td><span class="badge badge-danger">Experto</span></td>
-                                                <td><span class="badge badge-success">Disponible</span></td>
-                                            </tr>
-                                            <tr class="member-row" data-entidad="voluntarios" data-nivel="basico">
-                                                <td><input type="checkbox" class="member-checkbox" value="4"></td>
-                                                <td>Ana Martínez Torres</td>
-                                                <td><span class="badge badge-secondary">Voluntarios</span></td>
-                                                <td><span class="badge badge-secondary">Básico</span></td>
-                                                <td><span class="badge badge-success">Disponible</span></td>
-                                            </tr>
-                                            <tr class="member-row" data-entidad="bomberos" data-nivel="intermedio">
-                                                <td><input type="checkbox" class="member-checkbox" value="5"></td>
-                                                <td>Pedro González Ramírez</td>
-                                                <td><span class="badge badge-danger">Bomberos</span></td>
-                                                <td><span class="badge badge-info">Intermedio</span></td>
-                                                <td><span class="badge badge-success">Disponible</span></td>
-                                            </tr>
+                                            @forelse($usuarios as $usuario)
+                                                <tr class="member-row"
+                                                    data-entidad="{{ strtolower($usuario->entidad_perteneciente ?? '') }}"
+                                                    data-nivel="{{ strtolower($usuario->niveles_entrenamiento->nivel ?? '') }}">
+                                                    <td><input type="checkbox" class="member-checkbox" value="{{ $usuario->id }}" name="miembros[]"></td>
+                                                    <td>{{ $usuario->nombre }} {{ $usuario->apellido }}</td>
+                                                    <td>
+                                                        @if($usuario->entidad_perteneciente)
+                                                            <span class="badge badge-info">{{ $usuario->entidad_perteneciente }}</span>
+                                                        @else
+                                                            <span class="badge badge-secondary">Sin entidad</span>
+                                                        @endif
+                                                    </td>
+                                                    <td>
+                                                        @if($usuario->niveles_entrenamiento)
+                                                            <span class="badge badge-success">{{ $usuario->niveles_entrenamiento->nivel }}</span>
+                                                        @else
+                                                            <span class="badge badge-secondary">N/A</span>
+                                                        @endif
+                                                    </td>
+                                                    <td>
+                                                        @if($usuario->estados_sistema)
+                                                            <span class="badge" style="background-color: {{ $usuario->estados_sistema->color ?? '#6c757d' }}; color: white;">
+                                                                {{ $usuario->estados_sistema->nombre }}
+                                                            </span>
+                                                        @else
+                                                            <span class="badge badge-secondary">N/A</span>
+                                                        @endif
+                                                    </td>
+                                                </tr>
+                                            @empty
+                                                <tr>
+                                                    <td colspan="5" class="text-center text-muted">
+                                                        <i class="fas fa-info-circle"></i> No hay usuarios disponibles
+                                                    </td>
+                                                </tr>
+                                            @endforelse
                                         </tbody>
                                     </table>
                                 </div>
@@ -434,6 +450,11 @@
         });
 
         initializeEventListeners();
+
+        // Show modal if there are validation errors
+        @if ($errors->any() && !$isEditMode)
+            $('#' + modalId).modal('show');
+        @endif
     });
 
     function initializeMap() {
@@ -506,6 +527,74 @@
         // Update resumen when name or state changes
         document.getElementById('nombre_equipo-' + modalId).addEventListener('input', updateResumen);
         document.getElementById('estado_id-' + modalId).addEventListener('change', updateResumen);
+
+        // Search and filter functionality
+        const searchInput = document.getElementById('search-member-' + modalId);
+        const filterEntidad = document.getElementById('filter-entidad-' + modalId);
+        const filterNivel = document.getElementById('filter-nivel-' + modalId);
+
+        if (searchInput) {
+            searchInput.addEventListener('input', filterMembers);
+        }
+        if (filterEntidad) {
+            filterEntidad.addEventListener('change', filterMembers);
+        }
+        if (filterNivel) {
+            filterNivel.addEventListener('change', filterMembers);
+        }
+
+        // Select all functionality
+        const selectAllCheckbox = document.getElementById('select-all-members-' + modalId);
+        if (selectAllCheckbox) {
+            selectAllCheckbox.addEventListener('change', function() {
+                const visibleCheckboxes = document.querySelectorAll('#members-tbody-' + modalId + ' .member-row:not([style*="display: none"]) .member-checkbox');
+                visibleCheckboxes.forEach(checkbox => {
+                    checkbox.checked = this.checked;
+                });
+                updateSelectedMembers();
+            });
+        }
+
+        // Leader selection change
+        const liderSelect = document.getElementById('lider-equipo-' + modalId);
+        if (liderSelect) {
+            liderSelect.addEventListener('change', function() {
+                const liderInfo = document.getElementById('lider-info-' + modalId);
+                const liderNombre = document.getElementById('lider-nombre-display-' + modalId);
+
+                if (this.value) {
+                    const selectedOption = this.options[this.selectedIndex];
+                    liderNombre.textContent = selectedOption.text;
+                    liderInfo.classList.remove('d-none');
+                } else {
+                    liderInfo.classList.add('d-none');
+                }
+            });
+        }
+    }
+
+    function filterMembers() {
+        const searchTerm = document.getElementById('search-member-' + modalId).value.toLowerCase();
+        const entidadFilter = document.getElementById('filter-entidad-' + modalId).value.toLowerCase();
+        const nivelFilter = document.getElementById('filter-nivel-' + modalId).value.toLowerCase();
+
+        const rows = document.querySelectorAll('#members-tbody-' + modalId + ' .member-row');
+
+        rows.forEach(row => {
+            const nombre = row.cells[1].textContent.toLowerCase();
+            const entidad = row.getAttribute('data-entidad');
+            const nivel = row.getAttribute('data-nivel');
+
+            const matchesSearch = nombre.includes(searchTerm);
+            const matchesEntidad = !entidadFilter || entidad.includes(entidadFilter);
+            const matchesNivel = !nivelFilter || nivel.includes(nivelFilter);
+
+            if (matchesSearch && matchesEntidad && matchesNivel) {
+                row.style.display = '';
+            } else {
+                row.style.display = 'none';
+            }
+        });
     }
 
     function nextStep() {
@@ -585,14 +674,44 @@
             const row = checkbox.closest('tr');
             selectedMembers.push({
                 id: checkbox.value,
-                nombre: row.cells[1].textContent,
-                entidad: row.cells[2].textContent,
-                nivel: row.cells[3].textContent
+                nombre: row.cells[1].textContent.trim(),
+                entidad: row.cells[2].textContent.trim(),
+                nivel: row.cells[3].textContent.trim()
             });
         });
 
         document.getElementById('selected-count-' + modalId).textContent = selectedMembers.length + ' seleccionados';
         document.getElementById('resumen-miembros-' + modalId).textContent = selectedMembers.length;
+
+        // Update the selected members list in step 3
+        updateSelectedMembersList();
+    }
+
+    function updateSelectedMembersList() {
+        const tbody = document.getElementById('selected-members-list-' + modalId);
+
+        if (selectedMembers.length === 0) {
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="5" class="text-center text-muted">
+                        <i class="fas fa-info-circle"></i> No hay miembros seleccionados
+                    </td>
+                </tr>
+            `;
+        } else {
+            tbody.innerHTML = '';
+            selectedMembers.forEach((member, index) => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${index + 1}</td>
+                    <td>${member.nombre}</td>
+                    <td>${member.entidad}</td>
+                    <td>${member.nivel}</td>
+                    <td><span class="badge badge-secondary">Miembro</span></td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
     }
 
     function updateResumen() {
@@ -617,6 +736,20 @@
     }
 
     function saveTeam() {
+        // Validar campos requeridos
+        const nombre = document.getElementById('nombre_equipo-' + modalId).value.trim();
+        const estado = document.getElementById('estado_id-' + modalId).value;
+
+        if (!nombre) {
+            alert('Por favor, ingrese el nombre del equipo');
+            return;
+        }
+
+        if (!estado) {
+            alert('Por favor, seleccione el estado del equipo');
+            return;
+        }
+
         // Create form and submit
         const form = document.createElement('form');
         form.method = 'POST';
@@ -638,15 +771,37 @@
         form.appendChild(methodInput);
         @endif
 
-        // Add form data
+        // Add basic form data
         const fields = ['nombre_equipo', 'estado_id', 'latitud', 'longitud'];
         fields.forEach(field => {
+            const element = document.getElementById(field + '-' + modalId);
+            if (element && element.value) {
+                const input = document.createElement('input');
+                input.type = 'hidden';
+                input.name = field;
+                input.value = element.value;
+                form.appendChild(input);
+            }
+        });
+
+        // Add selected members
+        selectedMembers.forEach(member => {
             const input = document.createElement('input');
             input.type = 'hidden';
-            input.name = field.replace('-' + modalId, '');
-            input.value = document.getElementById(field + '-' + modalId).value;
+            input.name = 'miembros[]';
+            input.value = member.id;
             form.appendChild(input);
         });
+
+        // Add leader if selected
+        const liderSelect = document.getElementById('lider-equipo-' + modalId);
+        if (liderSelect && liderSelect.value) {
+            const liderInput = document.createElement('input');
+            liderInput.type = 'hidden';
+            liderInput.name = 'lider_id';
+            liderInput.value = liderSelect.value;
+            form.appendChild(liderInput);
+        }
 
         document.body.appendChild(form);
         form.submit();

@@ -26,7 +26,14 @@ class EquipoController extends Controller
             ->orderBy('orden')
             ->get();
 
-        return view('equipos.index', compact('equipos', 'estados'));
+        // Get available usuarios for the create modal
+        $usuarios = Usuario::with(['niveles_entrenamiento', 'estados_sistema'])
+            ->whereNotNull('nivel_entrenamiento_id')
+            ->orderBy('nombre')
+            ->orderBy('apellido')
+            ->get();
+
+        return view('equipos.index', compact('equipos', 'estados', 'usuarios'));
     }
 
     /**
@@ -53,6 +60,9 @@ class EquipoController extends Controller
             'estado_id' => 'required|uuid|exists:estados_sistema,id',
             'latitud' => 'nullable|numeric|min:-90|max:90',
             'longitud' => 'nullable|numeric|min:-180|max:180',
+            'miembros' => 'nullable|array',
+            'miembros.*' => 'uuid|exists:usuarios,id',
+            'lider_id' => 'nullable|uuid|exists:usuarios,id',
         ], [
             'nombre_equipo.required' => 'El nombre del equipo es obligatorio',
             'nombre_equipo.max' => 'El nombre del equipo no puede exceder 100 caracteres',
@@ -64,36 +74,68 @@ class EquipoController extends Controller
             'longitud.numeric' => 'La longitud debe ser un número',
             'longitud.min' => 'La longitud debe estar entre -180 y 180',
             'longitud.max' => 'La longitud debe estar entre -180 y 180',
+            'miembros.array' => 'Los miembros deben ser un array válido',
+            'miembros.*.uuid' => 'Cada miembro debe tener un ID válido',
+            'miembros.*.exists' => 'Uno o más miembros seleccionados no existen',
+            'lider_id.uuid' => 'El ID del líder debe ser válido',
+            'lider_id.exists' => 'El líder seleccionado no existe',
         ]);
 
-        // Crear el ID del equipo
-        $equipoId = \Ramsey\Uuid\Uuid::uuid4()->toString();
+        try {
+            DB::beginTransaction();
 
-        // Si se proporcionaron coordenadas, insertar con PostGIS
-        if ($request->filled('latitud') && $request->filled('longitud')) {
-            $lat = $validated['latitud'];
-            $lng = $validated['longitud'];
+            // Crear el ID del equipo
+            $equipoId = \Ramsey\Uuid\Uuid::uuid4()->toString();
 
-            DB::statement(
-                "INSERT INTO equipos (id, nombre_equipo, estado_id, cantidad_integrantes, ubicacion, creado)
-                 VALUES (?, ?, ?, ?, ST_GeogFromText('POINT({$lng} {$lat})'), NOW())",
-                [$equipoId, $validated['nombre_equipo'], $validated['estado_id'], 0]
-            );
-        } else {
-            // Insertar sin ubicación
-            DB::statement(
-                "INSERT INTO equipos (id, nombre_equipo, estado_id, cantidad_integrantes, creado)
-                 VALUES (?, ?, ?, ?, NOW())",
-                [$equipoId, $validated['nombre_equipo'], $validated['estado_id'], 0]
-            );
+            // Si se proporcionaron coordenadas, insertar con PostGIS
+            if ($request->filled('latitud') && $request->filled('longitud')) {
+                $lat = $validated['latitud'];
+                $lng = $validated['longitud'];
+
+                DB::statement(
+                    "INSERT INTO equipos (id, nombre_equipo, estado_id, cantidad_integrantes, ubicacion, creado)
+                     VALUES (?, ?, ?, ?, ST_GeogFromText('POINT({$lng} {$lat})'), NOW())",
+                    [$equipoId, $validated['nombre_equipo'], $validated['estado_id'], 0]
+                );
+            } else {
+                // Insertar sin ubicación
+                DB::statement(
+                    "INSERT INTO equipos (id, nombre_equipo, estado_id, cantidad_integrantes, creado)
+                     VALUES (?, ?, ?, ?, NOW())",
+                    [$equipoId, $validated['nombre_equipo'], $validated['estado_id'], 0]
+                );
+            }
+
+            // Agregar miembros al equipo si se proporcionaron
+            if ($request->filled('miembros') && is_array($request->miembros)) {
+                $liderId = $request->filled('lider_id') ? $validated['lider_id'] : null;
+
+                foreach ($request->miembros as $usuarioId) {
+                    $miembroId = \Ramsey\Uuid\Uuid::uuid4()->toString();
+                    $esLider = ($liderId && $usuarioId === $liderId);
+
+                    DB::statement(
+                        "INSERT INTO miembros_equipo (id, id_equipo, id_usuario, es_lider, fecha_ingreso)
+                         VALUES (?, ?, ?, ?, NOW())",
+                        [$miembroId, $equipoId, $usuarioId, $esLider]
+                    );
+                }
+            }
+
+            DB::commit();
+
+            return redirect()
+                ->route('equipos.index')
+                ->with('success', 'Equipo creado exitosamente');
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+
+            return redirect()
+                ->back()
+                ->withInput()
+                ->withErrors(['error' => 'Error al crear el equipo: ' . $e->getMessage()]);
         }
-
-        // Cargar el equipo recién creado
-        $equipo = Equipo::find($equipoId);
-
-        return redirect()
-            ->route('equipos.index')
-            ->with('success', 'Equipo creado exitosamente');
     }
 
     /**

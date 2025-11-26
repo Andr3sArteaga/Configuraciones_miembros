@@ -7,6 +7,7 @@
 namespace App\Models;
 
 use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
 
 /**
@@ -18,8 +19,9 @@ use Illuminate\Database\Eloquent\Model;
  * @property string|null $entidad_perteneciente
  * @property string|null $equipoid
  * @property Carbon|null $creado
- * 
+ *
  * @property Equipo|null $equipo
+ * @property Collection|CursoAsignado[] $cursos_asignados
  *
  * @package App\Models
  */
@@ -49,5 +51,16 @@ class ComunariosApoyo extends Model
 	public function equipo()
 	{
 		return $this->belongsTo(Equipo::class, 'equipoid');
+	}
+
+	public function cursos_asignados()
+	{
+		return $this->hasMany(CursoAsignado::class, 'entidad_id')
+			->where('entidad_tipo', 'comunario');
+	}
+
+	public function cursos()
+	{
+		return $this->cursos_asignados()->with('curso');
 	}
 }

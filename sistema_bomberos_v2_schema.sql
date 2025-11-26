@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict yE1jTt33FDvBuCtAarYcxePnoXEZnjuINEw8abQcXggbxhcJEmfK2MFqBSwckBv
+\restrict unN5JVHqQ12x6ipqLmwdpQonAgFRTgmTU9paGh4brUs87EmS5TKDNH9QdP0ObDB
 
 -- Dumped from database version 17.6 (Homebrew)
 -- Dumped by pg_dump version 17.6 (Homebrew)
@@ -110,35 +110,28 @@ $$;
 
 ALTER FUNCTION public.update_timestamp() OWNER TO angelfrederickpizaojeda;
 
+--
+-- Name: validar_entidad_tipo(); Type: FUNCTION; Schema: public; Owner: angelfrederickpizaojeda
+--
+
+CREATE FUNCTION public.validar_entidad_tipo() RETURNS trigger
+    LANGUAGE plpgsql
+    AS $$
+BEGIN
+    IF NEW.entidad_tipo NOT IN ('usuario', 'comunario') THEN
+        RAISE EXCEPTION 'Valor inválido para entidad_tipo: %. Debe ser "usuario" o "comunario".', NEW.entidad_tipo;
+    END IF;
+
+    RETURN NEW;
+END;
+$$;
+
+
+ALTER FUNCTION public.validar_entidad_tipo() OWNER TO angelfrederickpizaojeda;
+
 SET default_tablespace = '';
 
 SET default_table_access_method = heap;
-
---
--- Name: cache; Type: TABLE; Schema: public; Owner: angelfrederickpizaojeda
---
-
-CREATE TABLE public.cache (
-    key character varying(255) NOT NULL,
-    value text NOT NULL,
-    expiration integer NOT NULL
-);
-
-
-ALTER TABLE public.cache OWNER TO angelfrederickpizaojeda;
-
---
--- Name: cache_locks; Type: TABLE; Schema: public; Owner: angelfrederickpizaojeda
---
-
-CREATE TABLE public.cache_locks (
-    key character varying(255) NOT NULL,
-    owner character varying(255) NOT NULL,
-    expiration integer NOT NULL
-);
-
-
-ALTER TABLE public.cache_locks OWNER TO angelfrederickpizaojeda;
 
 --
 -- Name: comunarios_apoyo; Type: TABLE; Schema: public; Owner: angelfrederickpizaojeda
@@ -174,6 +167,35 @@ CREATE TABLE public.condiciones_climaticas (
 
 
 ALTER TABLE public.condiciones_climaticas OWNER TO angelfrederickpizaojeda;
+
+--
+-- Name: cursos; Type: TABLE; Schema: public; Owner: angelfrederickpizaojeda
+--
+
+CREATE TABLE public.cursos (
+    id uuid DEFAULT public.uuid_generate_v4() NOT NULL,
+    nombre character varying(200) NOT NULL,
+    descripcion text,
+    creado timestamp without time zone DEFAULT CURRENT_TIMESTAMP
+);
+
+
+ALTER TABLE public.cursos OWNER TO angelfrederickpizaojeda;
+
+--
+-- Name: cursos_asignados; Type: TABLE; Schema: public; Owner: angelfrederickpizaojeda
+--
+
+CREATE TABLE public.cursos_asignados (
+    id uuid DEFAULT public.uuid_generate_v4() NOT NULL,
+    curso_id uuid,
+    entidad_id uuid NOT NULL,
+    entidad_tipo character varying(50) NOT NULL,
+    fecha_asignacion timestamp without time zone DEFAULT CURRENT_TIMESTAMP
+);
+
+
+ALTER TABLE public.cursos_asignados OWNER TO angelfrederickpizaojeda;
 
 --
 -- Name: equipos; Type: TABLE; Schema: public; Owner: angelfrederickpizaojeda
@@ -213,44 +235,6 @@ CREATE TABLE public.estados_sistema (
 ALTER TABLE public.estados_sistema OWNER TO angelfrederickpizaojeda;
 
 --
--- Name: failed_jobs; Type: TABLE; Schema: public; Owner: angelfrederickpizaojeda
---
-
-CREATE TABLE public.failed_jobs (
-    id bigint NOT NULL,
-    uuid character varying(255) NOT NULL,
-    connection text NOT NULL,
-    queue text NOT NULL,
-    payload text NOT NULL,
-    exception text NOT NULL,
-    failed_at timestamp(0) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL
-);
-
-
-ALTER TABLE public.failed_jobs OWNER TO angelfrederickpizaojeda;
-
---
--- Name: failed_jobs_id_seq; Type: SEQUENCE; Schema: public; Owner: angelfrederickpizaojeda
---
-
-CREATE SEQUENCE public.failed_jobs_id_seq
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
-ALTER SEQUENCE public.failed_jobs_id_seq OWNER TO angelfrederickpizaojeda;
-
---
--- Name: failed_jobs_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: angelfrederickpizaojeda
---
-
-ALTER SEQUENCE public.failed_jobs_id_seq OWNED BY public.failed_jobs.id;
-
-
---
 -- Name: focos_calor; Type: TABLE; Schema: public; Owner: angelfrederickpizaojeda
 --
 
@@ -286,64 +270,6 @@ CREATE TABLE public.generos (
 ALTER TABLE public.generos OWNER TO angelfrederickpizaojeda;
 
 --
--- Name: job_batches; Type: TABLE; Schema: public; Owner: angelfrederickpizaojeda
---
-
-CREATE TABLE public.job_batches (
-    id character varying(255) NOT NULL,
-    name character varying(255) NOT NULL,
-    total_jobs integer NOT NULL,
-    pending_jobs integer NOT NULL,
-    failed_jobs integer NOT NULL,
-    failed_job_ids text NOT NULL,
-    options text,
-    cancelled_at integer,
-    created_at integer NOT NULL,
-    finished_at integer
-);
-
-
-ALTER TABLE public.job_batches OWNER TO angelfrederickpizaojeda;
-
---
--- Name: jobs; Type: TABLE; Schema: public; Owner: angelfrederickpizaojeda
---
-
-CREATE TABLE public.jobs (
-    id bigint NOT NULL,
-    queue character varying(255) NOT NULL,
-    payload text NOT NULL,
-    attempts smallint NOT NULL,
-    reserved_at integer,
-    available_at integer NOT NULL,
-    created_at integer NOT NULL
-);
-
-
-ALTER TABLE public.jobs OWNER TO angelfrederickpizaojeda;
-
---
--- Name: jobs_id_seq; Type: SEQUENCE; Schema: public; Owner: angelfrederickpizaojeda
---
-
-CREATE SEQUENCE public.jobs_id_seq
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
-ALTER SEQUENCE public.jobs_id_seq OWNER TO angelfrederickpizaojeda;
-
---
--- Name: jobs_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: angelfrederickpizaojeda
---
-
-ALTER SEQUENCE public.jobs_id_seq OWNED BY public.jobs.id;
-
-
---
 -- Name: miembros_equipo; Type: TABLE; Schema: public; Owner: angelfrederickpizaojeda
 --
 
@@ -357,41 +283,6 @@ CREATE TABLE public.miembros_equipo (
 
 
 ALTER TABLE public.miembros_equipo OWNER TO angelfrederickpizaojeda;
-
---
--- Name: migrations; Type: TABLE; Schema: public; Owner: angelfrederickpizaojeda
---
-
-CREATE TABLE public.migrations (
-    id integer NOT NULL,
-    migration character varying(255) NOT NULL,
-    batch integer NOT NULL
-);
-
-
-ALTER TABLE public.migrations OWNER TO angelfrederickpizaojeda;
-
---
--- Name: migrations_id_seq; Type: SEQUENCE; Schema: public; Owner: angelfrederickpizaojeda
---
-
-CREATE SEQUENCE public.migrations_id_seq
-    AS integer
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
-ALTER SEQUENCE public.migrations_id_seq OWNER TO angelfrederickpizaojeda;
-
---
--- Name: migrations_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: angelfrederickpizaojeda
---
-
-ALTER SEQUENCE public.migrations_id_seq OWNED BY public.migrations.id;
-
 
 --
 -- Name: niveles_entrenamiento; Type: TABLE; Schema: public; Owner: angelfrederickpizaojeda
@@ -443,19 +334,6 @@ CREATE TABLE public.noticias_incendios (
 
 
 ALTER TABLE public.noticias_incendios OWNER TO angelfrederickpizaojeda;
-
---
--- Name: password_reset_tokens; Type: TABLE; Schema: public; Owner: angelfrederickpizaojeda
---
-
-CREATE TABLE public.password_reset_tokens (
-    email character varying(255) NOT NULL,
-    token character varying(255) NOT NULL,
-    created_at timestamp(0) without time zone
-);
-
-
-ALTER TABLE public.password_reset_tokens OWNER TO angelfrederickpizaojeda;
 
 --
 -- Name: recursos; Type: TABLE; Schema: public; Owner: angelfrederickpizaojeda
@@ -545,22 +423,6 @@ CREATE TABLE public.roles (
 ALTER TABLE public.roles OWNER TO angelfrederickpizaojeda;
 
 --
--- Name: sessions; Type: TABLE; Schema: public; Owner: angelfrederickpizaojeda
---
-
-CREATE TABLE public.sessions (
-    id character varying(255) NOT NULL,
-    user_id bigint,
-    ip_address character varying(45),
-    user_agent text,
-    payload text NOT NULL,
-    last_activity integer NOT NULL
-);
-
-
-ALTER TABLE public.sessions OWNER TO angelfrederickpizaojeda;
-
---
 -- Name: tipos_incidente; Type: TABLE; Schema: public; Owner: angelfrederickpizaojeda
 --
 
@@ -614,45 +476,6 @@ CREATE TABLE public.tipos_sangre (
 ALTER TABLE public.tipos_sangre OWNER TO angelfrederickpizaojeda;
 
 --
--- Name: users; Type: TABLE; Schema: public; Owner: angelfrederickpizaojeda
---
-
-CREATE TABLE public.users (
-    id bigint NOT NULL,
-    name character varying(255) NOT NULL,
-    email character varying(255) NOT NULL,
-    email_verified_at timestamp(0) without time zone,
-    password character varying(255) NOT NULL,
-    remember_token character varying(100),
-    created_at timestamp(0) without time zone,
-    updated_at timestamp(0) without time zone
-);
-
-
-ALTER TABLE public.users OWNER TO angelfrederickpizaojeda;
-
---
--- Name: users_id_seq; Type: SEQUENCE; Schema: public; Owner: angelfrederickpizaojeda
---
-
-CREATE SEQUENCE public.users_id_seq
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
-ALTER SEQUENCE public.users_id_seq OWNER TO angelfrederickpizaojeda;
-
---
--- Name: users_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: angelfrederickpizaojeda
---
-
-ALTER SEQUENCE public.users_id_seq OWNED BY public.users.id;
-
-
---
 -- Name: usuarios; Type: TABLE; Schema: public; Owner: angelfrederickpizaojeda
 --
 
@@ -682,50 +505,6 @@ CREATE TABLE public.usuarios (
 ALTER TABLE public.usuarios OWNER TO angelfrederickpizaojeda;
 
 --
--- Name: failed_jobs id; Type: DEFAULT; Schema: public; Owner: angelfrederickpizaojeda
---
-
-ALTER TABLE ONLY public.failed_jobs ALTER COLUMN id SET DEFAULT nextval('public.failed_jobs_id_seq'::regclass);
-
-
---
--- Name: jobs id; Type: DEFAULT; Schema: public; Owner: angelfrederickpizaojeda
---
-
-ALTER TABLE ONLY public.jobs ALTER COLUMN id SET DEFAULT nextval('public.jobs_id_seq'::regclass);
-
-
---
--- Name: migrations id; Type: DEFAULT; Schema: public; Owner: angelfrederickpizaojeda
---
-
-ALTER TABLE ONLY public.migrations ALTER COLUMN id SET DEFAULT nextval('public.migrations_id_seq'::regclass);
-
-
---
--- Name: users id; Type: DEFAULT; Schema: public; Owner: angelfrederickpizaojeda
---
-
-ALTER TABLE ONLY public.users ALTER COLUMN id SET DEFAULT nextval('public.users_id_seq'::regclass);
-
-
---
--- Name: cache_locks cache_locks_pkey; Type: CONSTRAINT; Schema: public; Owner: angelfrederickpizaojeda
---
-
-ALTER TABLE ONLY public.cache_locks
-    ADD CONSTRAINT cache_locks_pkey PRIMARY KEY (key);
-
-
---
--- Name: cache cache_pkey; Type: CONSTRAINT; Schema: public; Owner: angelfrederickpizaojeda
---
-
-ALTER TABLE ONLY public.cache
-    ADD CONSTRAINT cache_pkey PRIMARY KEY (key);
-
-
---
 -- Name: comunarios_apoyo comunarios_apoyo_pkey; Type: CONSTRAINT; Schema: public; Owner: angelfrederickpizaojeda
 --
 
@@ -747,6 +526,22 @@ ALTER TABLE ONLY public.condiciones_climaticas
 
 ALTER TABLE ONLY public.condiciones_climaticas
     ADD CONSTRAINT condiciones_climaticas_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: cursos_asignados cursos_asignados_pkey; Type: CONSTRAINT; Schema: public; Owner: angelfrederickpizaojeda
+--
+
+ALTER TABLE ONLY public.cursos_asignados
+    ADD CONSTRAINT cursos_asignados_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: cursos cursos_pkey; Type: CONSTRAINT; Schema: public; Owner: angelfrederickpizaojeda
+--
+
+ALTER TABLE ONLY public.cursos
+    ADD CONSTRAINT cursos_pkey PRIMARY KEY (id);
 
 
 --
@@ -774,22 +569,6 @@ ALTER TABLE ONLY public.estados_sistema
 
 
 --
--- Name: failed_jobs failed_jobs_pkey; Type: CONSTRAINT; Schema: public; Owner: angelfrederickpizaojeda
---
-
-ALTER TABLE ONLY public.failed_jobs
-    ADD CONSTRAINT failed_jobs_pkey PRIMARY KEY (id);
-
-
---
--- Name: failed_jobs failed_jobs_uuid_unique; Type: CONSTRAINT; Schema: public; Owner: angelfrederickpizaojeda
---
-
-ALTER TABLE ONLY public.failed_jobs
-    ADD CONSTRAINT failed_jobs_uuid_unique UNIQUE (uuid);
-
-
---
 -- Name: focos_calor focos_calor_pkey; Type: CONSTRAINT; Schema: public; Owner: angelfrederickpizaojeda
 --
 
@@ -814,22 +593,6 @@ ALTER TABLE ONLY public.generos
 
 
 --
--- Name: job_batches job_batches_pkey; Type: CONSTRAINT; Schema: public; Owner: angelfrederickpizaojeda
---
-
-ALTER TABLE ONLY public.job_batches
-    ADD CONSTRAINT job_batches_pkey PRIMARY KEY (id);
-
-
---
--- Name: jobs jobs_pkey; Type: CONSTRAINT; Schema: public; Owner: angelfrederickpizaojeda
---
-
-ALTER TABLE ONLY public.jobs
-    ADD CONSTRAINT jobs_pkey PRIMARY KEY (id);
-
-
---
 -- Name: miembros_equipo miembros_equipo_id_equipo_id_usuario_key; Type: CONSTRAINT; Schema: public; Owner: angelfrederickpizaojeda
 --
 
@@ -843,14 +606,6 @@ ALTER TABLE ONLY public.miembros_equipo
 
 ALTER TABLE ONLY public.miembros_equipo
     ADD CONSTRAINT miembros_equipo_pkey PRIMARY KEY (id);
-
-
---
--- Name: migrations migrations_pkey; Type: CONSTRAINT; Schema: public; Owner: angelfrederickpizaojeda
---
-
-ALTER TABLE ONLY public.migrations
-    ADD CONSTRAINT migrations_pkey PRIMARY KEY (id);
 
 
 --
@@ -910,14 +665,6 @@ ALTER TABLE ONLY public.noticias_incendios
 
 
 --
--- Name: password_reset_tokens password_reset_tokens_pkey; Type: CONSTRAINT; Schema: public; Owner: angelfrederickpizaojeda
---
-
-ALTER TABLE ONLY public.password_reset_tokens
-    ADD CONSTRAINT password_reset_tokens_pkey PRIMARY KEY (email);
-
-
---
 -- Name: recursos recursos_codigo_key; Type: CONSTRAINT; Schema: public; Owner: angelfrederickpizaojeda
 --
 
@@ -963,14 +710,6 @@ ALTER TABLE ONLY public.roles
 
 ALTER TABLE ONLY public.roles
     ADD CONSTRAINT roles_pkey PRIMARY KEY (id);
-
-
---
--- Name: sessions sessions_pkey; Type: CONSTRAINT; Schema: public; Owner: angelfrederickpizaojeda
---
-
-ALTER TABLE ONLY public.sessions
-    ADD CONSTRAINT sessions_pkey PRIMARY KEY (id);
 
 
 --
@@ -1022,22 +761,6 @@ ALTER TABLE ONLY public.tipos_sangre
 
 
 --
--- Name: users users_email_unique; Type: CONSTRAINT; Schema: public; Owner: angelfrederickpizaojeda
---
-
-ALTER TABLE ONLY public.users
-    ADD CONSTRAINT users_email_unique UNIQUE (email);
-
-
---
--- Name: users users_pkey; Type: CONSTRAINT; Schema: public; Owner: angelfrederickpizaojeda
---
-
-ALTER TABLE ONLY public.users
-    ADD CONSTRAINT users_pkey PRIMARY KEY (id);
-
-
---
 -- Name: usuarios usuarios_ci_key; Type: CONSTRAINT; Schema: public; Owner: angelfrederickpizaojeda
 --
 
@@ -1059,6 +782,34 @@ ALTER TABLE ONLY public.usuarios
 
 ALTER TABLE ONLY public.usuarios
     ADD CONSTRAINT usuarios_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: idx_cursos_asignados_curso; Type: INDEX; Schema: public; Owner: angelfrederickpizaojeda
+--
+
+CREATE INDEX idx_cursos_asignados_curso ON public.cursos_asignados USING btree (curso_id);
+
+
+--
+-- Name: idx_cursos_asignados_entidad; Type: INDEX; Schema: public; Owner: angelfrederickpizaojeda
+--
+
+CREATE INDEX idx_cursos_asignados_entidad ON public.cursos_asignados USING btree (entidad_id);
+
+
+--
+-- Name: idx_cursos_asignados_tipo; Type: INDEX; Schema: public; Owner: angelfrederickpizaojeda
+--
+
+CREATE INDEX idx_cursos_asignados_tipo ON public.cursos_asignados USING btree (entidad_tipo);
+
+
+--
+-- Name: idx_cursos_nombre; Type: INDEX; Schema: public; Owner: angelfrederickpizaojeda
+--
+
+CREATE INDEX idx_cursos_nombre ON public.cursos USING btree (nombre);
 
 
 --
@@ -1202,27 +953,6 @@ CREATE INDEX idx_usuarios_rol ON public.usuarios USING btree (rol_id);
 
 
 --
--- Name: jobs_queue_index; Type: INDEX; Schema: public; Owner: angelfrederickpizaojeda
---
-
-CREATE INDEX jobs_queue_index ON public.jobs USING btree (queue);
-
-
---
--- Name: sessions_last_activity_index; Type: INDEX; Schema: public; Owner: angelfrederickpizaojeda
---
-
-CREATE INDEX sessions_last_activity_index ON public.sessions USING btree (last_activity);
-
-
---
--- Name: sessions_user_id_index; Type: INDEX; Schema: public; Owner: angelfrederickpizaojeda
---
-
-CREATE INDEX sessions_user_id_index ON public.sessions USING btree (user_id);
-
-
---
 -- Name: miembros_equipo actualizar_cantidad_integrantes_trigger; Type: TRIGGER; Schema: public; Owner: angelfrederickpizaojeda
 --
 
@@ -1234,6 +964,13 @@ CREATE TRIGGER actualizar_cantidad_integrantes_trigger AFTER INSERT OR DELETE ON
 --
 
 CREATE TRIGGER generar_codigo_recurso_trigger BEFORE INSERT ON public.recursos FOR EACH ROW EXECUTE FUNCTION public.generar_codigo_recurso();
+
+
+--
+-- Name: cursos_asignados trg_validar_entidad_tipo; Type: TRIGGER; Schema: public; Owner: angelfrederickpizaojeda
+--
+
+CREATE TRIGGER trg_validar_entidad_tipo BEFORE INSERT OR UPDATE ON public.cursos_asignados FOR EACH ROW EXECUTE FUNCTION public.validar_entidad_tipo();
 
 
 --
@@ -1284,6 +1021,14 @@ CREATE TRIGGER update_usuarios_timestamp BEFORE UPDATE ON public.usuarios FOR EA
 
 ALTER TABLE ONLY public.comunarios_apoyo
     ADD CONSTRAINT comunarios_apoyo_equipoid_fkey FOREIGN KEY (equipoid) REFERENCES public.equipos(id) ON DELETE CASCADE;
+
+
+--
+-- Name: cursos_asignados cursos_asignados_curso_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: angelfrederickpizaojeda
+--
+
+ALTER TABLE ONLY public.cursos_asignados
+    ADD CONSTRAINT cursos_asignados_curso_id_fkey FOREIGN KEY (curso_id) REFERENCES public.cursos(id) ON DELETE CASCADE;
 
 
 --
@@ -1418,5 +1163,5 @@ ALTER TABLE ONLY public.usuarios
 -- PostgreSQL database dump complete
 --
 
-\unrestrict yE1jTt33FDvBuCtAarYcxePnoXEZnjuINEw8abQcXggbxhcJEmfK2MFqBSwckBv
+\unrestrict unN5JVHqQ12x6ipqLmwdpQonAgFRTgmTU9paGh4brUs87EmS5TKDNH9QdP0ObDB
 
