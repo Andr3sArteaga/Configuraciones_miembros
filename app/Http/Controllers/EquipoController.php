@@ -60,22 +60,30 @@ class EquipoController extends Controller
             'longitud.max' => 'La longitud debe estar entre -180 y 180',
         ]);
 
-        // Crear el equipo
-        $equipo = new Equipo();
-        $equipo->id = \Ramsey\Uuid\Uuid::uuid4()->toString();
-        $equipo->nombre_equipo = $validated['nombre_equipo'];
-        $equipo->estado_id = $validated['estado_id'];
-        $equipo->cantidad_integrantes = 0;
+        // Crear el ID del equipo
+        $equipoId = \Ramsey\Uuid\Uuid::uuid4()->toString();
 
-        // Si se proporcionaron coordenadas, crear el punto geográfico
+        // Si se proporcionaron coordenadas, insertar con PostGIS
         if ($request->filled('latitud') && $request->filled('longitud')) {
             $lat = $validated['latitud'];
             $lng = $validated['longitud'];
-            // Formato WKT (Well-Known Text) para PostGIS
-            $equipo->ubicacion = DB::raw("ST_GeogFromText('POINT({$lng} {$lat})')");
+
+            DB::statement(
+                "INSERT INTO equipos (id, nombre_equipo, estado_id, cantidad_integrantes, ubicacion, creado)
+                 VALUES (?, ?, ?, ?, ST_GeogFromText('POINT({$lng} {$lat})'), NOW())",
+                [$equipoId, $validated['nombre_equipo'], $validated['estado_id'], 0]
+            );
+        } else {
+            // Insertar sin ubicación
+            DB::statement(
+                "INSERT INTO equipos (id, nombre_equipo, estado_id, cantidad_integrantes, creado)
+                 VALUES (?, ?, ?, ?, NOW())",
+                [$equipoId, $validated['nombre_equipo'], $validated['estado_id'], 0]
+            );
         }
 
-        $equipo->save();
+        // Cargar el equipo recién creado
+        $equipo = Equipo::find($equipoId);
 
         return redirect()
             ->route('equipos.index')

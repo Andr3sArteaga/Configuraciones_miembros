@@ -48,7 +48,9 @@
                                     <i class="fas fa-fire text-danger mr-2"></i>
                                     <span class="mr-3">Focos de Calor</span>
                                     <i class="fas fa-users text-primary mr-2"></i>
-                                    <span>Equipos de Bomberos</span>
+                                    <span class="mr-3">Equipos</span>
+                                    <i class="fas fa-bullhorn text-warning mr-2"></i>
+                                    <span>Reportes</span>
                                 </div>
                             </div>
                             <div class="col-sm-6 text-right">
@@ -86,7 +88,18 @@
             </div>
             <div class="col-md-3 col-sm-6 col-12">
                 <div class="info-box">
-                    <span class="info-box-icon bg-warning"><i class="fas fa-exclamation-triangle"></i></span>
+                    <span class="info-box-icon bg-warning"><i class="fas fa-bullhorn"></i></span>
+                    <div class="info-box-content">
+                        <span class="info-box-text">Reportes en Mapa</span>
+                        <span class="info-box-number" id="reportes-count">
+                            {{ $reportes->count() ?? 0 }}
+                        </span>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3 col-sm-6 col-12">
+                <div class="info-box">
+                    <span class="info-box-icon bg-danger"><i class="fas fa-exclamation-triangle"></i></span>
                     <div class="info-box-content">
                         <span class="info-box-text">Alta Confianza</span>
                         <span class="info-box-number" id="high-confidence-count">0</span>
@@ -207,6 +220,12 @@
             color: #007bff;
         }
 
+        .reporte-popup h6 {
+            margin: 0 0 10px 0;
+            font-weight: bold;
+            color: #ff9800;
+        }
+
         .popup-info {
             font-size: 12px;
         }
@@ -247,6 +266,7 @@
         let map;
         let focosLayer;
         let equiposLayer;
+        let reportesLayer;
 
         // Inicializar el mapa
         function initMap() {
@@ -272,10 +292,12 @@
             });
 
             equiposLayer = L.layerGroup();
+            reportesLayer = L.layerGroup();
 
             // Agregar capas al mapa
             map.addLayer(focosLayer);
             map.addLayer(equiposLayer);
+            map.addLayer(reportesLayer);
 
             // Agregar leyenda
             addLegend();
@@ -283,6 +305,7 @@
             // Cargar datos
             loadFocosData();
             loadEquiposData();
+            loadReportesData();
         }
 
         // Cargar focos de calor
@@ -389,14 +412,71 @@
                     });
 
                     // Ajustar vista del mapa si hay datos
-                    if (focosLayer.getLayers().length > 0 || equiposLayer.getLayers().length > 0) {
-                        const group = new L.featureGroup([focosLayer, equiposLayer]);
-                        map.fitBounds(group.getBounds().pad(0.1));
-                    }
+                    adjustMapBounds();
                 })
                 .catch(error => {
                     console.error('Error al cargar equipos:', error);
                 });
+        }
+
+        // Cargar reportes
+        function loadReportesData() {
+            const reportes = @json($reportes ?? []);
+
+            reportes.forEach(reporte => {
+                if (reporte.ubicacion && reporte.ubicacion.coordinates) {
+                    const [lng, lat] = reporte.ubicacion.coordinates;
+
+                    // Crear icono de reporte
+                    const reporteIcon = L.divIcon({
+                        html: '<div style="background-color: #ff9800; color: white; width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 3px solid white; box-shadow: 0 0 6px rgba(0,0,0,0.5);"><i class="fas fa-bullhorn" style="font-size: 12px;"></i></div>',
+                        className: 'reporte-marker',
+                        iconSize: [30, 30]
+                    });
+
+                    const marker = L.marker([lat, lng], {
+                        icon: reporteIcon
+                    });
+
+                    // Crear popup
+                    const fechaHora = reporte.fecha_hora ? new Date(reporte.fecha_hora).toLocaleString('es-BO') : 'N/A';
+                    const gravedadBadge = reporte.niveles_gravedad ? `<span class="badge badge-danger">${reporte.niveles_gravedad.nombre}</span>` : '';
+                    const estadoBadge = reporte.estados_sistema ? `<span class="badge" style="background-color: ${reporte.estados_sistema.color || '#6c757d'}">${reporte.estados_sistema.nombre}</span>` : '';
+
+                    const popupContent = `
+                        <div class="reporte-popup">
+                            <h6><i class="fas fa-bullhorn"></i> ${reporte.nombre_lugar || 'Reporte sin nombre'}</h6>
+                            <div class="popup-info">
+                                <p><strong>Fecha/Hora:</strong> ${fechaHora}</p>
+                                ${reporte.tipos_incidente ? `<p><strong>Tipo:</strong> ${reporte.tipos_incidente.nombre}</p>` : ''}
+                                ${gravedadBadge ? `<p><strong>Gravedad:</strong> ${gravedadBadge}</p>` : ''}
+                                ${estadoBadge ? `<p><strong>Estado:</strong> ${estadoBadge}</p>` : ''}
+                                ${reporte.nombre_reportante ? `<p><strong>Reportante:</strong> ${reporte.nombre_reportante}</p>` : ''}
+                                <p><strong>Coordenadas:</strong> ${lat.toFixed(6)}, ${lng.toFixed(6)}</p>
+                            </div>
+                            <div class="mt-2">
+                                <a href="/reportes/${reporte.id}" class="btn btn-sm btn-warning btn-block">
+                                    <i class="fas fa-info-circle"></i> Ver Detalles
+                                </a>
+                            </div>
+                        </div>
+                    `;
+
+                    marker.bindPopup(popupContent);
+                    reportesLayer.addLayer(marker);
+                }
+            });
+
+            // Ajustar vista del mapa si hay datos
+            adjustMapBounds();
+        }
+
+        // Ajustar vista del mapa para mostrar todas las capas
+        function adjustMapBounds() {
+            if (focosLayer.getLayers().length > 0 || equiposLayer.getLayers().length > 0 || reportesLayer.getLayers().length > 0) {
+                const group = new L.featureGroup([focosLayer, equiposLayer, reportesLayer]);
+                map.fitBounds(group.getBounds().pad(0.1));
+            }
         }
 
         // Agregar leyenda al mapa
@@ -413,6 +493,7 @@
                     <div><i class="circle" style="background: #ffc107;"></i> Foco Media Confianza (50-79%)</div>
                     <div><i class="circle" style="background: #17a2b8;"></i> Foco Baja Confianza (<50%)</div>
                     <div style="margin-top: 5px;"><i class="circle" style="background: #007bff;"></i> Equipo de Bomberos</div>
+                    <div><i class="circle" style="background: #ff9800;"></i> Reporte de Incidente</div>
                 `;
                 return div;
             };
