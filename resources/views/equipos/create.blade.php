@@ -85,7 +85,7 @@
                             <div class="row">
                                 <div class="col-md-12">
                                     <h5 class="mb-3">Ubicación GPS (Opcional)</h5>
-                                    <p class="text-muted">Haga clic en el mapa para establecer la ubicación del equipo</p>
+                                    <p class="text-muted">Haga clic aqi en el mapa para establecer la ubicación del equipo</p>
                                 </div>
                             </div>
 
