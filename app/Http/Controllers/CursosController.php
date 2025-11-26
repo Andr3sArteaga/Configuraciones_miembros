@@ -29,7 +29,17 @@ class CursosController extends Controller
      */
     public function store(Request $request)
     {
-        //
+        $request->validate([
+            'titulo' => 'required|string|max:255',
+            'descripcion' => 'nullable|string',
+            'url' => 'nullable|url',
+            'imagen' => 'nullable|string',
+            'fecha_inicio' => 'nullable|date',
+        ]);
+
+        Curso::create($request->all());
+
+        return redirect()->route('cursos.index')->with('success', 'Curso creado exitosamente.');
     }
 
     /**
