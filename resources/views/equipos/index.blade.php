@@ -127,5 +127,5 @@
         @endif
     </div>
 
-    @include('equipos.partials.create-modal')
+    @include('equipos.partials.create-modal', ['equipo' => null])
 @stop
