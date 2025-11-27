@@ -368,7 +368,7 @@
 
         // Cargar equipos de bomberos
         function loadEquiposData() {
-            fetch('/api/equipos')
+            fetch('/equipos/data/map')
                 .then(response => response.json())
                 .then(data => {
                     // Actualizar contador

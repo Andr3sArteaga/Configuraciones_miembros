@@ -73,7 +73,8 @@ Route::middleware(['auth'])->group(function () {
 
     // Equipos
     Route::resource('equipos', EquipoController::class);
-    Route::get('api/equipos', [EquipoController::class, 'api'])->name('api.equipos');
+    // Ruta para obtener equipos en el mapa del dashboard (autenticación web/sesión)
+    Route::get('equipos/data/map', [EquipoController::class, 'api'])->name('equipos.map-data');
     Route::post('equipos/{equipo}/miembros', [EquipoController::class, 'agregarMiembro'])->name('equipos.agregar-miembro');
     Route::delete('equipos/{equipo}/miembros/{usuario}', [EquipoController::class, 'removerMiembro'])->name('equipos.remover-miembro');
     Route::post('equipos/{equipo}/comunarios', [EquipoController::class, 'agregarComunario'])->name('equipos.agregar-comunario');

@@ -234,24 +234,33 @@ class EquipoController extends Controller
      */
     public function api()
     {
-        $equipos = Equipo::with('estados_sistema')
-            ->whereNotNull('ubicacion')
-            ->get()
-            ->map(function ($equipo) {
-                return [
-                    'id' => $equipo->id,
-                    'nombre_equipo' => $equipo->nombre_equipo,
-                    'cantidad_integrantes' => $equipo->cantidad_integrantes,
-                    'ubicacion' => $equipo->ubicacion,
-                    'estado' => $equipo->estados_sistema ? [
-                        'nombre' => $equipo->estados_sistema->nombre,
-                        'codigo' => $equipo->estados_sistema->codigo,
-                        'color' => $equipo->estados_sistema->color
-                    ] : null
-                ];
-            });
+        try {
+            $equipos = Equipo::with('estados_sistema')
+                ->whereNotNull('ubicacion')
+                ->get()
+                ->map(function ($equipo) {
+                    return [
+                        'id' => $equipo->id,
+                        'nombre_equipo' => $equipo->nombre_equipo,
+                        'cantidad_integrantes' => $equipo->cantidad_integrantes,
+                        'ubicacion' => $equipo->ubicacion,
+                        'estado' => $equipo->estados_sistema ? [
+                            'nombre' => $equipo->estados_sistema->nombre,
+                            'codigo' => $equipo->estados_sistema->codigo,
+                            'color' => $equipo->estados_sistema->color
+                        ] : null
+                    ];
+                });
 
-        return response()->json($equipos);
+            return response()->json($equipos);
+        } catch (\Exception $e) {
+            return response()->json([
+                'error' => 'Error al obtener equipos',
+                'message' => $e->getMessage(),
+                'line' => $e->getLine(),
+                'file' => basename($e->getFile())
+            ], 500);
+        }
     }
 
     /**
