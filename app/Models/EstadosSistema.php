@@ -57,24 +57,23 @@ class EstadosSistema extends Model
 		'activo',
 		'creado'
 	];
+	public function equipos()
+	{
+		return $this->hasMany(Equipo::class, 'estado_id');
+	}
+
+	public function recursos()
+	{
+		return $this->hasMany(Recurso::class, 'estado_id');
+	}
 
 	public function usuarios()
 	{
 		return $this->hasMany(Usuario::class, 'estado_id');
 	}
 
-	public function equipos()
-	{
-		return $this->hasMany(Equipo::class, 'estado_id');
-	}
-
 	public function reportes()
 	{
 		return $this->hasMany(Reporte::class, 'estado_id');
-	}
-
-	public function recursos()
-	{
-		return $this->hasMany(Recurso::class, 'estado_id');
 	}
 }

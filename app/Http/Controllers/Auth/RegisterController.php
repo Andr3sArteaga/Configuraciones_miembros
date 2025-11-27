@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Models\Usuario;
 use Illuminate\Foundation\Auth\RegistersUsers;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
@@ -49,8 +50,12 @@ class RegisterController extends Controller
     protected function validator(array $data)
     {
         return Validator::make($data, [
-            'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
+            'nombre' => ['required', 'string', 'max:100'],
+            'apellido' => ['required', 'string', 'max:100'],
+            'ci' => ['required', 'string', 'max:20', 'unique:usuarios,ci'],
+            'fecha_nacimiento' => ['required', 'date', 'before:today'],
+            'telefono' => ['nullable', 'string', 'max:20'],
+            'email' => ['required', 'string', 'email', 'max:150', 'unique:usuarios,email'],
             'password' => ['required', 'string', 'min:8', 'confirmed'],
         ]);
     }
@@ -59,14 +64,20 @@ class RegisterController extends Controller
      * Create a new user instance after a valid registration.
      *
      * @param  array  $data
-     * @return \App\Models\User
+     * @return \App\Models\Usuario
      */
     protected function create(array $data)
     {
-        return User::create([
-            'name' => $data['name'],
+        return Usuario::create([
+            'id' => \Illuminate\Support\Str::uuid()->toString(),
+            'nombre' => $data['nombre'],
+            'apellido' => $data['apellido'],
+            'ci' => $data['ci'],
+            'fecha_nacimiento' => $data['fecha_nacimiento'],
+            'telefono' => $data['telefono'] ?? null,
             'email' => $data['email'],
             'password' => Hash::make($data['password']),
+            'debe_cambiar_password' => true,
         ]);
     }
 }

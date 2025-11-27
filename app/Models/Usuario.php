@@ -7,8 +7,11 @@
 namespace App\Models;
 
 use Carbon\Carbon;
+use Illuminate\Auth\Events\Authenticated;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Foundation\Auth\User as Authenticatable;
+use Laravel\Sanctum\HasApiTokens;
 
 /**
  * Class Usuario
@@ -38,17 +41,18 @@ use Illuminate\Database\Eloquent\Model;
  * @property NivelesEntrenamiento|null $niveles_entrenamiento
  * @property Role|null $role
  * @property EstadosSistema|null $estados_sistema
- * @property Collection|ReportesIncendio[] $reportes_incendios
  * @property Collection|MiembrosEquipo[] $miembros_equipos
- * @property Collection|CursoAsignado[] $cursos_asignados
+ * @property Collection|ReportesIncendio[] $reportes_incendios
  *
  * @package App\Models
  */
-class Usuario extends Model
+class Usuario extends Authenticatable
 {
-	protected $keyType = 'string';
+	use HasApiTokens;
+
 	protected $table = 'usuarios';
 	public $incrementing = false;
+	protected $keyType = 'string';
 	public $timestamps = false;
 
 	protected $casts = [
@@ -119,24 +123,13 @@ class Usuario extends Model
 		return $this->belongsTo(EstadosSistema::class, 'estado_id');
 	}
 
-	public function reportes_incendios()
-	{
-		return $this->hasMany(ReportesIncendio::class, 'id_usuario_creador');
-	}
-
 	public function miembros_equipos()
 	{
 		return $this->hasMany(MiembrosEquipo::class, 'id_usuario');
 	}
 
-	public function cursos_asignados()
+	public function reportes_incendios()
 	{
-		return $this->hasMany(CursoAsignado::class, 'entidad_id')
-			->where('entidad_tipo', 'usuario');
-	}
-
-	public function cursos()
-	{
-		return $this->cursos_asignados()->with('curso');
+		return $this->hasMany(ReportesIncendio::class, 'id_usuario_creador');
 	}
 }

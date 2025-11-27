@@ -23,20 +23,20 @@ use Illuminate\Support\Facades\DB;
  * @property Carbon|null $actualizado
  * 
  * @property EstadosSistema|null $estados_sistema
- * @property Collection|Recurso[] $recursos
  * @property Collection|ComunariosApoyo[] $comunarios_apoyos
  * @property Collection|MiembrosEquipo[] $miembros_equipos
+ * @property Collection|Recurso[] $recursos
  *
  * @package App\Models
  */
 class Equipo extends Model
 {
-    protected $table = 'equipos';
-    public $incrementing = false;
-    protected $keyType = 'string';
-    public $timestamps = false;
+	protected $table = 'equipos';
+	public $incrementing = false;
+	protected $keyType = 'string';
+	public $timestamps = false;
 
-    protected $casts = [
+	protected $casts = [
         'id' => 'string',
         'ubicacion' => 'array',
         'cantidad_integrantes' => 'string',
@@ -45,53 +45,34 @@ class Equipo extends Model
         'actualizado' => 'datetime',
     ];
 
-    protected $fillable = [
-        'nombre_equipo',
-        'ubicacion',
-        'cantidad_integrantes',
-        'estado_id',
-        'creado',
-        'actualizado'
-    ];
+	protected $fillable = [
+		'nombre_equipo',
+		'ubicacion',
+		'cantidad_integrantes',
+		'estado_id',
+		'creado',
+		'actualizado'
+	];
 
-    public function estados_sistema()
-    {
-        return $this->belongsTo(EstadosSistema::class, 'estado_id');
-    }
+	public function estados_sistema()
+	{
+		return $this->belongsTo(EstadosSistema::class, 'estado_id');
+	}
 
-    public function recursos()
-    {
-        return $this->hasMany(Recurso::class, 'equipoid');
-    }
+	public function comunarios_apoyos()
+	{
+		return $this->hasMany(ComunariosApoyo::class, 'equipoid');
+	}
 
-    public function comunarios_apoyos()
-    {
-        return $this->hasMany(ComunariosApoyo::class, 'equipoid');
-    }
+	public function miembros_equipos()
+	{
+		return $this->hasMany(MiembrosEquipo::class, 'id_equipo');
+	}
 
-    public function miembros_equipos()
-    {
-        return $this->hasMany(MiembrosEquipo::class, 'id_equipo');
-    }
-
-    /**
-     * Relación many-to-many con usuarios a través de miembros_equipo
-     */
-    public function usuarios()
-    {
-        return $this->belongsToMany(Usuario::class, 'miembros_equipo', 'id_equipo', 'id_usuario')
-            ->withPivot('es_lider', 'fecha_ingreso');
-    }
-
-    /**
-     * Obtener el líder del equipo
-     */
-    public function lider()
-    {
-        return $this->belongsToMany(Usuario::class, 'miembros_equipo', 'id_equipo', 'id_usuario')
-            ->wherePivot('es_lider', true)
-            ->first();
-    }
+	public function recursos()
+	{
+		return $this->hasMany(Recurso::class, 'equipoid');
+	}
 
     /**
      * Accessor/Mutator para la columna PostGIS 'ubicacion'.
@@ -127,32 +108,6 @@ class Equipo extends Model
                 $lng = (float) $value['lng'];
 
                 return DB::raw("ST_SetSRID(ST_MakePoint({$lng}, {$lat}), 4326)");
-            }
-        );
-    }
-
-    /**
-     * Obtener latitud de la ubicación
-     */
-    protected function latitud(): \Illuminate\Database\Eloquent\Casts\Attribute
-    {
-        return \Illuminate\Database\Eloquent\Casts\Attribute::make(
-            get: function ($value, $attributes) {
-                $ubicacion = $this->ubicacion;
-                return $ubicacion['coordinates'][1] ?? null;
-            }
-        );
-    }
-
-    /**
-     * Obtener longitud de la ubicación
-     */
-    protected function longitud(): \Illuminate\Database\Eloquent\Casts\Attribute
-    {
-        return \Illuminate\Database\Eloquent\Casts\Attribute::make(
-            get: function ($value, $attributes) {
-                $ubicacion = $this->ubicacion;
-                return $ubicacion['coordinates'][0] ?? null;
             }
         );
     }
