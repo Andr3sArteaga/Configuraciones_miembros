@@ -366,6 +366,12 @@ return [
             'icon' => 'fas fa-fw fa-user-friends',
             'icon_color' => 'white',
         ],
+        [
+            'text' => 'Inscritos',
+            'url' => 'inscritos',
+            'icon' => 'fas fa-fw fa-user-plus',
+            'icon_color' => 'white',
+        ],
 
         // Información
         ['header' => 'INFORMACIÓN'],

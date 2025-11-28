@@ -11,6 +11,7 @@ use App\Http\Controllers\FocoCalorController;
 use App\Http\Controllers\RecursoController;
 use App\Http\Controllers\NoticiaController;
 use App\Http\Controllers\CursoController;
+use App\Http\Controllers\InscritoController;
 
 // ... (existing imports)
 use App\Http\Controllers\RoleController;
@@ -92,6 +93,8 @@ Route::middleware(['auth'])->group(function () {
     Route::delete('cursos/{curso}/asignacion/{asignacion}', [CursoController::class, 'removerAsignacion'])->name('cursos.remover-asignacion');
     Route::get('usuarios/{usuario}/cursos', [CursoController::class, 'cursosUsuario'])->name('usuarios.cursos');
     Route::get('comunarios/{comunario}/cursos', [CursoController::class, 'cursosComunario'])->name('comunarios.cursos');
+    // Inscritos
+    Route::post('cursos/{curso}/inscritos', [InscritoController::class, 'storeFromCurso'])->name('cursos.store-inscrito');
 
     // ========== CATÁLOGOS ==========
 
@@ -121,6 +124,9 @@ Route::middleware(['auth'])->group(function () {
 
     // Estados del Sistema
     Route::resource('estados-sistema', EstadoSistemaController::class);
+
+    // Inscritos
+    Route::resource('inscritos', InscritoController::class);
 
     // ========== MI CUENTA ==========
 

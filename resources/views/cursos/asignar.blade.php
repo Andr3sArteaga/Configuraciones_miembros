@@ -39,17 +39,21 @@
                             <div class="row">
                                 <div class="col-md-6">
                                     <div class="form-group">
-                                        <label for="entidad_tipo">Tipo de Entidad <span
-                                                class="text-danger">*</span></label>
+                                        <label for="entidad_tipo">Tipo de Entidad <span class="text-danger">*</span></label>
                                         <select class="form-control @error('entidad_tipo') is-invalid @enderror"
                                             id="entidad_tipo" name="entidad_tipo" required>
                                             <option value="">Seleccione...</option>
-                                            <option value="usuario" {{ old('entidad_tipo') == 'usuario' ? 'selected' : '' }}>
-                                                Usuario (Bombero)
+                                            <option value="usuario"
+                                                {{ old('entidad_tipo') == 'usuario' ? 'selected' : '' }}>
+                                                Usuario
                                             </option>
                                             <option value="comunario"
                                                 {{ old('entidad_tipo') == 'comunario' ? 'selected' : '' }}>
                                                 Comunario de Apoyo
+                                            </option>
+                                            <option value="inscrito"
+                                                {{ old('entidad_tipo') == 'inscrito' ? 'selected' : '' }}>
+                                                Inscrito
                                             </option>
                                         </select>
                                         @error('entidad_tipo')
@@ -91,6 +95,82 @@
                                             @endforeach
                                         </select>
                                     </div>
+
+                                    <div class="form-group" id="inscrito-group" style="display: none;">
+                                        <label>Seleccione una opción <span class="text-danger">*</span></label>
+                                        <div class="btn-group btn-group-toggle d-block" data-toggle="buttons">
+                                            <label class="btn btn-outline-primary active">
+                                                <input type="radio" name="inscrito_option" id="inscrito_existente"
+                                                    value="existente" checked> Inscrito Existente
+                                            </label>
+                                            <label class="btn btn-outline-success">
+                                                <input type="radio" name="inscrito_option" id="inscrito_nuevo"
+                                                    value="nuevo"> Crear Nuevo
+                                            </label>
+                                        </div>
+                                    </div>
+
+                                    <div class="form-group" id="inscrito-select-group" style="display: none;">
+                                        <label for="inscrito_select">Inscrito <span class="text-danger">*</span></label>
+                                        <select class="form-control select2" id="inscrito_select"
+                                            name="entidad_id_inscrito">
+                                            <option value="">Seleccione un inscrito...</option>
+                                            @foreach ($inscritos as $inscrito)
+                                                <option value="{{ $inscrito->id }}"
+                                                    {{ in_array($inscrito->id, $inscritosAsignados) ? 'disabled' : '' }}>
+                                                    {{ $inscrito->nombres }} {{ $inscrito->apellidos }} (CI:
+                                                    {{ $inscrito->ci }})
+                                                    {{ in_array($inscrito->id, $inscritosAsignados) ? '- Ya asignado' : '' }}
+                                                </option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Formulario de Inscrito (oculto inicialmente) -->
+                            <div id="inscrito-form-fields" style="display: none;">
+                                <hr>
+                                <h5 class="text-success"><i class="fas fa-user-plus"></i> Datos del Nuevo Inscrito</h5>
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <label for="inscrito_nombres">Nombres <span class="text-danger">*</span></label>
+                                            <input type="text" class="form-control" id="inscrito_nombres"
+                                                name="inscrito_nombres">
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <label for="inscrito_apellidos">Apellidos <span
+                                                    class="text-danger">*</span></label>
+                                            <input type="text" class="form-control" id="inscrito_apellidos"
+                                                name="inscrito_apellidos">
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-4">
+                                        <div class="form-group">
+                                            <label for="inscrito_ci">CI <span class="text-danger">*</span></label>
+                                            <input type="text" class="form-control" id="inscrito_ci"
+                                                name="inscrito_ci">
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="form-group">
+                                            <label for="inscrito_telefono">Teléfono</label>
+                                            <input type="text" class="form-control" id="inscrito_telefono"
+                                                name="inscrito_telefono">
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="form-group">
+                                            <label for="inscrito_correo">Correo <span class="text-danger">*</span></label>
+                                            <input type="email" class="form-control" id="inscrito_correo"
+                                                name="inscrito_correo">
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
 
@@ -119,7 +199,7 @@
                     </div>
                     <div class="card-body">
                         <div class="row">
-                            <div class="col-md-6">
+                            <div class="col-md-4">
                                 <h5>Usuarios Asignados ({{ count($usuariosAsignados) }})</h5>
                                 @if (count($usuariosAsignados) > 0)
                                     <ul class="list-group">
@@ -135,7 +215,7 @@
                                 @endif
                             </div>
 
-                            <div class="col-md-6">
+                            <div class="col-md-4">
                                 <h5>Comunarios Asignados ({{ count($comunariosAsignados) }})</h5>
                                 @if (count($comunariosAsignados) > 0)
                                     <ul class="list-group">
@@ -148,6 +228,22 @@
                                     </ul>
                                 @else
                                     <p class="text-muted">No hay comunarios asignados aún.</p>
+                                @endif
+                            </div>
+
+                            <div class="col-md-4">
+                                <h5>Inscritos Asignados ({{ count($inscritosAsignados ?? []) }})</h5>
+                                @if (isset($inscritos) && count($inscritosAsignados ?? []) > 0)
+                                    <ul class="list-group">
+                                        @foreach ($inscritos->whereIn('id', $inscritosAsignados) as $inscrito)
+                                            <li class="list-group-item">
+                                                <i class="fas fa-user-tag text-warning"></i>
+                                                {{ $inscrito->nombres }} {{ $inscrito->apellidos }}
+                                            </li>
+                                        @endforeach
+                                    </ul>
+                                @else
+                                    <p class="text-muted">No hay inscritos asignados aún.</p>
                                 @endif
                             </div>
                         </div>
@@ -178,25 +274,67 @@
             $('#entidad_tipo').on('change', function() {
                 const tipo = $(this).val();
 
+                // Ocultar todos los grupos
+                $('#usuario-group').hide();
+                $('#comunario-group').hide();
+                $('#inscrito-group').hide();
+                $('#inscrito-select-group').hide();
+                $('#inscrito-form-fields').hide();
+
+                // Remover required de todos los campos
+                $('#usuario_select').removeAttr('required');
+                $('#comunario_select').removeAttr('required');
+                $('#inscrito_select').removeAttr('required');
+                $('#inscrito_nombres, #inscrito_apellidos, #inscrito_ci, #inscrito_correo').removeAttr(
+                    'required');
+
+                // Mostrar el grupo correspondiente
                 if (tipo === 'usuario') {
                     $('#usuario-group').show();
-                    $('#comunario-group').hide();
                     $('#usuario_select').attr('required', true);
-                    $('#comunario_select').removeAttr('required');
                 } else if (tipo === 'comunario') {
-                    $('#usuario-group').hide();
                     $('#comunario-group').show();
                     $('#comunario_select').attr('required', true);
-                    $('#usuario_select').removeAttr('required');
-                } else {
-                    $('#usuario-group').hide();
-                    $('#comunario-group').hide();
-                    $('#usuario_select').removeAttr('required');
-                    $('#comunario_select').removeAttr('required');
+                } else if (tipo === 'inscrito') {
+                    $('#inscrito-group').show();
+                    // Por defecto mostrar inscrito existente
+                    if ($('#inscrito_existente').is(':checked')) {
+                        $('#inscrito-select-group').show();
+                        $('#inscrito_select').attr('required', true);
+                    } else {
+                        $('#inscrito-form-fields').show();
+                        $('#inscrito_nombres, #inscrito_apellidos, #inscrito_ci, #inscrito_correo').attr(
+                            'required', true);
+                    }
                 }
             });
 
-            // Al enviar el formulario, consolidar el ID de la entidad
+            // Manejar cambio entre inscrito existente y nuevo
+            $('input[name="inscrito_option"]').on('change', function() {
+                const option = $(this).val();
+
+                if (option === 'existente') {
+                    // Mostrar select de inscritos existentes
+                    $('#inscrito-select-group').show();
+                    $('#inscrito-form-fields').hide();
+
+                    // Actualizar required
+                    $('#inscrito_select').attr('required', true);
+                    $('#inscrito_nombres, #inscrito_apellidos, #inscrito_ci, #inscrito_correo').removeAttr(
+                        'required');
+                } else {
+                    // Mostrar formulario para crear nuevo
+                    $('#inscrito-select-group').hide();
+                    $('#inscrito-form-fields').show();
+
+                    // Actualizar required
+                    $('#inscrito_select').removeAttr('required');
+                    $('#inscrito_nombres, #inscrito_apellidos, #inscrito_ci, #inscrito_correo').attr(
+                        'required', true);
+                }
+            });
+
+            // Al enviar el formulario
             $('form').on('submit', function(e) {
                 const tipo = $('#entidad_tipo').val();
 
@@ -206,6 +344,17 @@
                 } else if (tipo === 'comunario') {
                     const comunarioId = $('#comunario_select').val();
                     $('#entidad_id_hidden').val(comunarioId);
+                } else if (tipo === 'inscrito') {
+                    const inscritoOption = $('input[name="inscrito_option"]:checked').val();
+
+                    if (inscritoOption === 'existente') {
+                        // Si es inscrito existente, usar el ID seleccionado
+                        const inscritoId = $('#inscrito_select').val();
+                        $('#entidad_id_hidden').val(inscritoId);
+                    } else {
+                        // Para inscrito nuevo, el ID se generará en el backend
+                        // No necesitamos establecer entidad_id_hidden
+                    }
                 }
             });
         });

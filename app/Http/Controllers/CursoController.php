@@ -6,9 +6,11 @@ use App\Models\Curso;
 use App\Models\CursoAsignado;
 use App\Models\Usuario;
 use App\Models\ComunariosApoyo;
+use App\Models\Inscrito;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\DB;
 
 class CursoController extends Controller
 {
@@ -78,8 +80,10 @@ class CursoController extends Controller
         $asignaciones->getCollection()->transform(function ($asignacion) {
             if ($asignacion->entidad_tipo === 'usuario') {
                 $asignacion->entidad = Usuario::find($asignacion->entidad_id);
-            } else {
+            } elseif ($asignacion->entidad_tipo === 'comunario') {
                 $asignacion->entidad = ComunariosApoyo::find($asignacion->entidad_id);
+            } else {
+                $asignacion->entidad = Inscrito::find($asignacion->entidad_id);
             }
             return $asignacion;
         });
@@ -154,6 +158,9 @@ class CursoController extends Controller
         // Obtener comunarios
         $comunarios = ComunariosApoyo::orderBy('nombre')->get();
 
+        // Obtener inscritos
+        $inscritos = Inscrito::orderBy('nombres')->orderBy('apellidos')->get();
+
         // Obtener IDs ya asignados
         $usuariosAsignados = CursoAsignado::where('curso_id', $id)
             ->where('entidad_tipo', 'usuario')
@@ -165,59 +172,155 @@ class CursoController extends Controller
             ->pluck('entidad_id')
             ->toArray();
 
+        $inscritosAsignados = CursoAsignado::where('curso_id', $id)
+            ->where('entidad_tipo', 'inscrito')
+            ->pluck('entidad_id')
+            ->toArray();
+
         return view('cursos.asignar', compact(
             'curso',
             'usuarios',
             'comunarios',
+            'inscritos',
             'usuariosAsignados',
-            'comunariosAsignados'
+            'comunariosAsignados',
+            'inscritosAsignados'
         ));
     }
 
     /**
-     * Asignar curso a una entidad (usuario o comunario)
+     * Asignar curso a una entidad (usuario, comunario o inscrito)
      */
     public function storeAsignacion(Request $request, string $id)
     {
         $curso = Curso::findOrFail($id);
 
         $request->validate([
-            'entidad_tipo' => 'required|in:usuario,comunario',
-            'entidad_id' => 'required|uuid',
+            'entidad_tipo' => 'required|in:usuario,comunario,inscrito',
         ]);
 
-        // Verificar que no exista ya la asignación
-        $existe = CursoAsignado::where('curso_id', $id)
-            ->where('entidad_tipo', $request->entidad_tipo)
-            ->where('entidad_id', $request->entidad_id)
-            ->exists();
+        try {
+            DB::beginTransaction();
 
-        if ($existe) {
+            // Si es inscrito, verificar si es nuevo o existente
+            if ($request->entidad_tipo === 'inscrito') {
+                // Verificar si se envió un ID de inscrito existente
+                if ($request->has('entidad_id') && !empty($request->entidad_id)) {
+                    // Es un inscrito existente
+                    $entidadId = $request->entidad_id;
+
+                    // Verificar que no exista ya la asignación
+                    $existe = CursoAsignado::where('curso_id', $id)
+                        ->where('entidad_tipo', 'inscrito')
+                        ->where('entidad_id', $entidadId)
+                        ->exists();
+
+                    if ($existe) {
+                        DB::rollBack();
+                        return redirect()->back()
+                            ->with('error', 'Este inscrito ya tiene asignado este curso.');
+                    }
+
+                    // Validar que el inscrito exista
+                    $inscrito = Inscrito::find($entidadId);
+                    if (!$inscrito) {
+                        DB::rollBack();
+                        return redirect()->back()
+                            ->with('error', 'El inscrito seleccionado no existe.');
+                    }
+                } else {
+                    // Es un inscrito nuevo, validar campos y crear
+                    $request->validate([
+                        'inscrito_nombres' => 'required|string|max:150',
+                        'inscrito_apellidos' => 'required|string|max:150',
+                        'inscrito_ci' => 'required|string|max:50|unique:inscrito,ci',
+                        'inscrito_telefono' => 'nullable|string|max:50',
+                        'inscrito_correo' => 'required|email|max:150|unique:inscrito,correo',
+                    ], [
+                        'inscrito_nombres.required' => 'El nombre del inscrito es obligatorio',
+                        'inscrito_apellidos.required' => 'Los apellidos del inscrito son obligatorios',
+                        'inscrito_ci.required' => 'El CI del inscrito es obligatorio',
+                        'inscrito_ci.unique' => 'Este CI ya está registrado',
+                        'inscrito_correo.required' => 'El correo del inscrito es obligatorio',
+                        'inscrito_correo.email' => 'El correo debe ser válido',
+                        'inscrito_correo.unique' => 'Este correo ya está registrado',
+                    ]);
+
+                    // Crear inscrito
+                    $inscrito = Inscrito::create([
+                        'id' => Str::uuid()->toString(),
+                        'nombres' => $request->inscrito_nombres,
+                        'apellidos' => $request->inscrito_apellidos,
+                        'ci' => $request->inscrito_ci,
+                        'telefono' => $request->inscrito_telefono,
+                        'correo' => $request->inscrito_correo,
+                        'fecha_registro' => now()
+                    ]);
+
+                    $entidadId = $inscrito->id;
+                }
+            } else {
+                // Para usuario o comunario, validar que exista el ID
+                $request->validate([
+                    'entidad_id' => 'required|uuid',
+                ]);
+
+                // Verificar que no exista ya la asignación
+                $existe = CursoAsignado::where('curso_id', $id)
+                    ->where('entidad_tipo', $request->entidad_tipo)
+                    ->where('entidad_id', $request->entidad_id)
+                    ->exists();
+
+                if ($existe) {
+                    DB::rollBack();
+                    return redirect()->back()
+                        ->with('error', 'Esta entidad ya tiene asignado este curso.');
+                }
+
+                // Validar que la entidad exista
+                if ($request->entidad_tipo === 'usuario') {
+                    $entidad = Usuario::find($request->entidad_id);
+                } else {
+                    $entidad = ComunariosApoyo::find($request->entidad_id);
+                }
+
+                if (!$entidad) {
+                    DB::rollBack();
+                    return redirect()->back()
+                        ->with('error', 'La entidad seleccionada no existe.');
+                }
+
+                $entidadId = $request->entidad_id;
+            }
+
+            // Crear la asignación
+            CursoAsignado::create([
+                'id' => Str::uuid()->toString(),
+                'curso_id' => $id,
+                'entidad_tipo' => $request->entidad_tipo,
+                'entidad_id' => $entidadId,
+            ]);
+
+            DB::commit();
+
+            // Mensaje de éxito según el tipo de asignación
+            if ($request->entidad_tipo === 'inscrito') {
+                $mensaje = ($request->has('entidad_id') && !empty($request->entidad_id))
+                    ? 'Inscrito asignado al curso exitosamente.'
+                    : 'Inscrito creado y asignado al curso exitosamente.';
+            } else {
+                $mensaje = 'Curso asignado exitosamente.';
+            }
+
+            return redirect()->route('cursos.asignar', $id)
+                ->with('success', $mensaje);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
             return redirect()->back()
-                ->with('error', 'Esta entidad ya tiene asignado este curso.');
+                ->with('error', 'Error al asignar curso: ' . $e->getMessage())
+                ->withInput();
         }
-
-        // Validar que la entidad exista
-        if ($request->entidad_tipo === 'usuario') {
-            $entidad = Usuario::find($request->entidad_id);
-        } else {
-            $entidad = ComunariosApoyo::find($request->entidad_id);
-        }
-
-        if (!$entidad) {
-            return redirect()->back()
-                ->with('error', 'La entidad seleccionada no existe.');
-        }
-
-        CursoAsignado::create([
-            'id' => Str::uuid()->toString(),
-            'curso_id' => $id,
-            'entidad_tipo' => $request->entidad_tipo,
-            'entidad_id' => $request->entidad_id,
-        ]);
-
-        return redirect()->route('cursos.asignar', $id)
-            ->with('success', 'Curso asignado exitosamente.');
     }
 
     /**

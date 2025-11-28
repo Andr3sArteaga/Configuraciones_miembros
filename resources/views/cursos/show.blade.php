@@ -102,6 +102,14 @@
                                 <span class="info-box-number">{{ $asignaciones->where('entidad_tipo', 'comunario')->count() }}</span>
                             </div>
                         </div>
+
+                        <div class="info-box">
+                            <span class="info-box-icon bg-warning"><i class="fas fa-user-tag"></i></span>
+                            <div class="info-box-content">
+                                <span class="info-box-text">Inscritos</span>
+                                <span class="info-box-number">{{ $asignaciones->where('entidad_tipo', 'inscrito')->count() }}</span>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -132,9 +140,13 @@
                                                 <span class="badge badge-primary">
                                                     <i class="fas fa-user"></i> Usuario
                                                 </span>
-                                            @else
+                                            @elseif ($asignacion->entidad_tipo === 'comunario')
                                                 <span class="badge badge-success">
                                                     <i class="fas fa-user-friends"></i> Comunario
+                                                </span>
+                                            @else
+                                                <span class="badge badge-warning">
+                                                    <i class="fas fa-user-tag"></i> Inscrito
                                                 </span>
                                             @endif
                                         </td>
@@ -144,8 +156,12 @@
                                                     <strong>{{ $asignacion->entidad->nombre }}
                                                         {{ $asignacion->entidad->apellido }}</strong><br>
                                                     <small class="text-muted">CI: {{ $asignacion->entidad->ci }}</small>
-                                                @else
+                                                @elseif ($asignacion->entidad_tipo === 'comunario')
                                                     <strong>{{ $asignacion->entidad->nombre }}</strong>
+                                                @else
+                                                    <strong>{{ $asignacion->entidad->nombres }}
+                                                        {{ $asignacion->entidad->apellidos }}</strong><br>
+                                                    <small class="text-muted">CI: {{ $asignacion->entidad->ci }}</small>
                                                 @endif
                                             @else
                                                 <span class="text-muted">No disponible</span>
@@ -155,9 +171,12 @@
                                             @if ($asignacion->entidad)
                                                 @if ($asignacion->entidad_tipo === 'usuario')
                                                     <small class="text-muted">Email: {{ $asignacion->entidad->email }}</small>
-                                                @else
+                                                @elseif ($asignacion->entidad_tipo === 'comunario')
                                                     <small class="text-muted">Edad:
                                                         {{ $asignacion->entidad->edad ?? 'N/A' }}</small>
+                                                @else
+                                                    <small class="text-muted">Email: {{ $asignacion->entidad->correo }}</small><br>
+                                                    <small class="text-muted">Tel: {{ $asignacion->entidad->telefono ?? 'N/A' }}</small>
                                                 @endif
                                             @endif
                                         </td>

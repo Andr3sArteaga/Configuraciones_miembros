@@ -38,7 +38,6 @@ class Equipo extends Model
 
 	protected $casts = [
         'id' => 'string',
-        'ubicacion' => 'array',
         'cantidad_integrantes' => 'string',
         'estado_id' => 'string',
         'creado' => 'datetime',
@@ -98,6 +97,10 @@ class Equipo extends Model
             set: function ($value) {
                 if ($value === null) {
                     return null;
+                }
+
+                if ($value instanceof \Illuminate\Contracts\Database\Query\Expression) {
+                    return $value;
                 }
 
                 if (!is_array($value) || !isset($value['lat'], $value['lng'])) {

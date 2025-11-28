@@ -45,7 +45,6 @@ class Reporte extends Model
 	protected $casts = [
         'id' => 'string',
         'fecha_hora' => 'datetime',
-        'ubicacion' => 'array',
         'tipo_incidente_id' => 'string',
         'gravedad_id' => 'string',
         'cant_bomberos' => 'int',
@@ -112,6 +111,10 @@ class Reporte extends Model
             set: function ($value) {
                 if ($value === null) {
                     return null;
+                }
+
+                if ($value instanceof \Illuminate\Contracts\Database\Query\Expression) {
+                    return $value;
                 }
 
                 if (!is_array($value) || !isset($value['lat'], $value['lng'])) {
