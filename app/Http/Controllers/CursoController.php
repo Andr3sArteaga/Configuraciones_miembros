@@ -11,6 +11,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Auth;
 
 class CursoController extends Controller
 {
@@ -88,7 +89,55 @@ class CursoController extends Controller
             return $asignacion;
         });
 
-        return view('cursos.show', compact('curso', 'asignaciones'));
+        // Determinar si el usuario autenticado ya está asignado como 'usuario'
+        $authUsuarioAsignado = false;
+        if (Auth::check()) {
+            $authUsuarioAsignado = CursoAsignado::where('curso_id', $id)
+                ->where('entidad_tipo', 'usuario')
+                ->where('entidad_id', Auth::id())
+                ->exists();
+        }
+
+        return view('cursos.show', compact('curso', 'asignaciones', 'authUsuarioAsignado'));
+    }
+
+    /**
+     * Permitir al usuario autenticado auto-inscribirse al curso
+     */
+    public function inscribirme(Request $request, string $id)
+    {
+        if (!Auth::check()) {
+            return redirect()->route('cursos.show', $id)->with('error', 'Debe iniciar sesión para inscribirse.');
+        }
+
+        try {
+            $curso = Curso::findOrFail($id);
+
+            // Comprobar duplicado
+            $existe = CursoAsignado::where('curso_id', $id)
+                ->where('entidad_tipo', 'usuario')
+                ->where('entidad_id', Auth::id())
+                ->exists();
+
+            if ($existe) {
+                return redirect()->route('cursos.show', $id)
+                    ->with('info', 'Ya estás inscrito en este curso');
+            }
+
+            // Crear asignación
+            CursoAsignado::create([
+                'id' => Str::uuid()->toString(),
+                'curso_id' => $id,
+                'entidad_tipo' => 'usuario',
+                'entidad_id' => Auth::id(),
+                'fecha_asignacion' => now()
+            ]);
+
+            return redirect()->route('cursos.show', $id)->with('success', 'Te has inscrito al curso correctamente');
+        } catch (\Exception $e) {
+            return redirect()->route('cursos.show', $id)
+                ->with('error', 'Error al inscribirte: ' . $e->getMessage());
+        }
     }
 
     /**
@@ -314,7 +363,6 @@ class CursoController extends Controller
 
             return redirect()->route('cursos.asignar', $id)
                 ->with('success', $mensaje);
-
         } catch (\Exception $e) {
             DB::rollBack();
             return redirect()->back()
