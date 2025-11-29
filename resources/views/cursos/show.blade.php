@@ -77,6 +77,23 @@
                         <a href="{{ route('cursos.index') }}" class="btn btn-secondary">
                             <i class="fas fa-arrow-left"></i> Volver
                         </a>
+                        {{-- Botón para que el usuario autenticado se inscriba a este curso (confirma mediante modal) --}}
+                        @auth
+                            @if (empty($authUsuarioAsignado) || !$authUsuarioAsignado)
+                                <button type="button" class="btn btn-primary ml-2" data-toggle="modal"
+                                    data-target="#inscribirmeModal">
+                                    <i class="fas fa-sign-in-alt"></i> Inscribirme
+                                </button>
+                            @else
+                                <button class="btn btn-outline-success ml-2" disabled>
+                                    <i class="fas fa-check"></i> Ya estás inscrito
+                                </button>
+                            @endif
+                        @else
+                            <a href="{{ route('login') }}" class="btn btn-outline-primary ml-2">
+                                <i class="fas fa-sign-in-alt"></i> Inicia sesión para inscribirte
+                            </a>
+                        @endauth
                     </div>
                 </div>
             </div>
@@ -91,7 +108,8 @@
                             <span class="info-box-icon bg-primary"><i class="fas fa-users"></i></span>
                             <div class="info-box-content">
                                 <span class="info-box-text">Usuarios</span>
-                                <span class="info-box-number">{{ $asignaciones->where('entidad_tipo', 'usuario')->count() }}</span>
+                                <span
+                                    class="info-box-number">{{ $asignaciones->where('entidad_tipo', 'usuario')->count() }}</span>
                             </div>
                         </div>
 
@@ -99,7 +117,8 @@
                             <span class="info-box-icon bg-success"><i class="fas fa-user-friends"></i></span>
                             <div class="info-box-content">
                                 <span class="info-box-text">Comunarios</span>
-                                <span class="info-box-number">{{ $asignaciones->where('entidad_tipo', 'comunario')->count() }}</span>
+                                <span
+                                    class="info-box-number">{{ $asignaciones->where('entidad_tipo', 'comunario')->count() }}</span>
                             </div>
                         </div>
 
@@ -107,7 +126,8 @@
                             <span class="info-box-icon bg-warning"><i class="fas fa-user-tag"></i></span>
                             <div class="info-box-content">
                                 <span class="info-box-text">Inscritos</span>
-                                <span class="info-box-number">{{ $asignaciones->where('entidad_tipo', 'inscrito')->count() }}</span>
+                                <span
+                                    class="info-box-number">{{ $asignaciones->where('entidad_tipo', 'inscrito')->count() }}</span>
                             </div>
                         </div>
                     </div>
@@ -115,6 +135,36 @@
             </div>
         </div>
 
+        {{-- Modal de confirmación para inscribirse al curso --}}
+        @auth
+            @if (empty($authUsuarioAsignado) || !$authUsuarioAsignado)
+                <div class="modal fade" id="inscribirmeModal" tabindex="-1" role="dialog"
+                    aria-labelledby="inscribirmeModalLabel" aria-hidden="true">
+                    <div class="modal-dialog modal-dialog-centered" role="document">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title" id="inscribirmeModalLabel">Confirmar Inscripción</h5>
+                                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                    <span aria-hidden="true">&times;</span>
+                                </button>
+                            </div>
+                            <div class="modal-body">
+                                <p>¿Deseas inscribirte al curso <strong>{{ $curso->nombre }}</strong>?</p>
+                                <p class="text-muted">Una vez inscrito, podrás ver y gestionar tu participación en la sección de
+                                    cursos.</p>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+                                <form method="POST" action="{{ route('cursos.inscribirme', $curso->id) }}">
+                                    @csrf
+                                    <button type="submit" class="btn btn-primary">Confirmar Inscripción</button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            @endif
+        @endauth
         <div class="row mt-3">
             <div class="col-md-12">
                 <div class="card">
@@ -170,22 +220,25 @@
                                         <td>
                                             @if ($asignacion->entidad)
                                                 @if ($asignacion->entidad_tipo === 'usuario')
-                                                    <small class="text-muted">Email: {{ $asignacion->entidad->email }}</small>
+                                                    <small class="text-muted">Email:
+                                                        {{ $asignacion->entidad->email }}</small>
                                                 @elseif ($asignacion->entidad_tipo === 'comunario')
                                                     <small class="text-muted">Edad:
                                                         {{ $asignacion->entidad->edad ?? 'N/A' }}</small>
                                                 @else
-                                                    <small class="text-muted">Email: {{ $asignacion->entidad->correo }}</small><br>
-                                                    <small class="text-muted">Tel: {{ $asignacion->entidad->telefono ?? 'N/A' }}</small>
+                                                    <small class="text-muted">Email:
+                                                        {{ $asignacion->entidad->correo }}</small><br>
+                                                    <small class="text-muted">Tel:
+                                                        {{ $asignacion->entidad->telefono ?? 'N/A' }}</small>
                                                 @endif
                                             @endif
                                         </td>
                                         <td>{{ $asignacion->fecha_asignacion ? $asignacion->fecha_asignacion->format('d/m/Y H:i') : 'N/A' }}
                                         </td>
                                         <td>
-                                            <form action="{{ route('cursos.remover-asignacion', [$curso->id, $asignacion->id]) }}" 
-                                                  method="POST" 
-                                                  class="d-inline form-delete-asignacion">
+                                            <form
+                                                action="{{ route('cursos.remover-asignacion', [$curso->id, $asignacion->id]) }}"
+                                                method="POST" class="d-inline form-delete-asignacion">
                                                 @csrf
                                                 @method('DELETE')
                                                 <button type="submit" class="btn btn-sm btn-danger">
@@ -222,12 +275,12 @@
     <script>
         $(document).ready(function() {
             console.log('Script cargado correctamente');
-            
+
             // Manejador para botones de eliminar
             $('.form-delete-asignacion').on('submit', function(e) {
                 e.preventDefault();
                 console.log('Formulario submit interceptado');
-                
+
                 const form = this;
 
                 if (typeof Swal === 'undefined') {

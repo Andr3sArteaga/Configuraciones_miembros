@@ -26,9 +26,8 @@ class EquipoController extends Controller
             ->orderBy('orden')
             ->get();
 
-        // Get available usuarios for the create modal
+        // Get available usuarios for the create modal (include users without nivel_entrenamiento)
         $usuarios = Usuario::with(['niveles_entrenamiento', 'estados_sistema'])
-            ->whereNotNull('nivel_entrenamiento_id')
             ->orderBy('nombre')
             ->orderBy('apellido')
             ->get();
@@ -166,9 +165,8 @@ class EquipoController extends Controller
             ->orderBy('orden')
             ->get();
 
-        // Get available usuarios for the modal
+        // Get available usuarios for the modal (include users without nivel_entrenamiento)
         $usuarios = Usuario::with(['niveles_entrenamiento', 'estados_sistema'])
-            ->whereNotNull('nivel_entrenamiento_id')
             ->orderBy('nombre')
             ->orderBy('apellido')
             ->get();

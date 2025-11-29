@@ -95,6 +95,8 @@ Route::middleware(['auth'])->group(function () {
     Route::get('comunarios/{comunario}/cursos', [CursoController::class, 'cursosComunario'])->name('comunarios.cursos');
     // Inscritos
     Route::post('cursos/{curso}/inscritos', [InscritoController::class, 'storeFromCurso'])->name('cursos.store-inscrito');
+    // Auto-inscripción (usuario autenticado)
+    Route::post('cursos/{curso}/inscribirme', [CursoController::class, 'inscribirme'])->name('cursos.inscribirme');
 
     // ========== CATÁLOGOS ==========
 
