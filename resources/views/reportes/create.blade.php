@@ -115,6 +115,26 @@
                         </div>
                     </div>
 
+                    <!-- Reporte de Animales -->
+                    <div class="card card-danger">
+                        <div class="card-header">
+                            <h3 class="card-title">Reporte de Animales</h3>
+                        </div>
+                        <div class="card-body">
+                            <div class="form-group">
+                                <label>¿Hay algún animal herido presente?</label>
+                                <div class="custom-control custom-radio">
+                                    <input class="custom-control-input" type="radio" id="animal_si" name="animal_presente" value="si">
+                                    <label for="animal_si" class="custom-control-label">Sí</label>
+                                </div>
+                                <div class="custom-control custom-radio">
+                                    <input class="custom-control-input" type="radio" id="animal_no" name="animal_presente" value="no" checked>
+                                    <label for="animal_no" class="custom-control-label">No</label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
                     <!-- Recursos Necesarios -->
                     <div class="card card-warning">
                         <div class="card-header">
@@ -255,6 +275,100 @@
                     </div>
                 </div>
             </div>
+        <!-- Modal Animales -->
+        <div class="modal fade" id="animalModal" tabindex="-1" role="dialog" aria-labelledby="animalModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-lg" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="animalModalLabel">Detalles del Animal Herido</h5>
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        <!-- Imagen -->
+                        <div class="form-group">
+                            <label>Imagen</label>
+                            <div class="input-group">
+                                <div class="custom-file">
+                                    <input type="file" class="custom-file-input" id="imagen_animal" name="imagen_animal">
+                                    <label class="custom-file-label" for="imagen_animal">Subir la imagen del animal</label>
+                                </div>
+                                <div class="input-group-append">
+                                    <span class="input-group-text">Subir</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <!-- Estado inicial -->
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label>Estado inicial del animal</label>
+                                    <select class="form-control" name="estado_animal">
+                                        <option value="Atascado / atrapado">Atascado / atrapado</option>
+                                        <option value="Desconocido">Desconocido</option>
+                                        <option value="Deshidratado">Deshidratado</option>
+                                        <option value="Desorientado / shock">Desorientado / shock</option>
+                                        <option value="Difícil acceso">Difícil acceso</option>
+                                        <option value="Herido grave">Herido grave</option>
+                                        <option value="Herido leve">Herido leve</option>
+                                        <option value="Inconsciente">Inconsciente</option>
+                                        <option value="Quemaduras">Quemaduras</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <!-- Tipo de incidente -->
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label>Tipo de incidente</label>
+                                    <select class="form-control" name="tipo_incidente_animal">
+                                        <option value="Incendio cercano - Alto">Incendio cercano - Alto</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Tamaño -->
+                        <div class="form-group">
+                            <label>Tamaño del animal</label>
+                            <div class="d-flex">
+                                <div class="custom-control custom-radio mr-3">
+                                    <input class="custom-control-input" type="radio" id="tamano_pequeno" name="tamano_animal" value="pequeno">
+                                    <label for="tamano_pequeno" class="custom-control-label">Pequeño</label>
+                                </div>
+                                <div class="custom-control custom-radio mr-3">
+                                    <input class="custom-control-input" type="radio" id="tamano_mediano" name="tamano_animal" value="mediano" checked>
+                                    <label for="tamano_mediano" class="custom-control-label">Mediano</label>
+                                </div>
+                                <div class="custom-control custom-radio">
+                                    <input class="custom-control-input" type="radio" id="tamano_grande" name="tamano_animal" value="grande">
+                                    <label for="tamano_grande" class="custom-control-label">Grande</label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Puede moverse -->
+                        <div class="form-group">
+                            <label>¿Puede moverse?</label>
+                            <div class="d-flex">
+                                <div class="custom-control custom-radio mr-3">
+                                    <input class="custom-control-input" type="radio" id="moverse_si" name="puede_moverse" value="si">
+                                    <label for="moverse_si" class="custom-control-label">Sí</label>
+                                </div>
+                                <div class="custom-control custom-radio">
+                                    <input class="custom-control-input" type="radio" id="moverse_no" name="puede_moverse" value="no" checked>
+                                    <label for="moverse_no" class="custom-control-label">No</label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-primary" data-dismiss="modal">Guardar y Cerrar</button>
+                    </div>
+                </div>
+            </div>
+        </div>
         </form>
     </div>
 @stop
@@ -309,6 +423,19 @@
                 marker = L.marker([latitud, longitud]).addTo(map);
                 map.setView([latitud, longitud], 13);
             }
+
+            // Mostrar modal si se selecciona "Sí" en animal herido
+            $('input[name="animal_presente"]').change(function() {
+                if (this.value === 'si') {
+                    $('#animalModal').modal('show');
+                }
+            });
+
+            // Actualizar label del input file
+            $('.custom-file-input').on('change', function() {
+                var fileName = $(this).val().split('\\').pop();
+                $(this).next('.custom-file-label').addClass("selected").html(fileName);
+            });
         });
     </script>
 @stop
