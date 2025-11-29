@@ -230,15 +230,14 @@
                 attribution: '© OpenStreetMap contributors'
             }).addTo(map);
 
-            // Nota: La ubicación PostGIS requiere una consulta especial para extraer coordenadas
-            // Por ahora mostramos el mapa sin marcador
-            // En producción, deberías agregar un método al controlador que devuelva las coordenadas
-
-            // Ejemplo de cómo se vería con coordenadas:
-            // const lat = {{ $reporte->latitud ?? -17.3895 }};
-            // const lng = {{ $reporte->longitud ?? -66.1568 }};
-            // L.marker([lat, lng]).addTo(map);
-            // map.setView([lat, lng], 13);
+            // Nota: La ubicación PostGIS viene como GeoJSON a través del accesor `ubicacion()`
+            const reporteUbicacion = @json($reporte->ubicacion ?? null);
+            if (reporteUbicacion && Array.isArray(reporteUbicacion.coordinates)) {
+                const lat = reporteUbicacion.coordinates[1];
+                const lng = reporteUbicacion.coordinates[0];
+                L.marker([lat, lng]).addTo(map);
+                map.setView([lat, lng], 13);
+            }
         });
     </script>
 @stop

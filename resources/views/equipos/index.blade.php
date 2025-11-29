@@ -38,7 +38,8 @@
                             Listado de Equipos
                         </h3>
                         <div class="card-tools">
-                            <button type="button" class="btn btn-sm btn-primary" data-toggle="modal" data-target="#createTeamModal">
+                            <button type="button" class="btn btn-sm btn-primary" data-toggle="modal"
+                                data-target="#createTeamModal">
                                 <i class="fas fa-plus"></i> Nuevo Equipo
                             </button>
                         </div>
@@ -49,6 +50,7 @@
                                 <thead>
                                     <tr>
                                         <th>Nombre</th>
+                                        <th>Líder</th>
                                         <th>Integrantes</th>
                                         <th>Ubicación</th>
                                         <th>Estado</th>
@@ -60,6 +62,16 @@
                                         <tr>
                                             <td>
                                                 <strong>{{ $equipo->nombre_equipo }}</strong>
+                                            </td>
+                                            <td>
+                                                @php
+                                                    $lider = $equipo->miembros->firstWhere('pivot.es_lider', true);
+                                                @endphp
+                                                @if ($lider)
+                                                    <strong>{{ $lider->nombre }} {{ $lider->apellido }}</strong>
+                                                @else
+                                                    <span class="text-muted">-</span>
+                                                @endif
                                             </td>
                                             <td>
                                                 {{ $equipo->cantidad_integrantes ?? 0 }}

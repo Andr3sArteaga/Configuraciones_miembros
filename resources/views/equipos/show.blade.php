@@ -58,6 +58,19 @@
                                 <span class="badge badge-info">{{ $equipo->cantidad_integrantes ?? 0 }}</span>
                             </dd>
 
+                            <dt class="col-sm-4">Líder:</dt>
+                            <dd class="col-sm-8">
+                                @php
+                                    $equipoLider = $equipo->miembros->firstWhere('pivot.es_lider', true);
+                                @endphp
+                                @if ($equipoLider)
+                                    <i class="fas fa-user-tie text-primary"></i>
+                                    {{ $equipoLider->nombre }} {{ $equipoLider->apellido }}
+                                @else
+                                    <span class="text-muted">Sin líder asignado</span>
+                                @endif
+                            </dd>
+
                             <dt class="col-sm-4">Ubicación GPS:</dt>
                             <dd class="col-sm-8">
                                 @if ($equipo->latitud && $equipo->longitud)

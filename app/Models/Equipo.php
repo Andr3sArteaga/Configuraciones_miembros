@@ -68,6 +68,12 @@ class Equipo extends Model
 		return $this->hasMany(MiembrosEquipo::class, 'id_equipo');
 	}
 
+	public function miembros()
+	{
+		return $this->belongsToMany(Usuario::class, 'miembros_equipo', 'id_equipo', 'id_usuario')
+			->withPivot('es_lider', 'fecha_ingreso');
+	}
+
 	public function recursos()
 	{
 		return $this->hasMany(Recurso::class, 'equipoid');
@@ -113,5 +119,45 @@ class Equipo extends Model
                 return DB::raw("ST_SetSRID(ST_MakePoint({$lng}, {$lat}), 4326)");
             }
         );
+    }
+
+    /**
+     * Get latitud from PostGIS geometry
+     */
+    public function getLatitudAttribute()
+    {
+        if (!$this->attributes['ubicacion']) {
+            return null;
+        }
+
+        try {
+            $result = DB::selectOne(
+                "SELECT ST_Y(ubicacion::geometry) AS lat FROM equipos WHERE id = ?",
+                [$this->id]
+            );
+            return $result ? $result->lat : null;
+        } catch (\Exception $e) {
+            return null;
+        }
+    }
+
+    /**
+     * Get longitud from PostGIS geometry
+     */
+    public function getLongitudAttribute()
+    {
+        if (!$this->attributes['ubicacion']) {
+            return null;
+        }
+
+        try {
+            $result = DB::selectOne(
+                "SELECT ST_X(ubicacion::geometry) AS lng FROM equipos WHERE id = ?",
+                [$this->id]
+            );
+            return $result ? $result->lng : null;
+        } catch (\Exception $e) {
+            return null;
+        }
     }
 }

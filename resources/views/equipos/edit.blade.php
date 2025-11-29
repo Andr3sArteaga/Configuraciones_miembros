@@ -66,7 +66,8 @@
                                 </dl>
                             </div>
                             <div class="col-md-6">
-                                <button type="button" class="btn btn-primary btn-lg btn-block" data-toggle="modal" data-target="#editTeamModal">
+                                <button type="button" class="btn btn-primary btn-lg btn-block" data-toggle="modal"
+                                    data-target="#editTeamModal">
                                     <i class="fas fa-edit"></i> Editar Equipo
                                 </button>
                                 <a href="{{ route('equipos.index') }}" class="btn btn-secondary btn-block">
@@ -94,7 +95,7 @@
         </div>
     </div>
 
-    @include('equipos.partials.create-modal')
+    @include('equipos.partials.create-modal', ['equipo' => $equipo])
 @stop
 
 @section('css')

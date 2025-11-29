@@ -230,8 +230,9 @@
                                     <div class="form-group">
                                         <label for="latitud">Latitud</label>
                                         <input type="number" class="form-control @error('latitud') is-invalid @enderror"
-                                            id="latitud" name="latitud" value="{{ old('latitud') }}" step="0.000001"
-                                            readonly>
+                                            id="latitud" name="latitud"
+                                            value="{{ old('latitud', data_get($reporte->ubicacion, 'coordinates.1')) }}"
+                                            step="0.000001" readonly>
                                         @error('latitud')
                                             <span class="invalid-feedback">{{ $message }}</span>
                                         @enderror
@@ -243,7 +244,9 @@
                                         <label for="longitud">Longitud</label>
                                         <input type="number"
                                             class="form-control @error('longitud') is-invalid @enderror" id="longitud"
-                                            name="longitud" value="{{ old('longitud') }}" step="0.000001" readonly>
+                                            name="longitud"
+                                            value="{{ old('longitud', data_get($reporte->ubicacion, 'coordinates.0')) }}"
+                                            step="0.000001" readonly>
                                         @error('longitud')
                                             <span class="invalid-feedback">{{ $message }}</span>
                                         @enderror
@@ -320,9 +323,18 @@
                 marker = L.marker([lat, lng]).addTo(map);
             });
 
-            // Cargar ubicación actual si existe
-            // Nota: La ubicación PostGIS requiere una consulta especial para extraer coordenadas
-            // Por simplicidad, el usuario puede hacer clic nuevamente para actualizar
+            // Cargar ubicación actual si existe (viene como GeoJSON a través del accessor 'ubicacion')
+            const reporteUbicacion = @json($reporte->ubicacion ?? null);
+            if (reporteUbicacion && Array.isArray(reporteUbicacion.coordinates)) {
+                const latInit = reporteUbicacion.coordinates[1];
+                const lngInit = reporteUbicacion.coordinates[0];
+
+                document.getElementById('latitud').value = latInit.toFixed(6);
+                document.getElementById('longitud').value = lngInit.toFixed(6);
+
+                marker = L.marker([latInit, lngInit]).addTo(map);
+                map.setView([latInit, lngInit], 13);
+            }
         });
     </script>
 @stop

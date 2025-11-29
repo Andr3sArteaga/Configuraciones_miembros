@@ -11,7 +11,8 @@
 @endphp
 
 <!-- Modal Principal - Crear/Editar Equipo con Tabs -->
-<div class="modal fade" id="{{ $modalId }}" tabindex="-1" role="dialog" aria-labelledby="{{ $modalId }}Label" aria-hidden="true" data-backdrop="static" data-keyboard="false">
+<div class="modal fade" id="{{ $modalId }}" tabindex="-1" role="dialog" aria-labelledby="{{ $modalId }}Label"
+    aria-hidden="true" data-backdrop="static" data-keyboard="false">
     <div class="modal-dialog modal-xl" role="document">
         <div class="modal-content">
             <div class="modal-header bg-primary">
@@ -41,7 +42,8 @@
                 <!-- Progress Bar -->
                 <div class="progress mb-4" style="height: 25px;">
                     <div class="progress-bar progress-bar-striped progress-bar-animated bg-primary" role="progressbar"
-                         id="progressBar-{{ $modalId }}" style="width: 20%;" aria-valuenow="20" aria-valuemin="0" aria-valuemax="100">
+                        id="progressBar-{{ $modalId }}" style="width: 20%;" aria-valuenow="20" aria-valuemin="0"
+                        aria-valuemax="100">
                         Paso 1 de 5
                     </div>
                 </div>
@@ -49,27 +51,32 @@
                 <!-- Tabs Navigation -->
                 <ul class="nav nav-tabs" id="teamTabs-{{ $modalId }}" role="tablist">
                     <li class="nav-item">
-                        <a class="nav-link active" id="tab-ubicacion-{{ $modalId }}" data-toggle="tab" href="#step-ubicacion-{{ $modalId }}" role="tab">
+                        <a class="nav-link active" id="tab-ubicacion-{{ $modalId }}" data-toggle="tab"
+                            href="#step-ubicacion-{{ $modalId }}" role="tab">
                             <i class="fas fa-map-marker-alt"></i> 1. Ubicación
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link disabled" id="tab-configurar-{{ $modalId }}" data-toggle="tab" href="#step-configurar-{{ $modalId }}" role="tab">
+                        <a class="nav-link disabled" id="tab-configurar-{{ $modalId }}" data-toggle="tab"
+                            href="#step-configurar-{{ $modalId }}" role="tab">
                             <i class="fas fa-cog"></i> 2. Configurar
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link disabled" id="tab-lider-{{ $modalId }}" data-toggle="tab" href="#step-lider-{{ $modalId }}" role="tab">
+                        <a class="nav-link disabled" id="tab-lider-{{ $modalId }}" data-toggle="tab"
+                            href="#step-lider-{{ $modalId }}" role="tab">
                             <i class="fas fa-user-tie"></i> 3. Líder
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link disabled" id="tab-mochila-{{ $modalId }}" data-toggle="tab" href="#step-mochila-{{ $modalId }}" role="tab">
+                        <a class="nav-link disabled" id="tab-mochila-{{ $modalId }}" data-toggle="tab"
+                            href="#step-mochila-{{ $modalId }}" role="tab">
                             <i class="fas fa-backpack"></i> 4. Mochila
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link disabled" id="tab-comunarios-{{ $modalId }}" data-toggle="tab" href="#step-comunarios-{{ $modalId }}" role="tab">
+                        <a class="nav-link disabled" id="tab-comunarios-{{ $modalId }}" data-toggle="tab"
+                            href="#step-comunarios-{{ $modalId }}" role="tab">
                             <i class="fas fa-users"></i> 5. Comunarios
                         </a>
                     </li>
@@ -79,41 +86,51 @@
                 <div class="tab-content mt-3" id="teamTabsContent-{{ $modalId }}">
                     <!-- PASO 1: Seleccionar Ubicación -->
                     <div class="tab-pane fade show active" id="step-ubicacion-{{ $modalId }}" role="tabpanel">
-                        <h4 class="mb-3"><i class="fas fa-map-marker-alt text-primary"></i> Seleccionar Ubicación del Equipo</h4>
-                        <p class="text-muted">Haga clic en el mapa para establecer la ubicación del equipo. Los marcadores rojos indican reportes rápidos de incendios.</p>
-                        
+                        <h4 class="mb-3"><i class="fas fa-map-marker-alt text-primary"></i> Seleccionar Ubicación del
+                            Equipo</h4>
+                        <p class="text-muted">Haga clic en el mapa para establecer la ubicación del equipo. Los
+                            marcadores rojos indican reportes rápidos de incendios.</p>
+
                         <div class="form-group">
-                            <div id="map-{{ $modalId }}" style="height: 450px; border-radius: 0.25rem; border: 2px solid #007bff;"></div>
+                            <div id="map-{{ $modalId }}"
+                                style="height: 450px; border-radius: 0.25rem; border: 2px solid #007bff;"></div>
                             <div class="d-flex justify-content-between align-items-center mt-2">
                                 <small class="form-text text-muted">
-                                    <i class="fas fa-info-circle"></i> Haga clic en el mapa para colocar el marcador de ubicación del equipo
+                                    <i class="fas fa-info-circle"></i> Haga clic en el mapa para colocar el marcador de
+                                    ubicación del equipo
                                 </small>
-                                <button type="button" id="btn-remove-marker-{{ $modalId }}" class="btn btn-danger btn-sm">
+                                <button type="button" id="btn-remove-marker-{{ $modalId }}"
+                                    class="btn btn-danger btn-sm">
                                     <i class="fas fa-trash"></i> Eliminar Marcador
                                 </button>
                             </div>
                             <!-- Campos ocultos para las coordenadas -->
-                            <input type="hidden" id="latitud-{{ $modalId }}" name="latitud" value="{{ $isEditMode ? ($equipo->latitud ?? '') : '' }}">
-                            <input type="hidden" id="longitud-{{ $modalId }}" name="longitud" value="{{ $isEditMode ? ($equipo->longitud ?? '') : '' }}">
+                            <input type="hidden" id="latitud-{{ $modalId }}" name="latitud"
+                                value="{{ $isEditMode ? $equipo->latitud ?? '' : '' }}">
+                            <input type="hidden" id="longitud-{{ $modalId }}" name="longitud"
+                                value="{{ $isEditMode ? $equipo->longitud ?? '' : '' }}">
                         </div>
 
                         <div class="alert alert-info mt-3">
-                            <i class="fas fa-fire text-danger"></i> <strong>Incendios Reportados:</strong> Los marcadores rojos en el mapa representan reportes rápidos de incendios activos.
+                            <i class="fas fa-fire text-danger"></i> <strong>Incendios Reportados:</strong> Los
+                            marcadores rojos en el mapa representan reportes rápidos de incendios activos.
                         </div>
                     </div>
 
                     <!-- PASO 2: Configurar Equipo -->
                     <div class="tab-pane fade" id="step-configurar-{{ $modalId }}" role="tabpanel">
                         <h4 class="mb-3"><i class="fas fa-cog text-primary"></i> Configurar Equipo</h4>
-                        
+
                         <div class="row">
                             <div class="col-md-6">
                                 <div class="form-group">
                                     <label for="nombre_equipo-{{ $modalId }}">
                                         Nombre del Equipo <span class="text-danger">*</span>
                                     </label>
-                                    <input type="text" class="form-control" id="nombre_equipo-{{ $modalId }}" name="nombre_equipo" 
-                                           placeholder="Ej: Equipo Alpha" value="{{ $isEditMode ? $equipo->nombre_equipo : '' }}" required>
+                                    <input type="text" class="form-control"
+                                        id="nombre_equipo-{{ $modalId }}" name="nombre_equipo"
+                                        placeholder="Ej: Equipo Alpha"
+                                        value="{{ $isEditMode ? $equipo->nombre_equipo : '' }}" required>
                                 </div>
                             </div>
 
@@ -122,10 +139,12 @@
                                     <label for="estado_id-{{ $modalId }}">
                                         Estado del Equipo <span class="text-danger">*</span>
                                     </label>
-                                    <select class="form-control" id="estado_id-{{ $modalId }}" name="estado_id" required>
+                                    <select class="form-control" id="estado_id-{{ $modalId }}" name="estado_id"
+                                        required>
                                         <option value="">Seleccione un estado</option>
                                         @foreach ($estados as $estado)
-                                            <option value="{{ $estado->id }}" {{ $isEditMode && $equipo->estado_id == $estado->id ? 'selected' : '' }}>
+                                            <option value="{{ $estado->id }}"
+                                                {{ $isEditMode && $equipo->estado_id == $estado->id ? 'selected' : '' }}>
                                                 {{ $estado->nombre }}
                                             </option>
                                         @endforeach
@@ -137,15 +156,15 @@
                         <hr class="my-4">
 
                         <h5 class="mb-3"><i class="fas fa-user-plus"></i> Agregar Miembros</h5>
-                        
+
                         <div class="row mb-3">
                             <div class="col-md-4">
                                 <div class="form-group">
                                     <label for="search-member-{{ $modalId }}">
                                         <i class="fas fa-search"></i> Buscar Miembros
                                     </label>
-                                    <input type="text" class="form-control" id="search-member-{{ $modalId }}" 
-                                           placeholder="Buscar por nombre...">
+                                    <input type="text" class="form-control"
+                                        id="search-member-{{ $modalId }}" placeholder="Buscar por nombre...">
                                 </div>
                             </div>
                             <div class="col-md-4">
@@ -182,16 +201,19 @@
                             <div class="card-header bg-light">
                                 <h6 class="mb-0">
                                     <i class="fas fa-users"></i> Usuarios Disponibles
-                                    <span class="badge badge-primary float-right" id="selected-count-{{ $modalId }}">0 seleccionados</span>
+                                    <span class="badge badge-primary float-right"
+                                        id="selected-count-{{ $modalId }}">0 seleccionados</span>
                                 </h6>
                             </div>
                             <div class="card-body p-0">
                                 <div class="table-responsive" style="max-height: 300px; overflow-y: auto;">
-                                    <table class="table table-hover table-sm mb-0" id="members-table-{{ $modalId }}">
+                                    <table class="table table-hover table-sm mb-0"
+                                        id="members-table-{{ $modalId }}">
                                         <thead class="thead-light" style="position: sticky; top: 0; z-index: 1;">
                                             <tr>
                                                 <th width="50">
-                                                    <input type="checkbox" id="select-all-members-{{ $modalId }}">
+                                                    <input type="checkbox"
+                                                        id="select-all-members-{{ $modalId }}">
                                                 </th>
                                                 <th>Nombre</th>
                                                 <th>Entidad</th>
@@ -201,28 +223,39 @@
                                         </thead>
                                         <tbody id="members-tbody-{{ $modalId }}">
                                             @forelse($usuarios as $usuario)
+                                                @php
+                                                    $isChecked =
+                                                        $isEditMode &&
+                                                        isset($miembrosAsignados) &&
+                                                        in_array($usuario->id, $miembrosAsignados);
+                                                @endphp
                                                 <tr class="member-row"
                                                     data-entidad="{{ strtolower($usuario->entidad_perteneciente ?? '') }}"
                                                     data-nivel="{{ strtolower($usuario->niveles_entrenamiento->nivel ?? '') }}">
-                                                    <td><input type="checkbox" class="member-checkbox" value="{{ $usuario->id }}" name="miembros[]"></td>
+                                                    <td><input type="checkbox" class="member-checkbox"
+                                                            value="{{ $usuario->id }}" name="miembros[]"
+                                                            {{ $isChecked ? 'checked' : '' }}></td>
                                                     <td>{{ $usuario->nombre }} {{ $usuario->apellido }}</td>
                                                     <td>
-                                                        @if($usuario->entidad_perteneciente)
-                                                            <span class="badge badge-info">{{ $usuario->entidad_perteneciente }}</span>
+                                                        @if ($usuario->entidad_perteneciente)
+                                                            <span
+                                                                class="badge badge-info">{{ $usuario->entidad_perteneciente }}</span>
                                                         @else
                                                             <span class="badge badge-secondary">Sin entidad</span>
                                                         @endif
                                                     </td>
                                                     <td>
-                                                        @if($usuario->niveles_entrenamiento)
-                                                            <span class="badge badge-success">{{ $usuario->niveles_entrenamiento->nivel }}</span>
+                                                        @if ($usuario->niveles_entrenamiento)
+                                                            <span
+                                                                class="badge badge-success">{{ $usuario->niveles_entrenamiento->nivel }}</span>
                                                         @else
                                                             <span class="badge badge-secondary">N/A</span>
                                                         @endif
                                                     </td>
                                                     <td>
-                                                        @if($usuario->estados_sistema)
-                                                            <span class="badge" style="background-color: {{ $usuario->estados_sistema->color ?? '#6c757d' }}; color: white;">
+                                                        @if ($usuario->estados_sistema)
+                                                            <span class="badge"
+                                                                style="background-color: {{ $usuario->estados_sistema->color ?? '#6c757d' }}; color: white;">
                                                                 {{ $usuario->estados_sistema->nombre }}
                                                             </span>
                                                         @else
@@ -244,38 +277,52 @@
                         </div>
 
                         <div class="alert alert-info mt-3">
-                            <i class="fas fa-info-circle"></i> <strong>Nota:</strong> Seleccione los miembros que formarán parte del equipo. Puede usar los filtros para encontrar usuarios específicos.
+                            <i class="fas fa-info-circle"></i> <strong>Nota:</strong> Seleccione los miembros que
+                            formarán parte del equipo. Puede usar los filtros para encontrar usuarios específicos.
                         </div>
                     </div>
 
                     <!-- PASO 3: Seleccionar Líder -->
                     <div class="tab-pane fade" id="step-lider-{{ $modalId }}" role="tabpanel">
-                        <h4 class="mb-3"><i class="fas fa-user-tie text-primary"></i> Seleccionar Líder del Equipo</h4>
-                        
+                        <h4 class="mb-3"><i class="fas fa-user-tie text-primary"></i> Seleccionar Líder del Equipo
+                        </h4>
+
                         <div class="row">
                             <div class="col-md-6">
                                 <div class="card card-outline card-primary">
                                     <div class="card-header">
-                                        <h5 class="card-title"><i class="fas fa-clipboard-list"></i> Resumen del Equipo Actual</h5>
+                                        <h5 class="card-title"><i class="fas fa-clipboard-list"></i> Resumen del
+                                            Equipo Actual</h5>
                                     </div>
                                     <div class="card-body">
                                         <table class="table table-sm table-borderless">
                                             <tbody>
                                                 <tr>
-                                                    <td class="font-weight-bold"><i class="fas fa-tag text-primary"></i> Nombre:</td>
-                                                    <td id="resumen-nombre-{{ $modalId }}">{{ $isEditMode ? $equipo->nombre_equipo : '-' }}</td>
+                                                    <td class="font-weight-bold"><i
+                                                            class="fas fa-tag text-primary"></i> Nombre:</td>
+                                                    <td id="resumen-nombre-{{ $modalId }}">
+                                                        {{ $isEditMode ? $equipo->nombre_equipo : '-' }}</td>
                                                 </tr>
                                                 <tr>
-                                                    <td class="font-weight-bold"><i class="fas fa-map-marker-alt text-danger"></i> Ubicación:</td>
-                                                    <td id="resumen-ubicacion-{{ $modalId }}">{{ $isEditMode && $equipo->latitud ? $equipo->latitud.', '.$equipo->longitud : '-' }}</td>
+                                                    <td class="font-weight-bold"><i
+                                                            class="fas fa-map-marker-alt text-danger"></i> Ubicación:
+                                                    </td>
+                                                    <td id="resumen-ubicacion-{{ $modalId }}">
+                                                        {{ $isEditMode && $equipo->latitud ? $equipo->latitud . ', ' . $equipo->longitud : '-' }}
+                                                    </td>
                                                 </tr>
                                                 <tr>
-                                                    <td class="font-weight-bold"><i class="fas fa-info-circle text-success"></i> Estado:</td>
-                                                    <td id="resumen-estado-{{ $modalId }}">{{ $isEditMode && $equipo->estados_sistema ? $equipo->estados_sistema->nombre : '-' }}</td>
+                                                    <td class="font-weight-bold"><i
+                                                            class="fas fa-info-circle text-success"></i> Estado:</td>
+                                                    <td id="resumen-estado-{{ $modalId }}">
+                                                        {{ $isEditMode && $equipo->estados_sistema ? $equipo->estados_sistema->nombre : '-' }}
+                                                    </td>
                                                 </tr>
                                                 <tr>
-                                                    <td class="font-weight-bold"><i class="fas fa-users text-info"></i> Miembros:</td>
-                                                    <td id="resumen-miembros-{{ $modalId }}">{{ $isEditMode ? $equipo->cantidad_integrantes : 0 }}</td>
+                                                    <td class="font-weight-bold"><i
+                                                            class="fas fa-users text-info"></i> Miembros:</td>
+                                                    <td id="resumen-miembros-{{ $modalId }}">
+                                                        {{ $isEditMode ? $equipo->cantidad_integrantes : 0 }}</td>
                                                 </tr>
                                             </tbody>
                                         </table>
@@ -286,23 +333,28 @@
                             <div class="col-md-6">
                                 <div class="card card-outline card-success">
                                     <div class="card-header">
-                                        <h5 class="card-title"><i class="fas fa-crown"></i> Seleccionar Líder del Equipo</h5>
+                                        <h5 class="card-title"><i class="fas fa-crown"></i> Seleccionar Líder del
+                                            Equipo</h5>
                                     </div>
                                     <div class="card-body">
                                         <div class="form-group">
                                             <label for="lider-equipo-{{ $modalId }}">
                                                 Líder <span class="text-danger">*</span>
                                             </label>
-                                            <select class="form-control" id="lider-equipo-{{ $modalId }}" name="lider_id" required>
+                                            <select class="form-control" id="lider-equipo-{{ $modalId }}"
+                                                name="lider_id" required>
                                                 <option value="">Seleccione un líder</option>
                                             </select>
                                             <small class="form-text text-muted">
-                                                <i class="fas fa-info-circle"></i> Seleccione un miembro del equipo para ser el líder
+                                                <i class="fas fa-info-circle"></i> Seleccione un miembro del equipo
+                                                para ser el líder
                                             </small>
                                         </div>
 
-                                        <div id="lider-info-{{ $modalId }}" class="alert alert-success d-none mt-3">
-                                            <h6 class="alert-heading"><i class="fas fa-user-check"></i> Líder Seleccionado</h6>
+                                        <div id="lider-info-{{ $modalId }}"
+                                            class="alert alert-success d-none mt-3">
+                                            <h6 class="alert-heading"><i class="fas fa-user-check"></i> Líder
+                                                Seleccionado</h6>
                                             <hr>
                                             <p class="mb-0" id="lider-nombre-display-{{ $modalId }}"></p>
                                         </div>
@@ -344,13 +396,15 @@
                     <div class="tab-pane fade" id="step-mochila-{{ $modalId }}" role="tabpanel">
                         <h4 class="mb-3"><i class="fas fa-backpack text-primary"></i> Mochila de Equipos</h4>
                         <div class="alert alert-info">
-                            <i class="fas fa-info-circle"></i> <strong>Asigna suministros al equipo según su disponibilidad</strong>
+                            <i class="fas fa-info-circle"></i> <strong>Asigna suministros al equipo según su
+                                disponibilidad</strong>
                         </div>
 
                         <div class="row">
                             <div class="col-md-12">
                                 <div class="alert alert-warning">
-                                    <i class="fas fa-exclamation-triangle"></i> <strong>Nota:</strong> Esta sección es opcional y está en desarrollo. Los suministros pueden asignarse posteriormente.
+                                    <i class="fas fa-exclamation-triangle"></i> <strong>Nota:</strong> Esta sección es
+                                    opcional y está en desarrollo. Los suministros pueden asignarse posteriormente.
                                 </div>
                             </div>
                         </div>
@@ -360,13 +414,15 @@
                     <div class="tab-pane fade" id="step-comunarios-{{ $modalId }}" role="tabpanel">
                         <h4 class="mb-3"><i class="fas fa-users text-primary"></i> Agregar Comunarios Locales</h4>
                         <div class="alert alert-info">
-                            <i class="fas fa-info-circle"></i> <strong>Opcional:</strong> Agregue comunarios locales que apoyarán al equipo en la zona.
+                            <i class="fas fa-info-circle"></i> <strong>Opcional:</strong> Agregue comunarios locales
+                            que apoyarán al equipo en la zona.
                         </div>
 
                         <div class="row">
                             <div class="col-md-12">
                                 <div class="alert alert-warning">
-                                    <i class="fas fa-exclamation-triangle"></i> <strong>Nota:</strong> Esta sección es opcional y está en desarrollo.
+                                    <i class="fas fa-exclamation-triangle"></i> <strong>Nota:</strong> Esta sección es
+                                    opcional y está en desarrollo.
                                 </div>
                             </div>
                         </div>
@@ -374,7 +430,8 @@
                 </div>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" id="btn-prev-{{ $modalId }}" style="display: none;">
+                <button type="button" class="btn btn-secondary" id="btn-prev-{{ $modalId }}"
+                    style="display: none;">
                     <i class="fas fa-arrow-left"></i> Anterior
                 </button>
                 <button type="button" class="btn btn-secondary" data-dismiss="modal">
@@ -383,7 +440,8 @@
                 <button type="button" class="btn btn-primary" id="btn-next-{{ $modalId }}">
                     Siguiente <i class="fas fa-arrow-right"></i>
                 </button>
-                <button type="button" class="btn btn-success" id="btn-save-{{ $modalId }}" style="display: none;">
+                <button type="button" class="btn btn-success" id="btn-save-{{ $modalId }}"
+                    style="display: none;">
                     <i class="fas fa-save"></i> {{ $isEditMode ? 'Actualizar' : 'Crear' }} Equipo
                 </button>
             </div>
@@ -392,426 +450,488 @@
 </div>
 
 @push('css')
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-<style>
-    .nav-tabs .nav-link.disabled {
-        cursor: not-allowed;
-        opacity: 0.5;
-    }
-    .nav-tabs .nav-link {
-        cursor: pointer;
-    }
-    .member-row {
-        cursor: pointer;
-    }
-    .member-row:hover {
-        background-color: #f8f9fa;
-    }
-    .table thead.thead-light {
-        background-color: #f8f9fa;
-    }
-    [id^="map-"] {
-        z-index: 1;
-    }
-    .modal {
-        z-index: 1050;
-    }
-    .modal-backdrop {
-        z-index: 1040;
-    }
-</style>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <style>
+        .nav-tabs .nav-link.disabled {
+            cursor: not-allowed;
+            opacity: 0.5;
+        }
+
+        .nav-tabs .nav-link {
+            cursor: pointer;
+        }
+
+        .member-row {
+            cursor: pointer;
+        }
+
+        .member-row:hover {
+            background-color: #f8f9fa;
+        }
+
+        .table thead.thead-light {
+            background-color: #f8f9fa;
+        }
+
+        [id^="map-"] {
+            z-index: 1;
+        }
+
+        .modal {
+            z-index: 1050;
+        }
+
+        .modal-backdrop {
+            z-index: 1040;
+        }
+    </style>
 @endpush
 
 @push('js')
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<script>
-(function() {
-    const modalId = '{{ $modalId }}';
-    const isEditMode = {{ $isEditMode ? 'true' : 'false' }};
-    
-    let map, marker;
-    let currentStep = 1;
-    let selectedMembers = [];
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+        (function() {
+            const modalId = '{{ $modalId }}';
+            const isEditMode = {{ $isEditMode ? 'true' : 'false' }};
 
-    document.addEventListener('DOMContentLoaded', function() {
-        // Initialize when modal is shown
-        $('#' + modalId).on('shown.bs.modal', function () {
-            if (!map) {
-                initializeMap();
-            }
-            setTimeout(function() {
-                map.invalidateSize();
-            }, 100);
-        });
+            let map, marker;
+            let currentStep = 1;
+            let selectedMembers = [];
 
-        // Reset on modal hide
-        $('#' + modalId).on('hidden.bs.modal', function () {
-            resetForm();
-        });
+            const assignedLeaderId = @json(isset($liderAsignadoId) ? $liderAsignadoId : null);
 
-        initializeEventListeners();
+            document.addEventListener('DOMContentLoaded', function() {
+                // Initialize when modal is shown
+                $('#' + modalId).on('shown.bs.modal', function() {
+                    if (!map) {
+                        initializeMap();
+                    }
+                    // Populate selected members from any pre-checked checkboxes (edit mode)
+                    populateSelectedMembersFromChecked();
+                    setTimeout(function() {
+                        map.invalidateSize();
+                    }, 100);
+                });
 
-        // Show modal if there are validation errors
-        @if ($errors->any() && !$isEditMode)
-            $('#' + modalId).modal('show');
-        @endif
-    });
+                // Reset on modal hide
+                $('#' + modalId).on('hidden.bs.modal', function() {
+                    resetForm();
+                });
 
-    function initializeMap() {
-        const defaultLat = {{ ($isEditMode && isset($equipo) && $equipo->latitud) ? $equipo->latitud : -16.5000 }};
-        const defaultLng = {{ ($isEditMode && isset($equipo) && $equipo->longitud) ? $equipo->longitud : -64.5000 }};
-        const defaultZoom = {{ ($isEditMode && isset($equipo) && $equipo->latitud) ? 13 : 6 }};
+                initializeEventListeners();
 
-        map = L.map('map-' + modalId).setView([defaultLat, defaultLng], defaultZoom);
+                // Show modal if there are validation errors
+                @if ($errors->any() && !$isEditMode)
+                    $('#' + modalId).modal('show');
+                @endif
+            });
 
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-            maxZoom: 19
-        }).addTo(map);
+            function initializeMap() {
+                const defaultLat =
+                    {{ $isEditMode && isset($equipo) && $equipo->latitud ? $equipo->latitud : -16.5 }};
+                const defaultLng =
+                    {{ $isEditMode && isset($equipo) && $equipo->longitud ? $equipo->longitud : -64.5 }};
+                const defaultZoom = {{ $isEditMode && isset($equipo) && $equipo->latitud ? 13 : 6 }};
 
-        // Add existing marker if in edit mode
-        @if($isEditMode && isset($equipo) && $equipo->latitud && $equipo->longitud)
-        marker = L.marker([defaultLat, defaultLng], { draggable: true }).addTo(map);
-        marker.on('dragend', function(e) {
-            const position = marker.getLatLng();
-            updateCoordinates(position.lat, position.lng);
-        });
-        @endif
+                map = L.map('map-' + modalId).setView([defaultLat, defaultLng], defaultZoom);
 
-        // Click event on map
-        map.on('click', function(e) {
-            const lat = e.latlng.lat;
-            const lng = e.latlng.lng;
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+                    maxZoom: 19
+                }).addTo(map);
 
-            if (marker) {
-                marker.setLatLng([lat, lng]);
-            } else {
-                marker = L.marker([lat, lng], { draggable: true }).addTo(map);
-                marker.on('dragend', function(e) {
-                    const position = marker.getLatLng();
-                    updateCoordinates(position.lat, position.lng);
+                // Add existing marker if in edit mode
+                @if ($isEditMode && isset($equipo) && $equipo->latitud && $equipo->longitud)
+                    marker = L.marker([defaultLat, defaultLng], {
+                        draggable: true
+                    }).addTo(map);
+                    marker.on('dragend', function(e) {
+                        const position = marker.getLatLng();
+                        updateCoordinates(position.lat, position.lng);
+                    });
+                @endif
+
+                // Click event on map
+                map.on('click', function(e) {
+                    const lat = e.latlng.lat;
+                    const lng = e.latlng.lng;
+
+                    if (marker) {
+                        marker.setLatLng([lat, lng]);
+                    } else {
+                        marker = L.marker([lat, lng], {
+                            draggable: true
+                        }).addTo(map);
+                        marker.on('dragend', function(e) {
+                            const position = marker.getLatLng();
+                            updateCoordinates(position.lat, position.lng);
+                        });
+                    }
+
+                    updateCoordinates(lat, lng);
+                });
+
+                // Remove marker button
+                document.getElementById('btn-remove-marker-' + modalId).addEventListener('click', function() {
+                    if (marker) {
+                        map.removeLayer(marker);
+                        marker = null;
+                    }
+                    document.getElementById('latitud-' + modalId).value = '';
+                    document.getElementById('longitud-' + modalId).value = '';
                 });
             }
 
-            updateCoordinates(lat, lng);
-        });
-
-        // Remove marker button
-        document.getElementById('btn-remove-marker-' + modalId).addEventListener('click', function() {
-            if (marker) {
-                map.removeLayer(marker);
-                marker = null;
-            }
-            document.getElementById('latitud-' + modalId).value = '';
-            document.getElementById('longitud-' + modalId).value = '';
-        });
-    }
-
-    function updateCoordinates(lat, lng) {
-        document.getElementById('latitud-' + modalId).value = lat.toFixed(6);
-        document.getElementById('longitud-' + modalId).value = lng.toFixed(6);
-        document.getElementById('resumen-ubicacion-' + modalId).textContent = lat.toFixed(4) + ', ' + lng.toFixed(4);
-    }
-
-    function initializeEventListeners() {
-        // Navigation
-        document.getElementById('btn-next-' + modalId).addEventListener('click', nextStep);
-        document.getElementById('btn-prev-' + modalId).addEventListener('click', prevStep);
-        document.getElementById('btn-save-' + modalId).addEventListener('click', saveTeam);
-
-        // Member selection
-        document.querySelectorAll('#members-tbody-' + modalId + ' .member-checkbox').forEach(checkbox => {
-            checkbox.addEventListener('change', updateSelectedMembers);
-        });
-
-        // Update resumen when name or state changes
-        document.getElementById('nombre_equipo-' + modalId).addEventListener('input', updateResumen);
-        document.getElementById('estado_id-' + modalId).addEventListener('change', updateResumen);
-
-        // Search and filter functionality
-        const searchInput = document.getElementById('search-member-' + modalId);
-        const filterEntidad = document.getElementById('filter-entidad-' + modalId);
-        const filterNivel = document.getElementById('filter-nivel-' + modalId);
-
-        if (searchInput) {
-            searchInput.addEventListener('input', filterMembers);
-        }
-        if (filterEntidad) {
-            filterEntidad.addEventListener('change', filterMembers);
-        }
-        if (filterNivel) {
-            filterNivel.addEventListener('change', filterMembers);
-        }
-
-        // Select all functionality
-        const selectAllCheckbox = document.getElementById('select-all-members-' + modalId);
-        if (selectAllCheckbox) {
-            selectAllCheckbox.addEventListener('change', function() {
-                const visibleCheckboxes = document.querySelectorAll('#members-tbody-' + modalId + ' .member-row:not([style*="display: none"]) .member-checkbox');
-                visibleCheckboxes.forEach(checkbox => {
-                    checkbox.checked = this.checked;
+            function populateSelectedMembersFromChecked() {
+                selectedMembers = [];
+                document.querySelectorAll('#members-tbody-' + modalId + ' .member-checkbox:checked').forEach(
+                checkbox => {
+                    const row = checkbox.closest('tr');
+                    selectedMembers.push({
+                        id: checkbox.value,
+                        nombre: row.cells[1].textContent.trim(),
+                        entidad: row.cells[2].textContent.trim(),
+                        nivel: row.cells[3].textContent.trim()
+                    });
                 });
-                updateSelectedMembers();
-            });
-        }
 
-        // Leader selection change
-        const liderSelect = document.getElementById('lider-equipo-' + modalId);
-        if (liderSelect) {
-            liderSelect.addEventListener('change', function() {
-                const liderInfo = document.getElementById('lider-info-' + modalId);
-                const liderNombre = document.getElementById('lider-nombre-display-' + modalId);
+                document.getElementById('selected-count-' + modalId).textContent = selectedMembers.length +
+                    ' seleccionados';
+                document.getElementById('resumen-miembros-' + modalId).textContent = selectedMembers.length;
+                updateSelectedMembersList();
+                updateLeaderSelect();
 
-                if (this.value) {
-                    const selectedOption = this.options[this.selectedIndex];
-                    liderNombre.textContent = selectedOption.text;
-                    liderInfo.classList.remove('d-none');
-                } else {
-                    liderInfo.classList.add('d-none');
+                // If we have an assigned leader id (edit mode), preselect it
+                if (assignedLeaderId) {
+                    const liderSelect = document.getElementById('lider-equipo-' + modalId);
+                    // Try to set the value if the option exists
+                    const optionExists = Array.from(liderSelect.options).some(opt => opt.value === assignedLeaderId);
+                    if (optionExists) {
+                        liderSelect.value = assignedLeaderId;
+                        // Show leader info box
+                        const liderInfo = document.getElementById('lider-info-' + modalId);
+                        const liderNombre = document.getElementById('lider-nombre-display-' + modalId);
+                        const selectedOption = liderSelect.options[liderSelect.selectedIndex];
+                        if (selectedOption) {
+                            liderNombre.textContent = selectedOption.text;
+                            liderInfo.classList.remove('d-none');
+                        }
+                    }
                 }
-            });
-        }
-    }
-
-    function filterMembers() {
-        const searchTerm = document.getElementById('search-member-' + modalId).value.toLowerCase();
-        const entidadFilter = document.getElementById('filter-entidad-' + modalId).value.toLowerCase();
-        const nivelFilter = document.getElementById('filter-nivel-' + modalId).value.toLowerCase();
-
-        const rows = document.querySelectorAll('#members-tbody-' + modalId + ' .member-row');
-
-        rows.forEach(row => {
-            const nombre = row.cells[1].textContent.toLowerCase();
-            const entidad = row.getAttribute('data-entidad');
-            const nivel = row.getAttribute('data-nivel');
-
-            const matchesSearch = nombre.includes(searchTerm);
-            const matchesEntidad = !entidadFilter || entidad.includes(entidadFilter);
-            const matchesNivel = !nivelFilter || nivel.includes(nivelFilter);
-
-            if (matchesSearch && matchesEntidad && matchesNivel) {
-                row.style.display = '';
-            } else {
-                row.style.display = 'none';
             }
-        });
-    }
 
-    function nextStep() {
-        if (validateStep(currentStep)) {
-            currentStep++;
-            updateStep();
-        }
-    }
-
-    function prevStep() {
-        currentStep--;
-        updateStep();
-    }
-
-    function updateStep() {
-        const tabs = ['ubicacion', 'configurar', 'lider', 'mochila', 'comunarios'];
-        tabs.forEach((tab, index) => {
-            const tabElement = document.getElementById('tab-' + tab + '-' + modalId);
-            const stepElement = document.getElementById('step-' + tab + '-' + modalId);
-            
-            if (index + 1 === currentStep) {
-                tabElement.classList.add('active');
-                tabElement.classList.remove('disabled');
-                stepElement.classList.add('show', 'active');
-            } else if (index + 1 < currentStep) {
-                tabElement.classList.remove('active', 'disabled');
-                stepElement.classList.remove('show', 'active');
-            } else {
-                tabElement.classList.remove('active');
-                tabElement.classList.add('disabled');
-                stepElement.classList.remove('show', 'active');
+            function updateCoordinates(lat, lng) {
+                document.getElementById('latitud-' + modalId).value = lat.toFixed(6);
+                document.getElementById('longitud-' + modalId).value = lng.toFixed(6);
+                document.getElementById('resumen-ubicacion-' + modalId).textContent = lat.toFixed(4) + ', ' + lng
+                    .toFixed(4);
             }
-        });
 
-        // Update progress bar
-        const progress = (currentStep / 5) * 100;
-        const progressBar = document.getElementById('progressBar-' + modalId);
-        progressBar.style.width = progress + '%';
-        progressBar.setAttribute('aria-valuenow', progress);
-        progressBar.textContent = 'Paso ' + currentStep + ' de 5';
+            function initializeEventListeners() {
+                // Navigation
+                document.getElementById('btn-next-' + modalId).addEventListener('click', nextStep);
+                document.getElementById('btn-prev-' + modalId).addEventListener('click', prevStep);
+                document.getElementById('btn-save-' + modalId).addEventListener('click', saveTeam);
 
-        // Update buttons
-        document.getElementById('btn-prev-' + modalId).style.display = currentStep > 1 ? 'inline-block' : 'none';
-        document.getElementById('btn-next-' + modalId).style.display = currentStep < 5 ? 'inline-block' : 'none';
-        document.getElementById('btn-save-' + modalId).style.display = currentStep === 5 ? 'inline-block' : 'none';
+                // Member selection
+                document.querySelectorAll('#members-tbody-' + modalId + ' .member-checkbox').forEach(checkbox => {
+                    checkbox.addEventListener('change', updateSelectedMembers);
+                });
 
-        // Update resumen in step 3
-        if (currentStep === 3) {
-            updateResumen();
-            updateLeaderSelect();
-        }
-    }
+                // Update resumen when name or state changes
+                document.getElementById('nombre_equipo-' + modalId).addEventListener('input', updateResumen);
+                document.getElementById('estado_id-' + modalId).addEventListener('change', updateResumen);
 
-    function validateStep(step) {
-        switch(step) {
-            case 2:
-                const nombre = document.getElementById('nombre_equipo-' + modalId).value.trim();
-                const estado = document.getElementById('estado_id-' + modalId).value;
-                
-                if (!nombre) {
-                    alert('Por favor, ingrese el nombre del equipo');
-                    return false;
+                // Search and filter functionality
+                const searchInput = document.getElementById('search-member-' + modalId);
+                const filterEntidad = document.getElementById('filter-entidad-' + modalId);
+                const filterNivel = document.getElementById('filter-nivel-' + modalId);
+
+                if (searchInput) {
+                    searchInput.addEventListener('input', filterMembers);
                 }
-                if (!estado) {
-                    alert('Por favor, seleccione el estado del equipo');
-                    return false;
+                if (filterEntidad) {
+                    filterEntidad.addEventListener('change', filterMembers);
                 }
-                return true;
-            default:
-                return true;
-        }
-    }
+                if (filterNivel) {
+                    filterNivel.addEventListener('change', filterMembers);
+                }
 
-    function updateSelectedMembers() {
-        selectedMembers = [];
-        document.querySelectorAll('#members-tbody-' + modalId + ' .member-checkbox:checked').forEach(checkbox => {
-            const row = checkbox.closest('tr');
-            selectedMembers.push({
-                id: checkbox.value,
-                nombre: row.cells[1].textContent.trim(),
-                entidad: row.cells[2].textContent.trim(),
-                nivel: row.cells[3].textContent.trim()
-            });
-        });
+                // Select all functionality
+                const selectAllCheckbox = document.getElementById('select-all-members-' + modalId);
+                if (selectAllCheckbox) {
+                    selectAllCheckbox.addEventListener('change', function() {
+                        const visibleCheckboxes = document.querySelectorAll('#members-tbody-' + modalId +
+                            ' .member-row:not([style*="display: none"]) .member-checkbox');
+                        visibleCheckboxes.forEach(checkbox => {
+                            checkbox.checked = this.checked;
+                        });
+                        updateSelectedMembers();
+                    });
+                }
 
-        document.getElementById('selected-count-' + modalId).textContent = selectedMembers.length + ' seleccionados';
-        document.getElementById('resumen-miembros-' + modalId).textContent = selectedMembers.length;
+                // Leader selection change
+                const liderSelect = document.getElementById('lider-equipo-' + modalId);
+                if (liderSelect) {
+                    liderSelect.addEventListener('change', function() {
+                        const liderInfo = document.getElementById('lider-info-' + modalId);
+                        const liderNombre = document.getElementById('lider-nombre-display-' + modalId);
 
-        // Update the selected members list in step 3
-        updateSelectedMembersList();
-    }
+                        if (this.value) {
+                            const selectedOption = this.options[this.selectedIndex];
+                            liderNombre.textContent = selectedOption.text;
+                            liderInfo.classList.remove('d-none');
+                        } else {
+                            liderInfo.classList.add('d-none');
+                        }
+                    });
+                }
+            }
 
-    function updateSelectedMembersList() {
-        const tbody = document.getElementById('selected-members-list-' + modalId);
+            function filterMembers() {
+                const searchTerm = document.getElementById('search-member-' + modalId).value.toLowerCase();
+                const entidadFilter = document.getElementById('filter-entidad-' + modalId).value.toLowerCase();
+                const nivelFilter = document.getElementById('filter-nivel-' + modalId).value.toLowerCase();
 
-        if (selectedMembers.length === 0) {
-            tbody.innerHTML = `
+                const rows = document.querySelectorAll('#members-tbody-' + modalId + ' .member-row');
+
+                rows.forEach(row => {
+                    const nombre = row.cells[1].textContent.toLowerCase();
+                    const entidad = row.getAttribute('data-entidad');
+                    const nivel = row.getAttribute('data-nivel');
+
+                    const matchesSearch = nombre.includes(searchTerm);
+                    const matchesEntidad = !entidadFilter || entidad.includes(entidadFilter);
+                    const matchesNivel = !nivelFilter || nivel.includes(nivelFilter);
+
+                    if (matchesSearch && matchesEntidad && matchesNivel) {
+                        row.style.display = '';
+                    } else {
+                        row.style.display = 'none';
+                    }
+                });
+            }
+
+            function nextStep() {
+                if (validateStep(currentStep)) {
+                    currentStep++;
+                    updateStep();
+                }
+            }
+
+            function prevStep() {
+                currentStep--;
+                updateStep();
+            }
+
+            function updateStep() {
+                const tabs = ['ubicacion', 'configurar', 'lider', 'mochila', 'comunarios'];
+                tabs.forEach((tab, index) => {
+                    const tabElement = document.getElementById('tab-' + tab + '-' + modalId);
+                    const stepElement = document.getElementById('step-' + tab + '-' + modalId);
+
+                    if (index + 1 === currentStep) {
+                        tabElement.classList.add('active');
+                        tabElement.classList.remove('disabled');
+                        stepElement.classList.add('show', 'active');
+                    } else if (index + 1 < currentStep) {
+                        tabElement.classList.remove('active', 'disabled');
+                        stepElement.classList.remove('show', 'active');
+                    } else {
+                        tabElement.classList.remove('active');
+                        tabElement.classList.add('disabled');
+                        stepElement.classList.remove('show', 'active');
+                    }
+                });
+
+                // Update progress bar
+                const progress = (currentStep / 5) * 100;
+                const progressBar = document.getElementById('progressBar-' + modalId);
+                progressBar.style.width = progress + '%';
+                progressBar.setAttribute('aria-valuenow', progress);
+                progressBar.textContent = 'Paso ' + currentStep + ' de 5';
+
+                // Update buttons
+                document.getElementById('btn-prev-' + modalId).style.display = currentStep > 1 ? 'inline-block' :
+                'none';
+                document.getElementById('btn-next-' + modalId).style.display = currentStep < 5 ? 'inline-block' :
+                'none';
+                document.getElementById('btn-save-' + modalId).style.display = currentStep === 5 ? 'inline-block' :
+                    'none';
+
+                // Update resumen in step 3
+                if (currentStep === 3) {
+                    updateResumen();
+                    updateLeaderSelect();
+                }
+            }
+
+            function validateStep(step) {
+                switch (step) {
+                    case 2:
+                        const nombre = document.getElementById('nombre_equipo-' + modalId).value.trim();
+                        const estado = document.getElementById('estado_id-' + modalId).value;
+
+                        if (!nombre) {
+                            alert('Por favor, ingrese el nombre del equipo');
+                            return false;
+                        }
+                        if (!estado) {
+                            alert('Por favor, seleccione el estado del equipo');
+                            return false;
+                        }
+                        return true;
+                    default:
+                        return true;
+                }
+            }
+
+            function updateSelectedMembers() {
+                selectedMembers = [];
+                document.querySelectorAll('#members-tbody-' + modalId + ' .member-checkbox:checked').forEach(
+                checkbox => {
+                    const row = checkbox.closest('tr');
+                    selectedMembers.push({
+                        id: checkbox.value,
+                        nombre: row.cells[1].textContent.trim(),
+                        entidad: row.cells[2].textContent.trim(),
+                        nivel: row.cells[3].textContent.trim()
+                    });
+                });
+
+                document.getElementById('selected-count-' + modalId).textContent = selectedMembers.length +
+                    ' seleccionados';
+                document.getElementById('resumen-miembros-' + modalId).textContent = selectedMembers.length;
+
+                // Update the selected members list in step 3
+                updateSelectedMembersList();
+            }
+
+            function updateSelectedMembersList() {
+                const tbody = document.getElementById('selected-members-list-' + modalId);
+
+                if (selectedMembers.length === 0) {
+                    tbody.innerHTML = `
                 <tr>
                     <td colspan="5" class="text-center text-muted">
                         <i class="fas fa-info-circle"></i> No hay miembros seleccionados
                     </td>
                 </tr>
             `;
-        } else {
-            tbody.innerHTML = '';
-            selectedMembers.forEach((member, index) => {
-                const row = document.createElement('tr');
-                row.innerHTML = `
+                } else {
+                    tbody.innerHTML = '';
+                    selectedMembers.forEach((member, index) => {
+                        const row = document.createElement('tr');
+                        row.innerHTML = `
                     <td>${index + 1}</td>
                     <td>${member.nombre}</td>
                     <td>${member.entidad}</td>
                     <td>${member.nivel}</td>
                     <td><span class="badge badge-secondary">Miembro</span></td>
                 `;
-                tbody.appendChild(row);
-            });
-        }
-    }
-
-    function updateResumen() {
-        const nombre = document.getElementById('nombre_equipo-' + modalId).value || '-';
-        const estadoSelect = document.getElementById('estado_id-' + modalId);
-        const estado = estadoSelect.options[estadoSelect.selectedIndex]?.text || '-';
-
-        document.getElementById('resumen-nombre-' + modalId).textContent = nombre;
-        document.getElementById('resumen-estado-' + modalId).textContent = estado;
-    }
-
-    function updateLeaderSelect() {
-        const liderSelect = document.getElementById('lider-equipo-' + modalId);
-        liderSelect.innerHTML = '<option value="">Seleccione un líder</option>';
-
-        selectedMembers.forEach(member => {
-            const option = document.createElement('option');
-            option.value = member.id;
-            option.textContent = member.nombre;
-            liderSelect.appendChild(option);
-        });
-    }
-
-    function saveTeam() {
-        // Validar campos requeridos
-        const nombre = document.getElementById('nombre_equipo-' + modalId).value.trim();
-        const estado = document.getElementById('estado_id-' + modalId).value;
-
-        if (!nombre) {
-            alert('Por favor, ingrese el nombre del equipo');
-            return;
-        }
-
-        if (!estado) {
-            alert('Por favor, seleccione el estado del equipo');
-            return;
-        }
-
-        // Create form and submit
-        const form = document.createElement('form');
-        form.method = 'POST';
-        form.action = '{{ $formAction }}';
-
-        // CSRF token
-        const csrfInput = document.createElement('input');
-        csrfInput.type = 'hidden';
-        csrfInput.name = '_token';
-        csrfInput.value = '{{ csrf_token() }}';
-        form.appendChild(csrfInput);
-
-        @if($isEditMode)
-        // Method spoofing for PUT
-        const methodInput = document.createElement('input');
-        methodInput.type = 'hidden';
-        methodInput.name = '_method';
-        methodInput.value = 'PUT';
-        form.appendChild(methodInput);
-        @endif
-
-        // Add basic form data
-        const fields = ['nombre_equipo', 'estado_id', 'latitud', 'longitud'];
-        fields.forEach(field => {
-            const element = document.getElementById(field + '-' + modalId);
-            if (element && element.value) {
-                const input = document.createElement('input');
-                input.type = 'hidden';
-                input.name = field;
-                input.value = element.value;
-                form.appendChild(input);
+                        tbody.appendChild(row);
+                    });
+                }
             }
-        });
 
-        // Add selected members
-        selectedMembers.forEach(member => {
-            const input = document.createElement('input');
-            input.type = 'hidden';
-            input.name = 'miembros[]';
-            input.value = member.id;
-            form.appendChild(input);
-        });
+            function updateResumen() {
+                const nombre = document.getElementById('nombre_equipo-' + modalId).value || '-';
+                const estadoSelect = document.getElementById('estado_id-' + modalId);
+                const estado = estadoSelect.options[estadoSelect.selectedIndex]?.text || '-';
 
-        // Add leader if selected
-        const liderSelect = document.getElementById('lider-equipo-' + modalId);
-        if (liderSelect && liderSelect.value) {
-            const liderInput = document.createElement('input');
-            liderInput.type = 'hidden';
-            liderInput.name = 'lider_id';
-            liderInput.value = liderSelect.value;
-            form.appendChild(liderInput);
-        }
+                document.getElementById('resumen-nombre-' + modalId).textContent = nombre;
+                document.getElementById('resumen-estado-' + modalId).textContent = estado;
+            }
 
-        document.body.appendChild(form);
-        form.submit();
-    }
+            function updateLeaderSelect() {
+                const liderSelect = document.getElementById('lider-equipo-' + modalId);
+                liderSelect.innerHTML = '<option value="">Seleccione un líder</option>';
 
-    function resetForm() {
-        currentStep = 1;
-        selectedMembers = [];
-        updateStep();
-    }
-})();
-</script>
+                selectedMembers.forEach(member => {
+                    const option = document.createElement('option');
+                    option.value = member.id;
+                    option.textContent = member.nombre;
+                    liderSelect.appendChild(option);
+                });
+            }
+
+            function saveTeam() {
+                // Validar campos requeridos
+                const nombre = document.getElementById('nombre_equipo-' + modalId).value.trim();
+                const estado = document.getElementById('estado_id-' + modalId).value;
+
+                if (!nombre) {
+                    alert('Por favor, ingrese el nombre del equipo');
+                    return;
+                }
+
+                if (!estado) {
+                    alert('Por favor, seleccione el estado del equipo');
+                    return;
+                }
+
+                // Create form and submit
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = '{{ $formAction }}';
+
+                // CSRF token
+                const csrfInput = document.createElement('input');
+                csrfInput.type = 'hidden';
+                csrfInput.name = '_token';
+                csrfInput.value = '{{ csrf_token() }}';
+                form.appendChild(csrfInput);
+
+                @if ($isEditMode)
+                    // Method spoofing for PUT
+                    const methodInput = document.createElement('input');
+                    methodInput.type = 'hidden';
+                    methodInput.name = '_method';
+                    methodInput.value = 'PUT';
+                    form.appendChild(methodInput);
+                @endif
+
+                // Add basic form data
+                const fields = ['nombre_equipo', 'estado_id', 'latitud', 'longitud'];
+                fields.forEach(field => {
+                    const element = document.getElementById(field + '-' + modalId);
+                    if (element && element.value) {
+                        const input = document.createElement('input');
+                        input.type = 'hidden';
+                        input.name = field;
+                        input.value = element.value;
+                        form.appendChild(input);
+                    }
+                });
+
+                // Add selected members
+                selectedMembers.forEach(member => {
+                    const input = document.createElement('input');
+                    input.type = 'hidden';
+                    input.name = 'miembros[]';
+                    input.value = member.id;
+                    form.appendChild(input);
+                });
+
+                // Add leader if selected
+                const liderSelect = document.getElementById('lider-equipo-' + modalId);
+                if (liderSelect && liderSelect.value) {
+                    const liderInput = document.createElement('input');
+                    liderInput.type = 'hidden';
+                    liderInput.name = 'lider_id';
+                    liderInput.value = liderSelect.value;
+                    form.appendChild(liderInput);
+                }
+
+                document.body.appendChild(form);
+                form.submit();
+            }
+
+            function resetForm() {
+                currentStep = 1;
+                selectedMembers = [];
+                updateStep();
+            }
+        })();
+    </script>
 @endpush

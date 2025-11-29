@@ -16,7 +16,7 @@ class EquipoController extends Controller
      */
     public function index()
     {
-        $equipos = Equipo::with('estados_sistema')
+        $equipos = Equipo::with(['estados_sistema', 'miembros'])
             ->orderBy('creado', 'desc')
             ->paginate(20);
 
@@ -33,7 +33,10 @@ class EquipoController extends Controller
             ->orderBy('apellido')
             ->get();
 
-        return view('equipos.index', compact('equipos', 'estados', 'usuarios'));
+        // Empty array for create mode (no members assigned yet)
+        $miembrosAsignados = [];
+
+        return view('equipos.index', compact('equipos', 'estados', 'usuarios', 'miembrosAsignados'));
     }
 
     /**
@@ -87,6 +90,9 @@ class EquipoController extends Controller
             // Crear el ID del equipo
             $equipoId = \Ramsey\Uuid\Uuid::uuid4()->toString();
 
+            // Calcular cantidad de integrantes
+            $cantidadMiembros = ($request->filled('miembros') && is_array($request->miembros)) ? count($request->miembros) : 0;
+
             // Si se proporcionaron coordenadas, insertar con PostGIS
             if ($request->filled('latitud') && $request->filled('longitud')) {
                 $lat = $validated['latitud'];
@@ -95,14 +101,14 @@ class EquipoController extends Controller
                 DB::statement(
                     "INSERT INTO equipos (id, nombre_equipo, estado_id, cantidad_integrantes, ubicacion, creado)
                      VALUES (?, ?, ?, ?, ST_GeogFromText('POINT({$lng} {$lat})'), NOW())",
-                    [$equipoId, $validated['nombre_equipo'], $validated['estado_id'], 0]
+                    [$equipoId, $validated['nombre_equipo'], $validated['estado_id'], $cantidadMiembros]
                 );
             } else {
                 // Insertar sin ubicación
                 DB::statement(
                     "INSERT INTO equipos (id, nombre_equipo, estado_id, cantidad_integrantes, creado)
                      VALUES (?, ?, ?, ?, NOW())",
-                    [$equipoId, $validated['nombre_equipo'], $validated['estado_id'], 0]
+                    [$equipoId, $validated['nombre_equipo'], $validated['estado_id'], $cantidadMiembros]
                 );
             }
 
@@ -127,7 +133,6 @@ class EquipoController extends Controller
             return redirect()
                 ->route('equipos.index')
                 ->with('success', 'Equipo creado exitosamente');
-
         } catch (\Exception $e) {
             DB::rollBack();
 
@@ -143,7 +148,7 @@ class EquipoController extends Controller
      */
     public function show(string $id)
     {
-        $equipo = Equipo::with('estados_sistema')->findOrFail($id);
+        $equipo = Equipo::with(['estados_sistema', 'miembros'])->findOrFail($id);
 
         return view('equipos.show', compact('equipo'));
     }
@@ -153,7 +158,7 @@ class EquipoController extends Controller
      */
     public function edit(string $id)
     {
-        $equipo = Equipo::findOrFail($id);
+        $equipo = Equipo::with('miembros')->findOrFail($id);
 
         // Obtener estados de equipos
         $estados = EstadosSistema::where('tabla', 'equipos')
@@ -161,11 +166,25 @@ class EquipoController extends Controller
             ->orderBy('orden')
             ->get();
 
+        // Get available usuarios for the modal
+        $usuarios = Usuario::with(['niveles_entrenamiento', 'estados_sistema'])
+            ->whereNotNull('nivel_entrenamiento_id')
+            ->orderBy('nombre')
+            ->orderBy('apellido')
+            ->get();
+
+        // Get IDs of current members
+        $miembrosAsignados = $equipo->miembros->pluck('id')->toArray();
+
+        // Get current leader ID (if any)
+        $liderAsignado = $equipo->miembros->firstWhere('pivot.es_lider', true);
+        $liderAsignadoId = $liderAsignado ? $liderAsignado->id : null;
+
         // Extraer latitud y longitud si existe ubicación
         $latitud = $equipo->latitud;
         $longitud = $equipo->longitud;
 
-        return view('equipos.edit', compact('equipo', 'estados', 'latitud', 'longitud'));
+        return view('equipos.edit', compact('equipo', 'estados', 'usuarios', 'miembrosAsignados', 'latitud', 'longitud', 'liderAsignadoId'));
     }
 
     /**
@@ -180,6 +199,9 @@ class EquipoController extends Controller
             'estado_id' => 'required|uuid|exists:estados_sistema,id',
             'latitud' => 'nullable|numeric|min:-90|max:90',
             'longitud' => 'nullable|numeric|min:-180|max:180',
+            'miembros' => 'nullable|array',
+            'miembros.*' => 'uuid|exists:usuarios,id',
+            'lider_id' => 'nullable|uuid|exists:usuarios,id',
         ], [
             'nombre_equipo.required' => 'El nombre del equipo es obligatorio',
             'nombre_equipo.max' => 'El nombre del equipo no puede exceder 100 caracteres',
@@ -191,27 +213,73 @@ class EquipoController extends Controller
             'longitud.numeric' => 'La longitud debe ser un número',
             'longitud.min' => 'La longitud debe estar entre -180 y 180',
             'longitud.max' => 'La longitud debe estar entre -180 y 180',
+            'miembros.array' => 'Los miembros deben ser un array válido',
+            'miembros.*.uuid' => 'Cada miembro debe tener un ID válido',
+            'miembros.*.exists' => 'Uno o más miembros seleccionados no existen',
+            'lider_id.uuid' => 'El ID del líder debe ser válido',
+            'lider_id.exists' => 'El líder seleccionado no existe',
         ]);
 
-        // Actualizar campos básicos
-        $equipo->nombre_equipo = $validated['nombre_equipo'];
-        $equipo->estado_id = $validated['estado_id'];
+        try {
+            DB::beginTransaction();
 
-        // Actualizar ubicación si se proporcionaron coordenadas
-        if ($request->filled('latitud') && $request->filled('longitud')) {
-            $lat = $validated['latitud'];
-            $lng = $validated['longitud'];
-            DB::statement("UPDATE equipos SET ubicacion = ST_GeogFromText('POINT({$lng} {$lat})') WHERE id = ?", [$equipo->id]);
-        } elseif (!$request->filled('latitud') && !$request->filled('longitud')) {
-            // Si ambos campos están vacíos, eliminar la ubicación
-            DB::statement("UPDATE equipos SET ubicacion = NULL WHERE id = ?", [$equipo->id]);
+            // Actualizar campos básicos
+            $equipo->nombre_equipo = $validated['nombre_equipo'];
+            $equipo->estado_id = $validated['estado_id'];
+
+            // Actualizar ubicación si se proporcionaron coordenadas
+            if ($request->filled('latitud') && $request->filled('longitud')) {
+                $lat = $validated['latitud'];
+                $lng = $validated['longitud'];
+                DB::statement("UPDATE equipos SET ubicacion = ST_GeogFromText('POINT({$lng} {$lat})') WHERE id = ?", [$equipo->id]);
+            } elseif (!$request->filled('latitud') && !$request->filled('longitud')) {
+                // Si ambos campos están vacíos, eliminar la ubicación
+                DB::statement("UPDATE equipos SET ubicacion = NULL WHERE id = ?", [$equipo->id]);
+            }
+
+            $equipo->save();
+
+            // Actualizar miembros del equipo
+            if ($request->has('miembros')) {
+                // Eliminar miembros actuales
+                DB::table('miembros_equipo')->where('id_equipo', $equipo->id)->delete();
+
+                $cantidadMiembros = 0;
+
+                // Agregar nuevos miembros
+                if (is_array($request->miembros) && count($request->miembros) > 0) {
+                    $liderId = $request->filled('lider_id') ? $validated['lider_id'] : null;
+                    $cantidadMiembros = count($request->miembros);
+
+                    foreach ($request->miembros as $usuarioId) {
+                        $miembroId = \Ramsey\Uuid\Uuid::uuid4()->toString();
+                        $esLider = ($liderId && $usuarioId === $liderId);
+
+                        DB::statement(
+                            "INSERT INTO miembros_equipo (id, id_equipo, id_usuario, es_lider, fecha_ingreso)
+                             VALUES (?, ?, ?, ?, NOW())",
+                            [$miembroId, $equipo->id, $usuarioId, $esLider]
+                        );
+                    }
+                }
+
+                // Actualizar contador de integrantes
+                DB::statement("UPDATE equipos SET cantidad_integrantes = ? WHERE id = ?", [$cantidadMiembros, $equipo->id]);
+            }
+
+            DB::commit();
+
+            return redirect()
+                ->route('equipos.index')
+                ->with('success', 'Equipo actualizado exitosamente');
+        } catch (\Exception $e) {
+            DB::rollBack();
+
+            return redirect()
+                ->back()
+                ->withInput()
+                ->withErrors(['error' => 'Error al actualizar el equipo: ' . $e->getMessage()]);
         }
-
-        $equipo->save();
-
-        return redirect()
-            ->route('equipos.index')
-            ->with('success', 'Equipo actualizado exitosamente');
     }
 
     /**
