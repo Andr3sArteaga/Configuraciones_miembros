@@ -15,13 +15,16 @@ return new class extends Migration
         Schema::create('equipos', function (Blueprint $table) {
             $table->uuid('id')->default(DB::raw('uuid_generate_v4()'))->primary();
             $table->string('nombre_equipo', 100);
-            $table->geography('ubicacion', 'point')->nullable();
+            //$table->geography('ubicacion', 'point')->nullable(); // eliminado: ubicación heredada de reporte
             $table->integer('cantidad_integrantes')->nullable()->default(0);
             $table->uuid('estado_id')->nullable()->index('idx_equipos_estado');
+            // Relación obligatoria al reporte
+            $table->uuid('reporte_id')->index('idx_equipos_reporte_id');
+            $table->foreign('reporte_id', 'fk_equipos_reporte')->references('id')->on('reportes')->onDelete('cascade');
             $table->timestamp('creado')->nullable()->useCurrent();
             $table->timestamp('actualizado')->nullable()->useCurrent();
 
-            $table->spatialIndex(['ubicacion'], 'idx_equipos_ubicacion');
+            // Se eliminó índice spatial ubicado en equipos: ubicacion ahora gestionado por reportes
         });
     }
 

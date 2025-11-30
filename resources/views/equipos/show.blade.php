@@ -81,6 +81,17 @@
                                 @endif
                             </dd>
 
+                            <dt class="col-sm-4">Reporte Asociado:</dt>
+                            <dd class="col-sm-8">
+                                @if ($equipo->reporte)
+                                    <a href="{{ route('reportes.show', $equipo->reporte->id) }}" target="_blank">
+                                        {{ $equipo->reporte->nombre_lugar ?? 'Reporte' }}
+                                    </a>
+                                @else
+                                    <span class="text-muted">N/A</span>
+                                @endif
+                            </dd>
+
                             <dt class="col-sm-4">Fecha de Creación:</dt>
                             <dd class="col-sm-8">{{ $equipo->creado ? $equipo->creado->format('d/m/Y H:i') : 'N/A' }}</dd>
 

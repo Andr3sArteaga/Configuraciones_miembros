@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Equipo;
 use App\Models\Usuario;
 use App\Models\EstadosSistema;
+use App\Models\Reporte;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -16,7 +17,7 @@ class EquipoController extends Controller
      */
     public function index()
     {
-        $equipos = Equipo::with(['estados_sistema', 'miembros'])
+        $equipos = Equipo::with(['estados_sistema', 'miembros', 'reporte'])
             ->orderBy('creado', 'desc')
             ->paginate(20);
 
@@ -35,7 +36,12 @@ class EquipoController extends Controller
         // Empty array for create mode (no members assigned yet)
         $miembrosAsignados = [];
 
-        return view('equipos.index', compact('equipos', 'estados', 'usuarios', 'miembrosAsignados'));
+        // Provide reportes to allow selection in team creation modal
+        $reportes = Reporte::whereNotNull('ubicacion')
+            ->orderBy('fecha_hora', 'desc')
+            ->get();
+
+        return view('equipos.index', compact('equipos', 'estados', 'usuarios', 'miembrosAsignados', 'reportes'));
     }
 
     /**
@@ -49,7 +55,12 @@ class EquipoController extends Controller
             ->orderBy('orden')
             ->get();
 
-        return view('equipos.create', compact('estados'));
+        // Provide reportes to help pick one if the user opens a create-only page
+        $reportes = Reporte::whereNotNull('ubicacion')
+            ->orderBy('fecha_hora', 'desc')
+            ->get();
+
+        return view('equipos.create', compact('estados', 'reportes'));
     }
 
     /**
@@ -60,8 +71,7 @@ class EquipoController extends Controller
         $validated = $request->validate([
             'nombre_equipo' => 'required|string|max:100',
             'estado_id' => 'required|uuid|exists:estados_sistema,id',
-            'latitud' => 'nullable|numeric|min:-90|max:90',
-            'longitud' => 'nullable|numeric|min:-180|max:180',
+            'reporte_id' => 'required|uuid|exists:reportes,id',
             'miembros' => 'nullable|array',
             'miembros.*' => 'uuid|exists:usuarios,id',
             'lider_id' => 'nullable|uuid|exists:usuarios,id',
@@ -70,12 +80,8 @@ class EquipoController extends Controller
             'nombre_equipo.max' => 'El nombre del equipo no puede exceder 100 caracteres',
             'estado_id.required' => 'Debe seleccionar un estado',
             'estado_id.exists' => 'El estado seleccionado no es válido',
-            'latitud.numeric' => 'La latitud debe ser un número',
-            'latitud.min' => 'La latitud debe estar entre -90 y 90',
-            'latitud.max' => 'La latitud debe estar entre -90 y 90',
-            'longitud.numeric' => 'La longitud debe ser un número',
-            'longitud.min' => 'La longitud debe estar entre -180 y 180',
-            'longitud.max' => 'La longitud debe estar entre -180 y 180',
+            'reporte_id.required' => 'Debe seleccionar el reporte asociado al equipo',
+            'reporte_id.exists' => 'El reporte seleccionado no es válido',
             'miembros.array' => 'Los miembros deben ser un array válido',
             'miembros.*.uuid' => 'Cada miembro debe tener un ID válido',
             'miembros.*.exists' => 'Uno o más miembros seleccionados no existen',
@@ -92,24 +98,13 @@ class EquipoController extends Controller
             // Calcular cantidad de integrantes
             $cantidadMiembros = ($request->filled('miembros') && is_array($request->miembros)) ? count($request->miembros) : 0;
 
-            // Si se proporcionaron coordenadas, insertar con PostGIS
-            if ($request->filled('latitud') && $request->filled('longitud')) {
-                $lat = $validated['latitud'];
-                $lng = $validated['longitud'];
+            // Insertar con reporte asociado (reporte_id obligatorio)
+            DB::statement(
+                "INSERT INTO equipos (id, nombre_equipo, estado_id, cantidad_integrantes, reporte_id, creado)
+                     VALUES (?, ?, ?, ?, ?, NOW())",
+                [$equipoId, $validated['nombre_equipo'], $validated['estado_id'], $cantidadMiembros, $validated['reporte_id']]
+            );
 
-                DB::statement(
-                    "INSERT INTO equipos (id, nombre_equipo, estado_id, cantidad_integrantes, ubicacion, creado)
-                     VALUES (?, ?, ?, ?, ST_GeogFromText('POINT({$lng} {$lat})'), NOW())",
-                    [$equipoId, $validated['nombre_equipo'], $validated['estado_id'], $cantidadMiembros]
-                );
-            } else {
-                // Insertar sin ubicación
-                DB::statement(
-                    "INSERT INTO equipos (id, nombre_equipo, estado_id, cantidad_integrantes, creado)
-                     VALUES (?, ?, ?, ?, NOW())",
-                    [$equipoId, $validated['nombre_equipo'], $validated['estado_id'], $cantidadMiembros]
-                );
-            }
 
             // Agregar miembros al equipo si se proporcionaron
             if ($request->filled('miembros') && is_array($request->miembros)) {
@@ -178,11 +173,13 @@ class EquipoController extends Controller
         $liderAsignado = $equipo->miembros->firstWhere('pivot.es_lider', true);
         $liderAsignadoId = $liderAsignado ? $liderAsignado->id : null;
 
-        // Extraer latitud y longitud si existe ubicación
+        // Extraer latitud/longitud del equipo (o del reporte relacionado) si está disponible
         $latitud = $equipo->latitud;
         $longitud = $equipo->longitud;
 
-        return view('equipos.edit', compact('equipo', 'estados', 'usuarios', 'miembrosAsignados', 'latitud', 'longitud', 'liderAsignadoId'));
+        $reportes = Reporte::whereNotNull('ubicacion')->orderBy('fecha_hora', 'desc')->get();
+
+        return view('equipos.edit', compact('equipo', 'estados', 'usuarios', 'miembrosAsignados', 'latitud', 'longitud', 'liderAsignadoId', 'reportes'));
     }
 
     /**
@@ -195,8 +192,7 @@ class EquipoController extends Controller
         $validated = $request->validate([
             'nombre_equipo' => 'required|string|max:100',
             'estado_id' => 'required|uuid|exists:estados_sistema,id',
-            'latitud' => 'nullable|numeric|min:-90|max:90',
-            'longitud' => 'nullable|numeric|min:-180|max:180',
+            'reporte_id' => 'required|uuid|exists:reportes,id',
             'miembros' => 'nullable|array',
             'miembros.*' => 'uuid|exists:usuarios,id',
             'lider_id' => 'nullable|uuid|exists:usuarios,id',
@@ -225,14 +221,9 @@ class EquipoController extends Controller
             $equipo->nombre_equipo = $validated['nombre_equipo'];
             $equipo->estado_id = $validated['estado_id'];
 
-            // Actualizar ubicación si se proporcionaron coordenadas
-            if ($request->filled('latitud') && $request->filled('longitud')) {
-                $lat = $validated['latitud'];
-                $lng = $validated['longitud'];
-                DB::statement("UPDATE equipos SET ubicacion = ST_GeogFromText('POINT({$lng} {$lat})') WHERE id = ?", [$equipo->id]);
-            } elseif (!$request->filled('latitud') && !$request->filled('longitud')) {
-                // Si ambos campos están vacíos, eliminar la ubicación
-                DB::statement("UPDATE equipos SET ubicacion = NULL WHERE id = ?", [$equipo->id]);
+            // Actualizar reporte asociado
+            if ($request->filled('reporte_id')) {
+                DB::statement("UPDATE equipos SET reporte_id = ? WHERE id = ?", [$validated['reporte_id'], $equipo->id]);
             }
 
             $equipo->save();
@@ -301,15 +292,16 @@ class EquipoController extends Controller
     public function api()
     {
         try {
-            $equipos = Equipo::with('estados_sistema')
-                ->whereNotNull('ubicacion')
+            $equipos = Equipo::with(['estados_sistema', 'reporte'])
+                ->whereNotNull('reporte_id')
                 ->get()
                 ->map(function ($equipo) {
                     return [
                         'id' => $equipo->id,
                         'nombre_equipo' => $equipo->nombre_equipo,
                         'cantidad_integrantes' => $equipo->cantidad_integrantes,
-                        'ubicacion' => $equipo->ubicacion,
+                        // Usar ubicacion del reporte asociado (equipos no almacenan ubicación directamente)
+                        'ubicacion' => $equipo->reporte ? $equipo->reporte->ubicacion : null,
                         'estado' => $equipo->estados_sistema ? [
                             'nombre' => $equipo->estados_sistema->nombre,
                             'codigo' => $equipo->estados_sistema->codigo,

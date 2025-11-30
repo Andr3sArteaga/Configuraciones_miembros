@@ -77,7 +77,7 @@
                                                 {{ $equipo->cantidad_integrantes ?? 0 }}
                                             </td>
                                             <td>
-                                                @if ($equipo->ubicacion)
+                                                @if ($equipo->latitud && $equipo->longitud)
                                                     <span class="badge badge-success">
                                                         <i class="fas fa-map-marker-alt"></i> Ubicación registrada
                                                     </span>

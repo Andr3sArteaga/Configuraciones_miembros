@@ -13,8 +13,7 @@ class FocoCalorController extends Controller
     public function index()
     {
         $focos = FocosCalor::orderBy('acq_date', 'desc')->paginate(20);
-        $countEquiposDesplegados = Equipo::whereNotNull('ubicacion')
-            ->where('ubicacion', '!=', '')
+        $countEquiposDesplegados = Equipo::whereNotNull('reporte_id')
             ->count();
 
         // Obtener reportes con ubicación para mostrar en el mapa
@@ -87,29 +86,29 @@ class FocoCalorController extends Controller
         // Filtrar por confianza mínima
         if ($request->has('min_confidence')) {
             $minConfidence = $request->input('min_confidence');
-            
+
             // Convertir letras a números si es necesario
             if (in_array(strtolower($minConfidence), ['l', 'n', 'h'])) {
                 $confidenceMap = ['l' => 0, 'n' => 50, 'h' => 80];
                 $minConfidence = $confidenceMap[strtolower($minConfidence)];
             }
-            
+
             // Filtrar por confianza numérica o letra
-            $query->where(function($q) use ($minConfidence) {
+            $query->where(function ($q) use ($minConfidence) {
                 $q->where('confidence', '>=', $minConfidence)
-                  ->orWhere('confidence', '=', 'h')
-                  ->when($minConfidence <= 50, function($query) {
-                      $query->orWhere('confidence', '=', 'n');
-                  })
-                  ->when($minConfidence <= 0, function($query) {
-                      $query->orWhere('confidence', '=', 'l');
-                  });
+                    ->orWhere('confidence', '=', 'h')
+                    ->when($minConfidence <= 50, function ($query) {
+                        $query->orWhere('confidence', '=', 'n');
+                    })
+                    ->when($minConfidence <= 0, function ($query) {
+                        $query->orWhere('confidence', '=', 'l');
+                    });
             });
         }
 
         // Ordenar por fecha más reciente
         $query->orderBy('acq_date', 'desc')
-              ->orderBy('acq_time', 'desc');
+            ->orderBy('acq_time', 'desc');
 
         // Paginación
         $perPage = min($request->input('per_page', 100), 1000);
@@ -157,7 +156,7 @@ class FocoCalorController extends Controller
      */
     private function toGeoJSON($focos)
     {
-        $features = $focos->items()->map(function ($foco) {
+        $features = collect($focos->items())->map(function ($foco) {
             return [
                 'type' => 'Feature',
                 'geometry' => [
@@ -178,7 +177,8 @@ class FocoCalorController extends Controller
                     'created_at' => $foco->creado?->toIso8601String(),
                 ],
             ];
-        })->toArray();
+        });
+
 
         return response()->json([
             'type' => 'FeatureCollection',
@@ -208,17 +208,17 @@ class FocoCalorController extends Controller
 
         $stats = [
             'total_hotspots' => $query->count(),
-            'high_confidence' => (clone $query)->where(function($q) {
+            'high_confidence' => (clone $query)->where(function ($q) {
                 $q->where('confidence', '=', 'h')
-                  ->orWhere('confidence', '>=', 80);
+                    ->orWhere('confidence', '>=', 80);
             })->count(),
-            'medium_confidence' => (clone $query)->where(function($q) {
+            'medium_confidence' => (clone $query)->where(function ($q) {
                 $q->where('confidence', '=', 'n')
-                  ->orWhereBetween('confidence', [50, 79]);
+                    ->orWhereBetween('confidence', [50, 79]);
             })->count(),
-            'low_confidence' => (clone $query)->where(function($q) {
+            'low_confidence' => (clone $query)->where(function ($q) {
                 $q->where('confidence', '=', 'l')
-                  ->orWhere('confidence', '<', 50);
+                    ->orWhere('confidence', '<', 50);
             })->count(),
             'avg_frp' => round((clone $query)->avg('frp'), 2),
             'max_frp' => (clone $query)->max('frp'),
@@ -256,7 +256,7 @@ class FocoCalorController extends Controller
         // NASA FIRMS API configuration
         $NASA_API_KEY = '1ae0346a287432156ada4abb791d57cd';
         $NASA_API_BASE = 'https://firms.modaps.eosdis.nasa.gov/api/area/csv';
-        
+
         // Bolivia bounding box
         $BOLIVIA_BOUNDS = [
             'min_lat' => -22.9,
@@ -313,12 +313,12 @@ class FocoCalorController extends Controller
 
             for ($i = 1; $i < count($lines); $i++) {
                 if (empty(trim($lines[$i]))) continue;
-                
+
                 $values = str_getcsv($lines[$i]);
                 if (count($values) < count($headers)) continue;
 
                 $fire = array_combine($headers, $values);
-                
+
                 $hotspots[] = [
                     'latitude' => (float) $fire['latitude'],
                     'longitude' => (float) $fire['longitude'],
@@ -335,7 +335,7 @@ class FocoCalorController extends Controller
             if ($format === 'geojson') {
                 return response()->json([
                     'type' => 'FeatureCollection',
-                    'features' => array_map(function($hotspot) {
+                    'features' => array_map(function ($hotspot) {
                         return [
                             'type' => 'Feature',
                             'geometry' => [
@@ -377,7 +377,6 @@ class FocoCalorController extends Controller
                 ],
                 'timestamp' => now()->toIso8601String(),
             ]);
-
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,

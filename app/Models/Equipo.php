@@ -10,13 +10,13 @@ use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
+use App\Models\Reporte;
 
 /**
  * Class Equipo
  * 
  * @property string $id
  * @property string $nombre_equipo
- * @property array|null $ubicacion
  * @property string|null $cantidad_integrantes
  * @property string|null $estado_id
  * @property Carbon|null $creado
@@ -31,111 +31,75 @@ use Illuminate\Support\Facades\DB;
  */
 class Equipo extends Model
 {
-	protected $table = 'equipos';
-	public $incrementing = false;
-	protected $keyType = 'string';
-	public $timestamps = false;
+    protected $table = 'equipos';
+    public $incrementing = false;
+    protected $keyType = 'string';
+    public $timestamps = false;
 
-	protected $casts = [
+    protected $casts = [
         'id' => 'string',
         'cantidad_integrantes' => 'string',
         'estado_id' => 'string',
+        'reporte_id' => 'string',
         'creado' => 'datetime',
         'actualizado' => 'datetime',
     ];
 
-	protected $fillable = [
-		'nombre_equipo',
-		'ubicacion',
-		'cantidad_integrantes',
-		'estado_id',
-		'creado',
-		'actualizado'
-	];
+    protected $fillable = [
+        'nombre_equipo',
+        'reporte_id',
+        'cantidad_integrantes',
+        'estado_id',
+        'creado',
+        'actualizado'
+    ];
 
-	public function estados_sistema()
-	{
-		return $this->belongsTo(EstadosSistema::class, 'estado_id');
-	}
-
-	public function comunarios_apoyos()
-	{
-		return $this->hasMany(ComunariosApoyo::class, 'equipoid');
-	}
-
-	public function miembros_equipos()
-	{
-		return $this->hasMany(MiembrosEquipo::class, 'id_equipo');
-	}
-
-	public function miembros()
-	{
-		return $this->belongsToMany(Usuario::class, 'miembros_equipo', 'id_equipo', 'id_usuario')
-			->withPivot('es_lider', 'fecha_ingreso');
-	}
-
-	public function recursos()
-	{
-		return $this->hasMany(Recurso::class, 'equipoid');
-	}
-
-    /**
-     * Accessor/Mutator para la columna PostGIS 'ubicacion'.
-     *
-     * - Get: Convierte geometría PostGIS a array GeoJSON.
-     * - Set: Acepta ['lat' => ..., 'lng' => ...] o null.
-     */
-    protected function ubicacion(): \Illuminate\Database\Eloquent\Casts\Attribute
+    public function estados_sistema()
     {
-        return \Illuminate\Database\Eloquent\Casts\Attribute::make(
-            get: function ($value) {
-                if ($value === null) {
-                    return null;
-                }
-
-                try {
-                    $result = DB::selectOne("SELECT ST_AsGeoJSON(?) AS geojson", [$value]);
-                    return $result ? json_decode($result->geojson, true) : null;
-                } catch (\Exception $e) {
-                    return null;
-                }
-            },
-            set: function ($value) {
-                if ($value === null) {
-                    return null;
-                }
-
-                if ($value instanceof \Illuminate\Contracts\Database\Query\Expression) {
-                    return $value;
-                }
-
-                if (!is_array($value) || !isset($value['lat'], $value['lng'])) {
-                    return null;
-                }
-
-                $lat = (float) $value['lat'];
-                $lng = (float) $value['lng'];
-
-                return DB::raw("ST_SetSRID(ST_MakePoint({$lng}, {$lat}), 4326)");
-            }
-        );
+        return $this->belongsTo(EstadosSistema::class, 'estado_id');
     }
+
+    public function comunarios_apoyos()
+    {
+        return $this->hasMany(ComunariosApoyo::class, 'equipoid');
+    }
+
+    public function miembros_equipos()
+    {
+        return $this->hasMany(MiembrosEquipo::class, 'id_equipo');
+    }
+
+    public function miembros()
+    {
+        return $this->belongsToMany(Usuario::class, 'miembros_equipo', 'id_equipo', 'id_usuario')
+            ->withPivot('es_lider', 'fecha_ingreso');
+    }
+
+    public function recursos()
+    {
+        return $this->hasMany(Recurso::class, 'equipoid');
+    }
+
+    public function reporte()
+    {
+        return $this->belongsTo(Reporte::class, 'reporte_id');
+    }
+
+    /* La columna 'ubicacion' fue eliminada de la tabla 'equipos'; la ubicación se hereda desde 'reportes'. */
 
     /**
      * Get latitud from PostGIS geometry
      */
     public function getLatitudAttribute()
     {
-        if (!$this->attributes['ubicacion']) {
-            return null;
-        }
-
+        // Preferir ubicacion propia, si existe; sino usar ubicacion del reporte asociado
+        // Si existe reporte relacionado, usar su ubicación
         try {
-            $result = DB::selectOne(
-                "SELECT ST_Y(ubicacion::geometry) AS lat FROM equipos WHERE id = ?",
-                [$this->id]
-            );
-            return $result ? $result->lat : null;
+            if ($this->reporte && isset($this->reporte->ubicacion['coordinates'])) {
+                return $this->reporte->ubicacion['coordinates'][1];
+            }
+
+            return null;
         } catch (\Exception $e) {
             return null;
         }
@@ -146,16 +110,12 @@ class Equipo extends Model
      */
     public function getLongitudAttribute()
     {
-        if (!$this->attributes['ubicacion']) {
-            return null;
-        }
-
         try {
-            $result = DB::selectOne(
-                "SELECT ST_X(ubicacion::geometry) AS lng FROM equipos WHERE id = ?",
-                [$this->id]
-            );
-            return $result ? $result->lng : null;
+            if ($this->reporte && isset($this->reporte->ubicacion['coordinates'])) {
+                return $this->reporte->ubicacion['coordinates'][0];
+            }
+
+            return null;
         } catch (\Exception $e) {
             return null;
         }

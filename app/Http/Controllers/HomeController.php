@@ -47,8 +47,7 @@ class HomeController extends Controller
         $estadoDesplegado = EstadosSistema::where('tabla', 'equipos')
             ->where('codigo', 'desplegado')
             ->first();
-        $equiposDesplegados  = Equipo::whereNotNull('ubicacion')
-            ->where('ubicacion', '!=', '')
+        $equiposDesplegados  = Equipo::whereNotNull('reporte_id')
             ->count();
 
         $estadoSolicitado = EstadosSistema::where('tabla', 'recursos')
@@ -105,7 +104,7 @@ class HomeController extends Controller
             ->get();
 
         // Equipos con relaciones
-        $equipos = Equipo::orderBy('creado', 'desc')
+        $equipos = Equipo::with('reporte')->orderBy('creado', 'desc')
             ->limit(10)
             ->get();
 
