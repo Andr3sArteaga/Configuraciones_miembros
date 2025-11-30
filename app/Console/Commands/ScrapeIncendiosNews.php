@@ -50,10 +50,8 @@ class ScrapeIncendiosNews extends Command
             $updatedCount = 0;
 
             foreach ($articles as $article) {
-                // Create a unique ID from the URL
-                $id = md5($article['url']);
-
-                $existing = NoticiasIncendio::find($id);
+                // Check if article already exists by URL
+                $existing = NoticiasIncendio::where('url', $article['url'])->first();
 
                 if ($existing) {
                     // Update existing article
@@ -65,9 +63,9 @@ class ScrapeIncendiosNews extends Command
                     ]);
                     $updatedCount++;
                 } else {
-                    // Create new article
+                    // Create new article with UUID
                     NoticiasIncendio::create([
-                        'id' => $id,
+                        'id' => (string) \Illuminate\Support\Str::uuid(),
                         'title' => $article['title'],
                         'url' => $article['url'],
                         'description' => $article['description'],

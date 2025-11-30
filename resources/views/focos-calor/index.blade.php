@@ -142,14 +142,6 @@
                 </div>
             </div>
         </div>
-
-        @if ($focos->hasPages())
-            <div class="row mt-3">
-                <div class="col-md-12">
-                    {{ $focos->links() }}
-                </div>
-            </div>
-        @endif
     </div>
 @stop
 
@@ -272,7 +264,8 @@
             });
 
             // Agregar capas al mapa
-            map.addLayer(focosLayer);
+            // Note: focosLayer is NOT added - we don't show database saved focos
+            // Only real-time NASA FIRMS data is displayed
             map.addLayer(equiposLayer);
             map.addLayer(reportesLayer);
             map.addLayer(nasaFirmsLayer); // Add NASA FIRMS layer
@@ -281,69 +274,14 @@
             addLegend();
 
             // Cargar datos
-            loadFocosData();
+            // loadFocosData(); // REMOVED - Don't show database saved focos
             loadEquiposData();
             loadReportesData();
             loadNASAFirmsData(2); // Load NASA FIRMS data for last 2 days by default
         }
 
-        // Cargar focos de calor
-        function loadFocosData() {
-            const focos = @json($focos->items());
-            let highConfidenceCount = 0;
-
-            focos.forEach(foco => {
-                if (foco.confidence >= 80) {
-                    highConfidenceCount++;
-                }
-
-                // Crear icono según nivel de confianza
-                let iconColor = '#dc3545'; // Rojo por defecto
-                let iconSize = 10;
-
-                if (foco.confidence >= 80) {
-                    iconColor = '#dc3545'; // Rojo
-                    iconSize = 12;
-                } else if (foco.confidence >= 50) {
-                    iconColor = '#ffc107'; // Amarillo
-                    iconSize = 10;
-                } else {
-                    iconColor = '#17a2b8'; // Azul claro
-                    iconSize = 8;
-                }
-
-                const focoIcon = L.divIcon({
-                    html: `<div style="background-color: ${iconColor}; width: ${iconSize}px; height: ${iconSize}px; border-radius: 50%; border: 2px solid white; box-shadow: 0 0 4px rgba(0,0,0,0.5);"></div>`,
-                    className: 'foco-marker',
-                    iconSize: [iconSize, iconSize]
-                });
-
-                const marker = L.marker([foco.latitude, foco.longitude], {
-                    icon: focoIcon
-                });
-
-                // Crear popup
-                const popupContent = `
-                    <div class="foco-popup">
-                        <h6><i class="fas fa-fire"></i> Foco de Calor</h6>
-                        <div class="popup-info">
-                            <p><strong>Coordenadas:</strong> ${foco.latitude.toFixed(6)}, ${foco.longitude.toFixed(6)}</p>
-                            <p><strong>Confianza:</strong> <span class="badge badge-${foco.confidence >= 80 ? 'danger' : (foco.confidence >= 50 ? 'warning' : 'info')}">${foco.confidence}%</span></p>
-                            <p><strong>Fecha:</strong> ${new Date(foco.acq_date).toLocaleDateString('es-BO')}</p>
-                            <p><strong>Hora:</strong> ${foco.acq_time || 'N/A'}</p>
-                            ${foco.frp ? `<p><strong>FRP:</strong> ${parseFloat(foco.frp).toFixed(2)} MW</p>` : ''}
-                            ${foco.bright_ti4 ? `<p><strong>Brillo TI4:</strong> ${parseFloat(foco.bright_ti4).toFixed(2)}K</p>` : ''}
-                        </div>
-                    </div>
-                `;
-
-                marker.bindPopup(popupContent);
-                focosLayer.addLayer(marker);
-            });
-
-            // Actualizar contador de alta confianza
-            document.getElementById('high-confidence-count').textContent = highConfidenceCount;
-        }
+        // Note: loadFocosData() function removed - we don't display database saved focos
+        // Only real-time NASA FIRMS data is shown on the map
 
         // Cargar equipos de bomberos
         function loadEquiposData() {
@@ -641,8 +579,8 @@
         function adjustMapBounds() {
             const allMarkers = [];
 
-            // Collect markers from all layers
-            focosLayer.eachLayer(marker => allMarkers.push(marker));
+            // Collect markers from all layers (excluding focosLayer - database saved focos)
+            // focosLayer.eachLayer(marker => allMarkers.push(marker)); // REMOVED
             nasaFirmsLayer.eachLayer(marker => allMarkers.push(marker));
             equiposLayer.eachLayer(marker => allMarkers.push(marker));
             reportesLayer.eachLayer(marker => allMarkers.push(marker));
