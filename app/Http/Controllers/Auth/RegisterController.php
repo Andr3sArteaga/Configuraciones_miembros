@@ -54,6 +54,19 @@ class RegisterController extends Controller
             'apellido' => ['required', 'string', 'max:100'],
             'ci' => ['required', 'string', 'max:20', 'unique:usuarios,ci'],
             'fecha_nacimiento' => ['required', 'date', 'before:today'],
+            'genero_id' => ['required', 'string', 'exists:generos,id'],
+            'tipo_sangre_id' => ['required', 'string', 'exists:tipos_sangre,id'],
+            'rol_id' => [
+                'required', 
+                'string', 
+                'exists:roles,id',
+                function ($attribute, $value, $fail) {
+                    $role = \App\Models\Role::find($value);
+                    if (!$role || !in_array($role->codigo, ['BOMBERO', 'PARAMEDICO', 'VETERINARIO'])) {
+                        $fail('El rol seleccionado no es válido.');
+                    }
+                },
+            ],
             'telefono' => ['nullable', 'string', 'max:20'],
             'email' => ['required', 'string', 'email', 'max:150', 'unique:usuarios,email'],
             'password' => ['required', 'string', 'min:8', 'confirmed'],
@@ -74,6 +87,9 @@ class RegisterController extends Controller
             'apellido' => $data['apellido'],
             'ci' => $data['ci'],
             'fecha_nacimiento' => $data['fecha_nacimiento'],
+            'genero_id' => $data['genero_id'],
+            'tipo_sangre_id' => $data['tipo_sangre_id'],
+            'rol_id' => $data['rol_id'],
             'telefono' => $data['telefono'] ?? null,
             'email' => $data['email'],
             'password' => Hash::make($data['password']),
