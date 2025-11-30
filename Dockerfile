@@ -1,0 +1,21 @@
+FROM php:8.4-fpm
+
+RUN apt-get update && apt-get install -y \
+    git \
+    unzip \
+    libpq-dev \
+    libzip-dev \
+    libicu-dev \
+    postgresql-client \
+    && docker-php-ext-install intl pdo pdo_pgsql zip
+
+# Instalar composer
+COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
+
+WORKDIR /var/www
+
+COPY . .
+
+# Copiar entrypoint
+COPY docker-entrypoint.sh /usr/local/bin/entrypoint.sh
+ENTRYPOINT ["entrypoint.sh"]
