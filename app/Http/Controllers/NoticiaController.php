@@ -12,7 +12,20 @@ class NoticiaController extends Controller
      */
     public function index()
     {
-        $noticias = NoticiasIncendio::orderBy('date', 'desc')->paginate(20);
+        // Get the latest 10 news articles
+        $noticias = NoticiasIncendio::orderBy('date', 'desc')
+            ->take(10)
+            ->get();
+        
+        // Create a fake paginator for compatibility with the view
+        $noticias = new \Illuminate\Pagination\LengthAwarePaginator(
+            $noticias,
+            $noticias->count(),
+            10,
+            1,
+            ['path' => request()->url()]
+        );
+        
         return view('noticias.index', compact('noticias'));
     }
 

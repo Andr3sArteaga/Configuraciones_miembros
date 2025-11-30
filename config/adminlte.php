@@ -133,7 +133,8 @@ return [
     |
     */
 
-    'usermenu_enabled' => true,
+    // Desactivar usermenu nativo (causaba un toggle invisible en la barra superior)
+    'usermenu_enabled' => false,
     'usermenu_header' => false,
     'usermenu_header_class' => 'bg-primary',
     'usermenu_image' => false,
@@ -309,6 +310,18 @@ return [
         [
             'type' => 'fullscreen-widget',
             'topnav_right' => true,
+        ],
+        // Icono visible de usuario y enlace a perfil
+        [
+            'text' => '<a class="nav-link text-dark d-flex align-items-center" href="/profile" title="Mi perfil"><i class="fas fa-user-circle fa-lg mr-1"></i><span class="d-none d-md-inline">Perfil</span></a>',
+            'topnav_right' => true,
+            'raw' => true,
+        ],
+        // Botón de logout visible (si tu logout requiere POST, reemplazar por el formulario correspondiente)
+        [
+            'text' => '<a class="nav-link btn btn-danger btn-sm text-white px-2" href="/logout" id="topnav-logout"><i class="fas fa-sign-out-alt mr-1"></i><span class="d-none d-md-inline">Salir</span></a>',
+            'topnav_right' => true,
+            'raw' => true,
         ],
 
         // Sidebar items:

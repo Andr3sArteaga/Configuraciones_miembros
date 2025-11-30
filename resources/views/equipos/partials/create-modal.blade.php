@@ -419,10 +419,54 @@
                         </div>
 
                         <div class="row">
-                            <div class="col-md-12">
-                                <div class="alert alert-warning">
-                                    <i class="fas fa-exclamation-triangle"></i> <strong>Nota:</strong> Esta sección es
-                                    opcional y está en desarrollo.
+                            <div class="col-md-5">
+                                <div class="card">
+                                    <div class="card-header bg-light">
+                                        <h6 class="mb-0">Nuevo Comunario</h6>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="form-group">
+                                            <label for="nombre_comunario-{{ $modalId }}">Nombre Completo</label>
+                                            <input type="text" class="form-control" id="nombre_comunario-{{ $modalId }}"
+                                                placeholder="Nombre del comunario">
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="edad_comunario-{{ $modalId }}">Edad</label>
+                                            <input type="number" class="form-control" id="edad_comunario-{{ $modalId }}"
+                                                placeholder="Edad" min="18" max="100">
+                                        </div>
+                                        <button type="button" class="btn btn-success btn-block"
+                                            id="btn-add-comunario-{{ $modalId }}">
+                                            <i class="fas fa-plus"></i> Agregar Comunario
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-7">
+                                <div class="card">
+                                    <div class="card-header bg-light">
+                                        <h6 class="mb-0">Comunarios Agregados</h6>
+                                    </div>
+                                    <div class="card-body p-0">
+                                        <div class="table-responsive" style="max-height: 300px; overflow-y: auto;">
+                                            <table class="table table-sm table-hover mb-0">
+                                                <thead class="thead-light">
+                                                    <tr>
+                                                        <th>Nombre</th>
+                                                        <th>Edad</th>
+                                                        <th style="width: 50px;">Acción</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody id="comunarios-list-{{ $modalId }}">
+                                                    <tr>
+                                                        <td colspan="3" class="text-center text-muted py-3">
+                                                            No hay comunarios agregados
+                                                        </td>
+                                                    </tr>
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -497,6 +541,7 @@
             let map, marker;
             let currentStep = 1;
             let selectedMembers = [];
+            let comunarios = [];
 
             const assignedLeaderId = @json(isset($liderAsignadoId) ? $liderAsignadoId : null);
 
@@ -686,6 +731,72 @@
                         }
                     });
                 }
+
+                // Add Comunario
+                document.getElementById('btn-add-comunario-' + modalId).addEventListener('click', addComunario);
+            }
+
+            function addComunario() {
+                const nombreInput = document.getElementById('nombre_comunario-' + modalId);
+                const edadInput = document.getElementById('edad_comunario-' + modalId);
+                
+                const nombre = nombreInput.value.trim();
+                const edad = edadInput.value.trim();
+
+                if (!nombre) {
+                    alert('Por favor ingrese el nombre del comunario');
+                    return;
+                }
+                if (!edad) {
+                    alert('Por favor ingrese la edad del comunario');
+                    return;
+                }
+
+                comunarios.push({ nombre, edad });
+                
+                nombreInput.value = '';
+                edadInput.value = '';
+                
+                renderComunariosList();
+            }
+
+            function renderComunariosList() {
+                const tbody = document.getElementById('comunarios-list-' + modalId);
+                
+                if (comunarios.length === 0) {
+                    tbody.innerHTML = `
+                        <tr>
+                            <td colspan="3" class="text-center text-muted py-3">
+                                No hay comunarios agregados
+                            </td>
+                        </tr>
+                    `;
+                    return;
+                }
+
+                tbody.innerHTML = '';
+                comunarios.forEach((comunario, index) => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${comunario.nombre}</td>
+                        <td>${comunario.edad}</td>
+                        <td>
+                            <button type="button" class="btn btn-danger btn-xs btn-delete-comunario" data-index="${index}">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </td>
+                    `;
+                    tbody.appendChild(row);
+                });
+
+                // Add delete event listeners
+                document.querySelectorAll('.btn-delete-comunario').forEach(btn => {
+                    btn.addEventListener('click', function() {
+                        const index = this.getAttribute('data-index');
+                        comunarios.splice(index, 1);
+                        renderComunariosList();
+                    });
+                });
             }
 
             function filterMembers() {
@@ -914,6 +1025,7 @@
                 });
 
                 // Add leader if selected
+                // Add leader if selected
                 const liderSelect = document.getElementById('lider-equipo-' + modalId);
                 if (liderSelect && liderSelect.value) {
                     const liderInput = document.createElement('input');
@@ -923,13 +1035,31 @@
                     form.appendChild(liderInput);
                 }
 
+                // Add comunarios
+                comunarios.forEach((comunario, index) => {
+                    const nombreInput = document.createElement('input');
+                    nombreInput.type = 'hidden';
+                    nombreInput.name = `comunarios[${index}][nombre]`;
+                    nombreInput.value = comunario.nombre;
+                    form.appendChild(nombreInput);
+
+                    const edadInput = document.createElement('input');
+                    edadInput.type = 'hidden';
+                    edadInput.name = `comunarios[${index}][edad]`;
+                    edadInput.value = comunario.edad;
+                    form.appendChild(edadInput);
+                });
+
                 document.body.appendChild(form);
                 form.submit();
             }
 
             function resetForm() {
                 currentStep = 1;
+                currentStep = 1;
                 selectedMembers = [];
+                comunarios = [];
+                renderComunariosList();
                 updateStep();
             }
         })();

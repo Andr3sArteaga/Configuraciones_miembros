@@ -6,12 +6,12 @@
     <div class="container-fluid">
         <div class="row mb-2">
             <div class="col-sm-6">
-                <h1 class="m-0">Reportes de Incendios</h1>
+                <h1 class="m-0">Reportes</h1>
             </div>
             <div class="col-sm-6">
                 <ol class="breadcrumb float-sm-right">
                     <li class="breadcrumb-item"><a href="{{ route('home') }}">Inicio</a></li>
-                    <li class="breadcrumb-item active">Reportes de Incendios</li>
+                    <li class="breadcrumb-item active">Reporte de usuario</li>
                 </ol>
             </div>
         </div>
@@ -20,14 +20,41 @@
 
 @section('content')
     <div class="container-fluid">
+        {{-- Mensajes de éxito/error --}}
+        @if (session('success'))
+            <div class="alert alert-success alert-dismissible fade show" role="alert">
+                <i class="fas fa-check-circle mr-2"></i>
+                {{ session('success') }}
+                <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+        @endif
+
+        @if (session('error'))
+            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                <i class="fas fa-exclamation-circle mr-2"></i>
+                {{ session('error') }}
+                <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+        @endif
+
         <div class="row">
             <div class="col-md-12">
                 <div class="card">
                     <div class="card-header">
                         <h3 class="card-title">
                             <i class="fas fa-fire mr-1"></i>
-                            Listado de Reportes de Incendios
+                            Listado de Reportes
                         </h3>
+                        <div class="card-tools">
+                            <a href="{{ route('reportes-incendio.create') }}" class="btn btn-primary btn-sm">
+                                <i class="fas fa-plus mr-1"></i>
+                                Nuevo Reporte
+                            </a>
+                        </div>
                     </div>
                     <div class="card-body p-0">
                         <div class="table-responsive">
@@ -122,15 +149,23 @@
                                             </td>
                                             <td class="text-center">
                                                 <div class="btn-group btn-group-sm" role="group">
-                                                    <a href="#" class="btn btn-info" title="Ver Detalles">
+                                                    <a href="{{ route('reportes-incendio.show', $reporte->id) }}" 
+                                                       class="btn btn-info" title="Ver Detalles">
                                                         <i class="fas fa-eye"></i>
                                                     </a>
-                                                    <a href="#" class="btn btn-warning" title="Editar">
+                                                    <a href="{{ route('reportes-incendio.edit', $reporte->id) }}" 
+                                                       class="btn btn-warning" title="Editar">
                                                         <i class="fas fa-edit"></i>
                                                     </a>
-                                                    <button type="button" class="btn btn-danger" title="Eliminar">
-                                                        <i class="fas fa-trash"></i>
-                                                    </button>
+                                                    <form action="{{ route('reportes-incendio.destroy', $reporte->id) }}" 
+                                                          method="POST" class="d-inline" 
+                                                          onsubmit="return confirm('¿Está seguro de que desea eliminar este reporte?');">
+                                                        @csrf
+                                                        @method('DELETE')
+                                                        <button type="submit" class="btn btn-danger" title="Eliminar">
+                                                            <i class="fas fa-trash"></i>
+                                                        </button>
+                                                    </form>
                                                 </div>
                                             </td>
                                         </tr>
