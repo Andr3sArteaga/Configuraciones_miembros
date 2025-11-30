@@ -33,7 +33,11 @@ class HomeController extends Controller
     public function index()
     {
         // Estadísticas para InfoBoxes
-        $incendiosActivos = ReportesIncendio::where('controlado', false)->count();
+        // Contar reportes con gravedad "Activo"
+        $gravedadActivo = \App\Models\NivelesGravedad::where('codigo', 'activo')
+            ->orWhere('nombre', 'Activo')
+            ->first();
+        $incendiosActivos = Reporte::where('gravedad_id', $gravedadActivo?->id)->count();
 
         $estadoPendiente = EstadosSistema::where('tabla', 'reportes')
             ->where('codigo', 'pendiente')

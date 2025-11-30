@@ -27,7 +27,7 @@
                     <span class="info-box-icon bg-danger elevation-1"><i class="fas fa-fire"></i></span>
                     <div class="info-box-content">
                         <span class="info-box-text">Incendios Activos</span>
-                        <span class="info-box-number">
+                        <span class="info-box-number" id="incendios-activos-count">
                             {{ $incendiosActivos ?? 0 }}
                         </span>
                     </div>
@@ -89,8 +89,8 @@
                         <div class="row">
                             <div class="col-sm-3 col-6">
                                 <div class="description-block border-right">
-                                    <span class="description-percentage text-danger"><i class="fas fa-fire"></i></span>
-                                    <h5 class="description-header">{{ $focosCalor ?? 0 }}</h5>
+                                    <span class="description-percentage text-danger"><i class="fas fa-satellite"></i></span>
+                                    <h5 class="description-header" id="focos-calor-count">{{ $focosCalor ?? 0 }}</h5>
                                     <span class="description-text">FOCOS DE CALOR</span>
                                 </div>
                             </div>
@@ -324,6 +324,8 @@
 
 @section('css')
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css" />
     <style>
         .info-box-number {
             font-size: 2rem;
@@ -334,6 +336,7 @@
 
 @section('js')
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
     <script>
         // Inicializar mapa
         const map = L.map('map').setView([-17.3935, -63.4653], 8); // Santa Cruz, Bolivia
@@ -346,10 +349,32 @@
         const focosLayer = L.layerGroup();
         const equiposLayer = L.layerGroup();
         const reportesLayer = L.layerGroup();
+        
+        // NASA FIRMS layer with clustering
+        const nasaFirmsLayer = L.markerClusterGroup({
+            iconCreateFunction: function(cluster) {
+                return L.divIcon({
+                    html: '<div style="background-color: #FF0000; color: white; border-radius: 50%; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; font-weight: bold; border: 2px solid #fff;">' +
+                        cluster.getChildCount() + '</div>',
+                    className: 'marker-cluster-nasa',
+                    iconSize: L.point(40, 40)
+                });
+            }
+        });
+        
+        // NASA FIRMS API configuration
+        const NASA_API_KEY = '1ae0346a287432156ada4abb791d57cd';
+        const NASA_API_BASE = 'https://firms.modaps.eosdis.nasa.gov/api/area/csv';
+        const BOLIVIA_BOUNDS = {
+            minLat: -22.9,
+            maxLat: -9.7,
+            minLng: -69.6,
+            maxLng: -57.5
+        };
 
         // Añadir control de capas para poder alternar
         const overlays = {
-            'Focos de Calor': focosLayer,
+            'Focos NASA FIRMS': nasaFirmsLayer,
             'Equipos': equiposLayer,
             'Reportes': reportesLayer
         };
@@ -442,23 +467,127 @@
         map.addLayer(focosLayer);
         map.addLayer(equiposLayer);
         map.addLayer(reportesLayer);
+        // NASA FIRMS layer is added when checkbox is checked
+        
+        // Load NASA FIRMS data function
+        function loadNASAFirmsData(days = 2) {
+            // Clear existing markers
+            nasaFirmsLayer.clearLayers();
+            
+            const apiUrl = `${NASA_API_BASE}/${NASA_API_KEY}/VIIRS_NOAA21_NRT/world/${days}`;
+            
+            console.log('Fetching NASA FIRMS data...');
+            
+            fetch(apiUrl)
+                .then(response => {
+                    if (!response.ok) throw new Error('NASA FIRMS API failed');
+                    return response.text();
+                })
+                .then(csvData => {
+                    const lines = csvData.trim().split('\n');
+                    if (lines.length < 2) {
+                        console.log('No NASA FIRMS data available');
+                        return;
+                    }
+                    
+                    const headers = lines[0].split(',');
+                    let boliviaFireCount = 0;
+                    
+                    for (let i = 1; i < lines.length; i++) {
+                        const values = lines[i].split(',');
+                        const fire = {};
+                        headers.forEach((header, index) => {
+                            fire[header.trim()] = values[index] ? values[index].trim() : '';
+                        });
+                        
+                        const lat = parseFloat(fire.latitude);
+                        const lng = parseFloat(fire.longitude);
+                        
+                        // Filter for Bolivia
+                        if (lat >= BOLIVIA_BOUNDS.minLat && lat <= BOLIVIA_BOUNDS.maxLat &&
+                            lng >= BOLIVIA_BOUNDS.minLng && lng <= BOLIVIA_BOUNDS.maxLng) {
+                            
+                            boliviaFireCount++;
+                            
+                            // Determine color and size based on confidence
+                            let markerColor, markerSize, confidenceText;
+                            const confidence = fire.confidence;
+                            
+                            if (confidence === 'h' || parseFloat(confidence) >= 80) {
+                                confidenceText = 'Alta Confianza';
+                                markerColor = '#FF0000';
+                                markerSize = 12;
+                            } else if (confidence === 'n' || (parseFloat(confidence) >= 50 && parseFloat(confidence) < 80)) {
+                                confidenceText = 'Media Confianza';
+                                markerColor = '#FFA500';
+                                markerSize = 10;
+                            } else {
+                                confidenceText = 'Baja Confianza';
+                                markerColor = '#00CED1';
+                                markerSize = 8;
+                            }
+                            
+                            const fireIcon = L.divIcon({
+                                html: `<div style="background-color: ${markerColor}; width: ${markerSize}px; height: ${markerSize}px; border-radius: 50%; border: 2px solid white; box-shadow: 0 0 6px rgba(0,0,0,0.6);"></div>`,
+                                className: 'nasa-fire-marker',
+                                iconSize: [markerSize, markerSize]
+                            });
+                            
+                            const marker = L.marker([lat, lng], { icon: fireIcon });
+                            
+                            const acqDate = fire.acq_date || 'N/A';
+                            const acqTime = fire.acq_time || 'N/A';
+                            const formattedTime = acqTime !== 'N/A' ? acqTime.substring(0, 2) + ':' + acqTime.substring(2, 4) : 'N/A';
+                            
+                            const popupContent = `
+                                <div>
+                                    <h6 style="margin: 0 0 10px 0; font-weight: bold; color: ${markerColor};">
+                                        <i class="fas fa-satellite"></i> NASA FIRMS - ${confidenceText}
+                                    </h6>
+                                    <div style="font-size: 12px;">
+                                        <p><strong>Fecha:</strong> ${acqDate}</p>
+                                        <p><strong>Hora:</strong> ${formattedTime}</p>
+                                        <p><strong>FRP:</strong> ${fire.frp ? parseFloat(fire.frp).toFixed(2) + ' MW' : 'N/A'}</p>
+                                        <p><strong>Coordenadas:</strong> ${lat.toFixed(6)}, ${lng.toFixed(6)}</p>
+                                    </div>
+                                </div>
+                            `;
+                            
+                            marker.bindPopup(popupContent);
+                            nasaFirmsLayer.addLayer(marker);
+                        }
+                    }
+                    
+                    console.log(`Loaded ${boliviaFireCount} NASA FIRMS hotspots`);
+                    
+                    // Update FOCOS DE CALOR counter in the UI
+                    document.getElementById('focos-calor-count').textContent = boliviaFireCount;
+                })
+                .catch(error => {
+                    console.error('Error loading NASA FIRMS:', error);
+                });
+        }
+        
+        // Listen for layer add/remove events
+        map.on('overlayadd', function(e) {
+            if (e.name === 'Focos NASA FIRMS') {
+                loadNASAFirmsData(2); // Load 2 days of data when layer is enabled
+            }
+        });
 
         // Ajustar vista del mapa si hay datos
         (function adjustBounds() {
-            const layers = [focosLayer, equiposLayer, reportesLayer];
+            const layers = [focosLayer, equiposLayer, reportesLayer, nasaFirmsLayer];
             const bounds = L.latLngBounds();
             let hasBounds = false;
             layers.forEach(layer => {
-                if (layer.getLayers().length > 0) {
-                    try {
-                        const lb = layer.getBounds();
-                        if (lb && lb.isValid && lb.isValid()) {
-                            bounds.extend(lb);
+                if (layer.getLayers && layer.getLayers().length > 0) {
+                    layer.eachLayer(marker => {
+                        if (marker.getLatLng) {
+                            bounds.extend(marker.getLatLng());
                             hasBounds = true;
                         }
-                    } catch (e) {
-                        // ignore invalid bounds
-                    }
+                    });
                 }
             });
             if (hasBounds) {

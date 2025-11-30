@@ -69,8 +69,6 @@
                         <div class="row">
                             <div class="col-sm-8">
                                 <div class="d-flex align-items-center flex-wrap">
-                                    <i class="fas fa-fire text-danger mr-2"></i>
-                                    <span class="mr-3">Focos BD</span>
                                     <i class="fas fa-satellite mr-2" style="color: #FF0000;"></i>
                                     <span class="mr-3">NASA FIRMS</span>
                                     <i class="fas fa-users text-primary mr-2"></i>
@@ -92,15 +90,7 @@
 
         <!-- Filtros y Estadísticas -->
         <div class="row">
-            <div class="col-md-3 col-sm-6 col-12">
-                <div class="info-box">
-                    <span class="info-box-icon bg-danger"><i class="fas fa-fire"></i></span>
-                    <div class="info-box-content">
-                        <span class="info-box-text">Focos Activos</span>
-                        <span class="info-box-number">{{ $focos->total() }}</span>
-                    </div>
-                </div>
-            </div>
+
             <div class="col-md-3 col-sm-6 col-12">
                 <div class="info-box">
                     <span class="info-box-icon bg-primary"><i class="fas fa-users"></i></span>
@@ -123,15 +113,7 @@
                     </div>
                 </div>
             </div>
-            <div class="col-md-3 col-sm-6 col-12">
-                <div class="info-box">
-                    <span class="info-box-icon bg-danger"><i class="fas fa-exclamation-triangle"></i></span>
-                    <div class="info-box-content">
-                        <span class="info-box-text">Alta Confianza (BD)</span>
-                        <span class="info-box-number" id="high-confidence-count">0</span>
-                    </div>
-                </div>
-            </div>
+
             <div class="col-md-3 col-sm-6 col-12">
                 <div class="info-box">
                     <span class="info-box-icon" style="background-color: #FF0000;"><i class="fas fa-satellite"></i></span>
