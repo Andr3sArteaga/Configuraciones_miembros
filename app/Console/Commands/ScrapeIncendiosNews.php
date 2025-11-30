@@ -33,28 +33,28 @@ class ScrapeIncendiosNews extends Command
 
         try {
             $response = Http::timeout(30)->get('https://www.opinion.com.bo/tags/incendios/');
-            
+
             if (!$response->successful()) {
                 $this->error('Failed to fetch the page');
                 return 1;
             }
 
             $html = $response->body();
-            
+
             // Parse the HTML to extract news articles
             $articles = $this->parseArticles($html);
-            
+
             $this->info('Found ' . count($articles) . ' articles');
-            
+
             $newCount = 0;
             $updatedCount = 0;
 
             foreach ($articles as $article) {
                 // Create a unique ID from the URL
                 $id = md5($article['url']);
-                
+
                 $existing = NoticiasIncendio::find($id);
-                
+
                 if ($existing) {
                     // Update existing article
                     $existing->update([
@@ -81,7 +81,6 @@ class ScrapeIncendiosNews extends Command
 
             $this->info("Scraping completed! New: {$newCount}, Updated: {$updatedCount}");
             return 0;
-
         } catch (\Exception $e) {
             $this->error('Error: ' . $e->getMessage());
             return 1;
@@ -94,40 +93,47 @@ class ScrapeIncendiosNews extends Command
     private function parseArticles($html)
     {
         $articles = [];
-        
-        // Pattern to match article links - looking for full article URLs
-        preg_match_all('/<a[^>]+href="(https:\/\/www\.opinion\.com\.bo\/articulo\/[^"]+)"[^>]*>(.*?)<\/a>/s', $html, $linkMatches, PREG_SET_ORDER);
-        
+
+        // Pattern to match article links - both full and relative URLs
+        preg_match_all('/<a[^>]+href="((?:https:\/\/www\.opinion\.com\.bo)?\/articulo\/[^"]+)"[^>]*>(.*?)<\/a>/s', $html, $linkMatches, PREG_SET_ORDER);
+
+        $this->info('Found ' . count($linkMatches) . ' potential article links');
+
         $processedUrls = [];
         $count = 0;
-        
+
         foreach ($linkMatches as $match) {
             $url = $match[1];
             $linkContent = $match[2];
-            
+
+            // Convert relative URLs to absolute
+            if (strpos($url, 'http') !== 0) {
+                $url = 'https://www.opinion.com.bo' . $url;
+            }
+
             // Skip if already processed
             if (isset($processedUrls[$url])) {
                 continue;
             }
-            
+
             // Extract title from the link content
             $title = trim(strip_tags($linkContent));
-            
+
             // Skip if title is too short or empty
-            if (strlen($title) < 20) {
+            if (strlen($title) < 10) {
                 continue;
             }
-            
+
             $processedUrls[$url] = true;
-            
+
             // Extract date from URL (format: /YYYYMMDDHHMMSS)
             $date = $this->extractDateFromUrl($url);
-            
-            $this->info("Processing: " . substr($title, 0, 50) . "...");
-            
+
+            $this->info("Processing: " . substr($title, 0, 60) . "...");
+
             // Try to fetch the article page to get image and description
             $articleData = $this->fetchArticleDetails($url);
-            
+
             $articles[] = [
                 'url' => $url,
                 'title' => $title,
@@ -135,18 +141,18 @@ class ScrapeIncendiosNews extends Command
                 'image' => $articleData['image'] ?? null,
                 'date' => $date,
             ];
-            
+
             $count++;
-            
+
             // Limit to 10 articles
             if ($count >= 10) {
                 break;
             }
-            
+
             // Small delay to avoid overwhelming the server
             usleep(500000); // 0.5 seconds
         }
-        
+
         return $articles;
     }
 
@@ -164,7 +170,7 @@ class ScrapeIncendiosNews extends Command
                 return now();
             }
         }
-        
+
         return now();
     }
 
@@ -175,33 +181,32 @@ class ScrapeIncendiosNews extends Command
     {
         try {
             $response = Http::timeout(10)->get($url);
-            
+
             if (!$response->successful()) {
                 return ['image' => null, 'description' => null];
             }
-            
+
             $html = $response->body();
-            
+
             $image = null;
             $description = null;
-            
+
             // Try to extract Open Graph image
             if (preg_match('/<meta[^>]+property=["\']og:image["\'][^>]+content=["\'](https?:\/\/[^"\']+)["\']/', $html, $matches)) {
                 $image = $matches[1];
             }
-            
+
             // Try to extract meta description
             if (preg_match('/<meta[^>]+name=["\']description["\'][^>]+content=["\'](.*?)["\']/', $html, $matches)) {
                 $description = trim(strip_tags($matches[1]));
             } elseif (preg_match('/<meta[^>]+property=["\']og:description["\'][^>]+content=["\'](.*?)["\']/', $html, $matches)) {
                 $description = trim(strip_tags($matches[1]));
             }
-            
+
             return [
                 'image' => $image,
                 'description' => $description,
             ];
-            
         } catch (\Exception $e) {
             return ['image' => null, 'description' => null];
         }
