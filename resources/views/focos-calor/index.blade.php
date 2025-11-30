@@ -50,13 +50,16 @@
                                 </div>
                                 <div class="col-md-6">
                                     <div class="btn-group btn-group-sm float-md-right" role="group">
-                                        <button type="button" class="btn btn-outline-primary" id="filter-24h" onclick="loadNASAFirmsData(1)">
+                                        <button type="button" class="btn btn-outline-primary" id="filter-24h"
+                                            onclick="loadNASAFirmsData(1)">
                                             <i class="fas fa-clock"></i> Últimas 24 Horas
                                         </button>
-                                        <button type="button" class="btn btn-outline-primary active" id="filter-2d" onclick="loadNASAFirmsData(2)">
+                                        <button type="button" class="btn btn-outline-primary active" id="filter-2d"
+                                            onclick="loadNASAFirmsData(2)">
                                             <i class="fas fa-calendar-day"></i> Últimos 2 Días
                                         </button>
-                                        <button type="button" class="btn btn-outline-primary" id="filter-7d" onclick="loadNASAFirmsData(7)">
+                                        <button type="button" class="btn btn-outline-primary" id="filter-7d"
+                                            onclick="loadNASAFirmsData(7)">
                                             <i class="fas fa-calendar-week"></i> Últimos 7 Días
                                         </button>
                                     </div>
@@ -135,74 +138,6 @@
                                 N/A
                             @endif
                         </span>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Tabla de Datos -->
-        <div class="row">
-            <div class="col-md-12">
-                <div class="card">
-                    <div class="card-header">
-                        <h3 class="card-title">
-                            <i class="fas fa-fire mr-1"></i>
-                            Listado de Focos de Calor
-                        </h3>
-                        <div class="card-tools">
-                            <button type="button" class="btn btn-tool" data-card-widget="collapse">
-                                <i class="fas fa-minus"></i>
-                            </button>
-                        </div>
-                    </div>
-                    <div class="card-body p-0">
-                        <div class="table-responsive">
-                            <table class="table table-hover m-0">
-                                <thead>
-                                    <tr>
-                                        <th>Latitud</th>
-                                        <th>Longitud</th>
-                                        <th>Confianza</th>
-                                        <th>Fecha</th>
-                                        <th>Hora</th>
-                                        <th>FRP</th>
-                                        <th>Acciones</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @forelse($focos as $foco)
-                                        <tr>
-                                            <td>{{ number_format($foco->latitude, 6) }}</td>
-                                            <td>{{ number_format($foco->longitude, 6) }}</td>
-                                            <td>
-                                                @if ($foco->confidence >= 80)
-                                                    <span class="badge badge-danger">{{ $foco->confidence }}%</span>
-                                                @elseif($foco->confidence >= 50)
-                                                    <span class="badge badge-warning">{{ $foco->confidence }}%</span>
-                                                @else
-                                                    <span class="badge badge-info">{{ $foco->confidence }}%</span>
-                                                @endif
-                                            </td>
-                                            <td>{{ $foco->acq_date->format('d/m/Y') }}</td>
-                                            <td>{{ $foco->acq_time }}</td>
-                                            <td>{{ $foco->frp ? number_format($foco->frp, 2) . ' MW' : 'N/A' }}</td>
-                                            <td>
-                                                <button class="btn btn-xs btn-info"
-                                                    onclick="centerMapOnFoco({{ $foco->latitude }}, {{ $foco->longitude }})">
-                                                    <i class="fas fa-map-marker-alt"></i> Ver en Mapa
-                                                </button>
-                                            </td>
-                                        </tr>
-                                    @empty
-                                        <tr>
-                                            <td colspan="7" class="text-center text-muted py-3">
-                                                No hay focos de calor registrados
-                                            </td>
-                                        </tr>
-                                    @endforelse
-                                </tbody>
-                            </table>
-                        </div>
                     </div>
                 </div>
             </div>
@@ -289,7 +224,7 @@
         // NASA FIRMS API configuration
         const NASA_API_KEY = '1ae0346a287432156ada4abb791d57cd';
         const NASA_API_BASE = 'https://firms.modaps.eosdis.nasa.gov/api/area/csv';
-        
+
         // Bolivia boundaries
         const BOLIVIA_BOUNDS = {
             minLat: -22.9,
@@ -483,9 +418,13 @@
                     });
 
                     // Crear popup
-                    const fechaHora = reporte.fecha_hora ? new Date(reporte.fecha_hora).toLocaleString('es-BO') : 'N/A';
-                    const gravedadBadge = reporte.niveles_gravedad ? `<span class="badge badge-danger">${reporte.niveles_gravedad.nombre}</span>` : '';
-                    const estadoBadge = reporte.estados_sistema ? `<span class="badge" style="background-color: ${reporte.estados_sistema.color || '#6c757d'}">${reporte.estados_sistema.nombre}</span>` : '';
+                    const fechaHora = reporte.fecha_hora ? new Date(reporte.fecha_hora).toLocaleString('es-BO') :
+                        'N/A';
+                    const gravedadBadge = reporte.niveles_gravedad ?
+                        `<span class="badge badge-danger">${reporte.niveles_gravedad.nombre}</span>` : '';
+                    const estadoBadge = reporte.estados_sistema ?
+                        `<span class="badge" style="background-color: ${reporte.estados_sistema.color || '#6c757d'}">${reporte.estados_sistema.nombre}</span>` :
+                        '';
 
                     const popupContent = `
                         <div class="reporte-popup">
@@ -558,7 +497,7 @@
                     if (lines.length < 2) {
                         console.log('No fire data available');
                         document.getElementById('nasa-firms-count').textContent = '0';
-                        
+
                         // Show no data notification
                         $(document).Toasts('create', {
                             class: 'bg-warning',
@@ -572,13 +511,13 @@
 
                     // Get headers
                     const headers = lines[0].split(',');
-                    
+
                     // Parse data rows
                     let boliviaFireCount = 0;
-                    
+
                     for (let i = 1; i < lines.length; i++) {
                         const values = lines[i].split(',');
-                        
+
                         // Create object from CSV row
                         const fire = {};
                         headers.forEach((header, index) => {
@@ -592,7 +531,7 @@
                         // Filter for Bolivia boundaries
                         if (lat >= BOLIVIA_BOUNDS.minLat && lat <= BOLIVIA_BOUNDS.maxLat &&
                             lng >= BOLIVIA_BOUNDS.minLng && lng <= BOLIVIA_BOUNDS.maxLng) {
-                            
+
                             boliviaFireCount++;
 
                             // Determine confidence level and color
@@ -604,13 +543,14 @@
                             // NASA FIRMS uses 'l', 'n', 'h' for low, nominal, high confidence
                             // Or numeric values
                             const confidence = fire.confidence;
-                            
+
                             if (confidence === 'h' || parseFloat(confidence) >= 80) {
                                 confidenceLevel = 'high';
                                 confidenceText = 'Foco Alta Confianza';
                                 markerColor = '#FF0000'; // Red
                                 markerSize = 12;
-                            } else if (confidence === 'n' || (parseFloat(confidence) >= 50 && parseFloat(confidence) < 80)) {
+                            } else if (confidence === 'n' || (parseFloat(confidence) >= 50 && parseFloat(confidence) <
+                                    80)) {
                                 confidenceLevel = 'nominal';
                                 confidenceText = 'Foco Media Confianza';
                                 markerColor = '#FFA500'; // Orange
@@ -637,8 +577,9 @@
                             // Format date and time
                             const acqDate = fire.acq_date || 'N/A';
                             const acqTime = fire.acq_time || 'N/A';
-                            const formattedTime = acqTime !== 'N/A' ? acqTime.substring(0, 2) + ':' + acqTime.substring(2, 4) : 'N/A';
-                            
+                            const formattedTime = acqTime !== 'N/A' ? acqTime.substring(0, 2) + ':' + acqTime.substring(
+                                2, 4) : 'N/A';
+
                             // Create popup content
                             const popupContent = `
                                 <div class="nasa-fire-popup">
@@ -664,9 +605,9 @@
 
                     // Update counter
                     document.getElementById('nasa-firms-count').textContent = boliviaFireCount;
-                    
+
                     console.log(`Loaded ${boliviaFireCount} NASA FIRMS fire hotspots in Bolivia`);
-                    
+
                     // Show success notification
                     $(document).Toasts('create', {
                         class: 'bg-success',
@@ -675,7 +616,7 @@
                         delay: 4000,
                         body: `Se encontraron ${boliviaFireCount} focos de calor en Bolivia`
                     });
-                    
+
                     // Adjust map view if needed
                     if (boliviaFireCount > 0) {
                         adjustMapBounds();
@@ -684,7 +625,7 @@
                 .catch(error => {
                     console.error('Error loading NASA FIRMS data:', error);
                     document.getElementById('nasa-firms-count').textContent = 'Error';
-                    
+
                     // Show error notification
                     $(document).Toasts('create', {
                         class: 'bg-danger',
@@ -699,13 +640,13 @@
         // Ajustar vista del mapa para mostrar todas las capas
         function adjustMapBounds() {
             const allMarkers = [];
-            
+
             // Collect markers from all layers
             focosLayer.eachLayer(marker => allMarkers.push(marker));
             nasaFirmsLayer.eachLayer(marker => allMarkers.push(marker));
             equiposLayer.eachLayer(marker => allMarkers.push(marker));
             reportesLayer.eachLayer(marker => allMarkers.push(marker));
-            
+
             // Only adjust bounds if we have markers
             if (allMarkers.length > 0) {
                 const group = new L.featureGroup(allMarkers);
