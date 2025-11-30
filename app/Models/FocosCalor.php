@@ -38,7 +38,7 @@ class FocosCalor extends Model
 		'longitude' => 'float',
 		'confidence' => 'string',
 		'acq_date' => 'datetime',
-		'acq_time' => 'time without time zone',
+		'acq_time' => 'string',
 		'bright_ti4' => 'float',
 		'bright_ti5' => 'float',
 		'frp' => 'float',

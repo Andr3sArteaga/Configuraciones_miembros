@@ -57,7 +57,9 @@ class HomeController extends Controller
         $recursosSolicitados = Recurso::where('estado_id', $estadoSolicitado?->id)->count();
 
         // Datos para el mapa
-        $focos = FocosCalor::orderBy('acq_date', 'desc')
+        $focos = FocosCalor::whereDate('acq_date', today())
+            ->orderBy('acq_date', 'desc')
+            ->orderBy('acq_time', 'desc')
             ->limit(100)
             ->get();
         $focosCalor = $focos->count();

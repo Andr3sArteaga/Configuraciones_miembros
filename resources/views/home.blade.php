@@ -382,22 +382,9 @@
             collapsed: false
         }).addTo(map);
 
-        // Agregar marcadores de focos de calor (ejemplo)
-        @if (isset($focos) && count($focos) > 0)
-            @foreach ($focos as $foco)
-                L.marker([{{ $foco->latitude }}, {{ $foco->longitude }}], {
-                    icon: L.icon({
-                        iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png',
-                        shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
-                        iconSize: [25, 41],
-                        iconAnchor: [12, 41],
-                        popupAnchor: [1, -34],
-                        shadowSize: [41, 41]
-                    })
-                }).addTo(focosLayer).bindPopup(
-                    'Foco de Calor<br>Confianza: {{ $foco->confidence }}%<br>Fecha: {{ $foco->acq_date }}');
-            @endforeach
-        @endif
+        // Note: Database saved focos are NOT shown on the map
+        // Only real-time NASA FIRMS data (circles) are displayed
+        // The saved focos are for historical reference only
 
         // Agregar marcadores de equipos (desde variable $equipos)
         @if (isset($equipos) && count($equipos) > 0)

@@ -37,12 +37,16 @@ class ImportNasaFirms extends Command
         foreach ($satellites as $satellite) {
             $this->info("Trying satellite: {$satellite}...");
             
-            // Use world endpoint and filter by Bolivia bounds
+            // Use area endpoint with Bolivia bounds
             $url = sprintf(
-                '%s/%s/%s/world/%s',
+                '%s/%s/%s/%s,%s,%s,%s/%s',
                 self::NASA_API_BASE,
                 self::NASA_API_KEY,
                 $satellite,
+                self::BOLIVIA_BOUNDS['min_lng'],
+                self::BOLIVIA_BOUNDS['min_lat'],
+                self::BOLIVIA_BOUNDS['max_lng'],
+                self::BOLIVIA_BOUNDS['max_lat'],
                 $days
             );
 
@@ -121,11 +125,15 @@ class ImportNasaFirms extends Command
             }
             
             try {
+                // Format time (HHMM -> HH:MM:00)
+                $time = str_pad($fire['acq_time'], 4, '0', STR_PAD_LEFT);
+                $formattedTime = substr($time, 0, 2) . ':' . substr($time, 2, 2) . ':00';
+
                 // Check if already exists
                 $exists = FocosCalor::where('latitude', $lat)
                     ->where('longitude', $lng)
                     ->where('acq_date', $fire['acq_date'])
-                    ->where('acq_time', $fire['acq_time'])
+                    ->where('acq_time', $formattedTime)
                     ->exists();
 
                 if ($exists) {
@@ -134,13 +142,22 @@ class ImportNasaFirms extends Command
                     continue;
                 }
 
+                // Handle confidence
+                $confidence = $fire['confidence'] ?? null;
+                if (!is_numeric($confidence)) {
+                    $confidenceMap = ['l' => 0, 'n' => 50, 'h' => 100];
+                    $confidence = $confidenceMap[strtolower($confidence)] ?? 0;
+                }
+
+
+
                 // Create new hotspot record
                 FocosCalor::create([
                     'latitude' => $lat,
                     'longitude' => $lng,
-                    'confidence' => $fire['confidence'] ?? null,
+                    'confidence' => $confidence,
                     'acq_date' => Carbon::parse($fire['acq_date']),
-                    'acq_time' => $fire['acq_time'],
+                    'acq_time' => $formattedTime,
                     'bright_ti4' => isset($fire['bright_ti4']) ? (float) $fire['bright_ti4'] : null,
                     'bright_ti5' => isset($fire['bright_ti5']) ? (float) $fire['bright_ti5'] : null,
                     'frp' => isset($fire['frp']) ? (float) $fire['frp'] : null,
@@ -148,6 +165,9 @@ class ImportNasaFirms extends Command
 
                 $imported++;
             } catch (\Exception $e) {
+                if ($errors == 0) {
+                    $this->error("First error: " . $e->getMessage());
+                }
                 $errors++;
             }
 
