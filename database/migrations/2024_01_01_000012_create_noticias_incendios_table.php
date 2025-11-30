@@ -17,7 +17,7 @@ return new class extends Migration
             $table->string('title', 500);
             $table->date('date');
             $table->text('description')->nullable();
-            $table->string('url', 1000)->nullable();
+            $table->string('url', 1000)->nullable()->unique(); // Added unique constraint
             $table->string('image', 1000)->nullable();
             $table->timestamp('creado')->nullable()->useCurrent();
         });
