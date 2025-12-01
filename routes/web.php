@@ -56,6 +56,11 @@ Route::middleware(['auth'])->group(function () {
         return redirect('/home');
     });
 
+    // Welcome
+    Route::get('/welcome', function () {
+        return view('welcome');
+    })->name('welcome');
+    
     // Dashboard
     Route::get('/home', [HomeController::class, 'index'])->name('home');
     Route::get('/dashboard', [HomeController::class, 'index'])->name('dashboard');

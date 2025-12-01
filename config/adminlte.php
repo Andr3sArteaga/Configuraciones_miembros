@@ -533,6 +533,18 @@ return [
             'icon_color' => 'cyan',
             'can' => 'guest-only',
         ],
+
+        // Labels
+        [
+            'header' => 'LABELS',
+            'can' => 'guest-only',
+        ],
+        [
+            'text' => 'Bienvenido',
+            'url' => 'welcome',
+            'icon'=> 'fas fa-fw fa-home',
+            'icon_color' => 'white',
+        ],
     ],
 
 
