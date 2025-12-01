@@ -1,5 +1,8 @@
 @extends('adminlte::page')
 
+{{-- 🔹 Cargar componente de Leaflet Assets --}}
+<x-map.leaflet-assets />
+
 {{-- 🔹 Título dinámico --}}
 @section('title')
     {{ config('adminlte.title', 'Mi Panel') }}
@@ -220,6 +223,40 @@
         .btn-primary:not(:hover) {
             color: rgb(0, 0, 0);
             /* color cuando NO está el mouse encima */
+        }
+
+        /* ===== SELECT2 ESTILOS GLOBALES ===== */
+        .select2-container--bootstrap4 .select2-selection--single {
+            border: 1px solid #ced4da !important;
+            border-radius: 0.25rem;
+            height: auto;
+            min-height: 38px;
+            padding: 6px 12px !important;
+            background-color: #fff !important;
+        }
+
+        .select2-container--bootstrap4 .select2-selection--single .select2-selection__rendered {
+            padding: 0 !important;
+            line-height: 1.5;
+            color: #495057;
+        }
+
+        .select2-container--bootstrap4 .select2-selection--single .select2-selection__arrow {
+            display: block !important;
+        }
+
+        .select2-container--bootstrap4.select2-container--focus .select2-selection--single {
+            border-color: #80bdff !important;
+            box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25) !important;
+        }
+
+        .select2-container--bootstrap4 .select2-selection--single:focus {
+            border-color: #80bdff !important;
+            box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25) !important;
+        }
+
+        .select2-container--bootstrap4 .select2-selection--single .select2-selection__placeholder {
+            color: #6c757d;
         }
     </style>
 @endpush

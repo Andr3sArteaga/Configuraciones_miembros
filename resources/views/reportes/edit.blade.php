@@ -256,7 +256,24 @@
 
                             <div class="form-group">
                                 <label>Seleccione la ubicación en el mapa</label>
-                                <div id="map" style="height: 400px; width: 100%;"></div>
+                                @php
+                                    $lat = '-17.3895';
+                                    $lng = '-66.1568';
+                                    $zoom = 6;
+
+                                    if ($reporte->ubicacion) {
+                                        $coords = is_array($reporte->ubicacion)
+                                            ? $reporte->ubicacion['coordinates']
+                                            : $reporte->ubicacion->coordinates;
+                                        if (is_array($coords) && count($coords) >= 2) {
+                                            $lat = $coords[1];
+                                            $lng = $coords[0];
+                                            $zoom = 13;
+                                        }
+                                    }
+                                @endphp
+                                <x-map.leaflet-map mapId="map-edit-reporte" lat="{{ $lat }}"
+                                    lng="{{ $lng }}" zoom="{{ $zoom }}" height="400px" />
                                 <small class="form-text text-muted">Haga clic en el mapa para actualizar la
                                     ubicación</small>
                             </div>
@@ -285,11 +302,9 @@
 @stop
 
 @section('css')
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 @stop
 
 @section('js')
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
         $(document).ready(function() {
             // Inicializar Select2
@@ -299,42 +314,42 @@
                 allowClear: true
             });
 
-            // Inicializar mapa
-            const map = L.map('map').setView([-17.3895, -66.1568], 6);
+            // Esperar a que el mapa se inicialice
+            const waitForMap = setInterval(function() {
+                const map = window.mapInstance_map_edit_reporte;
+                if (!map) return;
+                clearInterval(waitForMap);
 
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                attribution: '© OpenStreetMap contributors'
-            }).addTo(map);
+                let marker = null;
 
-            let marker = null;
+                // Click en el mapa para seleccionar ubicación
+                map.on('click', function(e) {
+                    const lat = e.latlng.lat;
+                    const lng = e.latlng.lng;
 
-            // Click en el mapa para seleccionar ubicación
-            map.on('click', function(e) {
-                const lat = e.latlng.lat;
-                const lng = e.latlng.lng;
+                    document.getElementById('latitud').value = lat.toFixed(6);
+                    document.getElementById('longitud').value = lng.toFixed(6);
 
-                document.getElementById('latitud').value = lat.toFixed(6);
-                document.getElementById('longitud').value = lng.toFixed(6);
+                    if (marker) {
+                        map.removeLayer(marker);
+                    }
 
-                if (marker) {
-                    map.removeLayer(marker);
+                    marker = L.marker([lat, lng]).addTo(map);
+                });
+
+                // Cargar ubicación actual si existe (viene como GeoJSON a través del accessor 'ubicacion')
+                const reporteUbicacion = @json($reporte->ubicacion ?? null);
+                if (reporteUbicacion && Array.isArray(reporteUbicacion.coordinates)) {
+                    const latInit = reporteUbicacion.coordinates[1];
+                    const lngInit = reporteUbicacion.coordinates[0];
+
+                    document.getElementById('latitud').value = latInit.toFixed(6);
+                    document.getElementById('longitud').value = lngInit.toFixed(6);
+
+                    marker = L.marker([latInit, lngInit]).addTo(map);
+                    map.setView([latInit, lngInit], 13);
                 }
-
-                marker = L.marker([lat, lng]).addTo(map);
-            });
-
-            // Cargar ubicación actual si existe (viene como GeoJSON a través del accessor 'ubicacion')
-            const reporteUbicacion = @json($reporte->ubicacion ?? null);
-            if (reporteUbicacion && Array.isArray(reporteUbicacion.coordinates)) {
-                const latInit = reporteUbicacion.coordinates[1];
-                const lngInit = reporteUbicacion.coordinates[0];
-
-                document.getElementById('latitud').value = latInit.toFixed(6);
-                document.getElementById('longitud').value = lngInit.toFixed(6);
-
-                marker = L.marker([latInit, lngInit]).addTo(map);
-                map.setView([latInit, lngInit], 13);
-            }
+            }, 50);
         });
     </script>
 @stop

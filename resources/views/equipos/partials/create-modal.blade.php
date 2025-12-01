@@ -86,16 +86,29 @@
                 <div class="tab-content mt-3" id="teamTabsContent-{{ $modalId }}">
                     <!-- PASO 1: Seleccionar Ubicación -->
                     <div class="tab-pane fade show active" id="step-ubicacion-{{ $modalId }}" role="tabpanel">
-                        <h5 class="mb-3"><i class="fas fa-map-marker-alt text-primary"></i> Seleccionar Reporte de Incendio</h5>
-                        
+                        <h5 class="mb-3"><i class="fas fa-map-marker-alt text-primary"></i> Seleccionar Reporte de
+                            Incendio</h5>
+
                         <div class="alert alert-info">
-                            <i class="fas fa-info-circle"></i> Seleccione un reporte haciendo clic en un marcador del mapa o en la lista lateral.
+                            <i class="fas fa-info-circle"></i> Seleccione un reporte haciendo clic en un marcador del
+                            mapa o en la lista lateral.
                         </div>
 
                         <div class="row">
                             <div class="col-md-8">
-                                <div id="map-{{ $modalId }}"
-                                    style="height: 300px; border-radius: 0.25rem; border: 2px solid #007bff;"></div>
+                                @php
+                                    $mapLat = -17.8;
+                                    $mapLng = -63.1;
+                                    $mapZoom = 6;
+
+                                    if ($isEditMode && isset($equipo) && $equipo->latitud && $equipo->longitud) {
+                                        $mapLat = $equipo->latitud;
+                                        $mapLng = $equipo->longitud;
+                                        $mapZoom = 13;
+                                    }
+                                @endphp
+                                <x-map.leaflet-map mapId="map-{{ $modalId }}" lat="{{ $mapLat }}"
+                                    lng="{{ $mapLng }}" zoom="{{ $mapZoom }}" height="300px" />
                                 <input type="hidden" id="reporte_id-{{ $modalId }}" name="reporte_id"
                                     value="{{ $isEditMode ? $equipo->reporte_id ?? '' : '' }}">
                             </div>
@@ -109,9 +122,11 @@
                                             style="max-height: 300px; overflow-y: auto;">
                                             @forelse($reportes ?? [] as $r)
                                                 <li class="list-group-item list-group-item-action p-2">
-                                                    <a href="javascript:void(0);" class="select-reporte d-block text-decoration-none"
+                                                    <a href="javascript:void(0);"
+                                                        class="select-reporte d-block text-decoration-none"
                                                         data-id="{{ $r->id }}">
-                                                        <strong class="d-block">{{ $r->nombre_lugar ?? 'Reporte' }}</strong>
+                                                        <strong
+                                                            class="d-block">{{ $r->nombre_lugar ?? 'Reporte' }}</strong>
                                                         <small class="text-muted">
                                                             {{ $r->fecha_hora?->format('d/m/Y H:i') ?? 'Sin fecha' }}
                                                         </small>
@@ -133,353 +148,359 @@
                         </div>
                     </div>
 
-                <!-- PASO 2: Configurar Equipo -->
-                <div class="tab-pane fade" id="step-configurar-{{ $modalId }}" role="tabpanel">
-                    <h4 class="mb-3"><i class="fas fa-cog text-primary"></i> Configurar Equipo</h4>
+                    <!-- PASO 2: Configurar Equipo -->
+                    <div class="tab-pane fade" id="step-configurar-{{ $modalId }}" role="tabpanel">
+                        <h4 class="mb-3"><i class="fas fa-cog text-primary"></i> Configurar Equipo</h4>
 
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="form-group">
-                                <label for="nombre_equipo-{{ $modalId }}">
-                                    Nombre del Equipo <span class="text-danger">*</span>
-                                </label>
-                                <input type="text" class="form-control" id="nombre_equipo-{{ $modalId }}"
-                                    name="nombre_equipo" placeholder="Ej: Equipo Alpha"
-                                    value="{{ $isEditMode ? $equipo->nombre_equipo : '' }}" required>
-                            </div>
-                        </div>
-
-                        <div class="col-md-6">
-                            <div class="form-group">
-                                <label for="estado_id-{{ $modalId }}">
-                                    Estado del Equipo <span class="text-danger">*</span>
-                                </label>
-                                <select class="form-control" id="estado_id-{{ $modalId }}" name="estado_id"
-                                    required>
-                                    <option value="">Seleccione un estado</option>
-                                    @foreach ($estados as $estado)
-                                        <option value="{{ $estado->id }}"
-                                            {{ $isEditMode && $equipo->estado_id == $estado->id ? 'selected' : '' }}>
-                                            {{ $estado->nombre }}
-                                        </option>
-                                    @endforeach
-                                </select>
-                            </div>
-                        </div>
-                    </div>
-
-                    <hr class="my-4">
-
-                    <h5 class="mb-3"><i class="fas fa-user-plus"></i> Agregar Miembros</h5>
-
-                    <div class="row mb-3">
-                        <div class="col-md-4">
-                            <div class="form-group">
-                                <label for="search-member-{{ $modalId }}">
-                                    <i class="fas fa-search"></i> Buscar Miembros
-                                </label>
-                                <input type="text" class="form-control" id="search-member-{{ $modalId }}"
-                                    placeholder="Buscar por nombre...">
-                            </div>
-                        </div>
-                        <div class="col-md-4">
-                            <div class="form-group">
-                                <label for="filter-entidad-{{ $modalId }}">
-                                    <i class="fas fa-building"></i> Filtrar por Entidad
-                                </label>
-                                <select class="form-control" id="filter-entidad-{{ $modalId }}">
-                                    <option value="">Todas las entidades</option>
-                                    <option value="bomberos">Bomberos</option>
-                                    <option value="policia">Policía</option>
-                                    <option value="defensa_civil">Defensa Civil</option>
-                                    <option value="voluntarios">Voluntarios</option>
-                                </select>
-                            </div>
-                        </div>
-                        <div class="col-md-4">
-                            <div class="form-group">
-                                <label for="filter-nivel-{{ $modalId }}">
-                                    <i class="fas fa-layer-group"></i> Filtrar por Nivel
-                                </label>
-                                <select class="form-control" id="filter-nivel-{{ $modalId }}">
-                                    <option value="">Todos los niveles</option>
-                                    <option value="basico">Básico</option>
-                                    <option value="intermedio">Intermedio</option>
-                                    <option value="avanzado">Avanzado</option>
-                                    <option value="experto">Experto</option>
-                                </select>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="card">
-                        <div class="card-header bg-light">
-                            <h6 class="mb-0">
-                                <i class="fas fa-users"></i> Usuarios Disponibles
-                                <span class="badge badge-primary float-right"
-                                    id="selected-count-{{ $modalId }}">0 seleccionados</span>
-                            </h6>
-                        </div>
-                        <div class="card-body p-0">
-                            <div class="table-responsive" style="max-height: 250px; overflow-y: auto;">
-                                <table class="table table-hover table-sm mb-0"
-                                    id="members-table-{{ $modalId }}">
-                                    <thead class="thead-light" style="position: sticky; top: 0; z-index: 1;">
-                                        <tr>
-                                            <th width="50">
-                                                <input type="checkbox" id="select-all-members-{{ $modalId }}">
-                                            </th>
-                                            <th>Nombre</th>
-                                            <th>Entidad</th>
-                                            <th>Nivel</th>
-                                            <th>Estado</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="members-tbody-{{ $modalId }}">
-                                        @forelse($usuarios as $usuario)
-                                            @php
-                                                $isChecked =
-                                                    $isEditMode &&
-                                                    isset($miembrosAsignados) &&
-                                                    in_array($usuario->id, $miembrosAsignados);
-                                            @endphp
-                                            <tr class="member-row"
-                                                data-entidad="{{ strtolower($usuario->entidad_perteneciente ?? '') }}"
-                                                data-nivel="{{ strtolower($usuario->niveles_entrenamiento->nivel ?? '') }}">
-                                                <td><input type="checkbox" class="member-checkbox"
-                                                        value="{{ $usuario->id }}" name="miembros[]"
-                                                        {{ $isChecked ? 'checked' : '' }}></td>
-                                                <td>{{ $usuario->nombre }} {{ $usuario->apellido }}</td>
-                                                <td>
-                                                    @if ($usuario->entidad_perteneciente)
-                                                        <span
-                                                            class="badge badge-info">{{ $usuario->entidad_perteneciente }}</span>
-                                                    @else
-                                                        <span class="badge badge-secondary">Sin entidad</span>
-                                                    @endif
-                                                </td>
-                                                <td>
-                                                    @if ($usuario->niveles_entrenamiento)
-                                                        <span
-                                                            class="badge badge-success">{{ $usuario->niveles_entrenamiento->nivel }}</span>
-                                                    @else
-                                                        <span class="badge badge-secondary">N/A</span>
-                                                    @endif
-                                                </td>
-                                                <td>
-                                                    @if ($usuario->estados_sistema)
-                                                        <span class="badge"
-                                                            style="background-color: {{ $usuario->estados_sistema->color ?? '#6c757d' }}; color: white;">
-                                                            {{ $usuario->estados_sistema->nombre }}
-                                                        </span>
-                                                    @else
-                                                        <span class="badge badge-secondary">N/A</span>
-                                                    @endif
-                                                </td>
-                                            </tr>
-                                        @empty
-                                            <tr>
-                                                <td colspan="5" class="text-center text-muted">
-                                                    <i class="fas fa-info-circle"></i> No hay usuarios disponibles
-                                                </td>
-                                            </tr>
-                                        @endforelse
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="alert alert-info mt-3">
-                        <i class="fas fa-info-circle"></i> <strong>Nota:</strong> Seleccione los miembros que
-                        formarán parte del equipo. Puede usar los filtros para encontrar usuarios específicos.
-                    </div>
-                </div>
-
-                <!-- PASO 3: Seleccionar Líder -->
-                <div class="tab-pane fade" id="step-lider-{{ $modalId }}" role="tabpanel">
-                    <h4 class="mb-3"><i class="fas fa-user-tie text-primary"></i> Seleccionar Líder del Equipo
-                    </h4>
-
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="card card-outline card-primary">
-                                <div class="card-header">
-                                    <h5 class="card-title"><i class="fas fa-clipboard-list"></i> Resumen del
-                                        Equipo Actual</h5>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="nombre_equipo-{{ $modalId }}">
+                                        Nombre del Equipo <span class="text-danger">*</span>
+                                    </label>
+                                    <input type="text" class="form-control"
+                                        id="nombre_equipo-{{ $modalId }}" name="nombre_equipo"
+                                        placeholder="Ej: Equipo Alpha"
+                                        value="{{ $isEditMode ? $equipo->nombre_equipo : '' }}" required>
                                 </div>
-                                <div class="card-body">
-                                    <table class="table table-sm table-borderless">
-                                        <tbody>
+                            </div>
+
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="estado_id-{{ $modalId }}">
+                                        Estado del Equipo <span class="text-danger">*</span>
+                                    </label>
+                                    <select class="form-control" id="estado_id-{{ $modalId }}" name="estado_id"
+                                        required>
+                                        <option value="">Seleccione un estado</option>
+                                        @foreach ($estados as $estado)
+                                            <option value="{{ $estado->id }}"
+                                                {{ $isEditMode && $equipo->estado_id == $estado->id ? 'selected' : '' }}>
+                                                {{ $estado->nombre }}
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <hr class="my-4">
+
+                        <h5 class="mb-3"><i class="fas fa-user-plus"></i> Agregar Miembros</h5>
+
+                        <div class="row mb-3">
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label for="search-member-{{ $modalId }}">
+                                        <i class="fas fa-search"></i> Buscar Miembros
+                                    </label>
+                                    <input type="text" class="form-control"
+                                        id="search-member-{{ $modalId }}" placeholder="Buscar por nombre...">
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label for="filter-entidad-{{ $modalId }}">
+                                        <i class="fas fa-building"></i> Filtrar por Entidad
+                                    </label>
+                                    <select class="form-control" id="filter-entidad-{{ $modalId }}">
+                                        <option value="">Todas las entidades</option>
+                                        <option value="bomberos">Bomberos</option>
+                                        <option value="policia">Policía</option>
+                                        <option value="defensa_civil">Defensa Civil</option>
+                                        <option value="voluntarios">Voluntarios</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label for="filter-nivel-{{ $modalId }}">
+                                        <i class="fas fa-layer-group"></i> Filtrar por Nivel
+                                    </label>
+                                    <select class="form-control" id="filter-nivel-{{ $modalId }}">
+                                        <option value="">Todos los niveles</option>
+                                        <option value="basico">Básico</option>
+                                        <option value="intermedio">Intermedio</option>
+                                        <option value="avanzado">Avanzado</option>
+                                        <option value="experto">Experto</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="card">
+                            <div class="card-header bg-light">
+                                <h6 class="mb-0">
+                                    <i class="fas fa-users"></i> Usuarios Disponibles
+                                    <span class="badge badge-primary float-right"
+                                        id="selected-count-{{ $modalId }}">0 seleccionados</span>
+                                </h6>
+                            </div>
+                            <div class="card-body p-0">
+                                <div class="table-responsive" style="max-height: 250px; overflow-y: auto;">
+                                    <table class="table table-hover table-sm mb-0"
+                                        id="members-table-{{ $modalId }}">
+                                        <thead class="thead-light" style="position: sticky; top: 0; z-index: 1;">
                                             <tr>
-                                                <td class="font-weight-bold"><i class="fas fa-tag text-primary"></i>
-                                                    Nombre:</td>
-                                                <td id="resumen-nombre-{{ $modalId }}">
-                                                    {{ $isEditMode ? $equipo->nombre_equipo : '-' }}</td>
+                                                <th width="50">
+                                                    <input type="checkbox"
+                                                        id="select-all-members-{{ $modalId }}">
+                                                </th>
+                                                <th>Nombre</th>
+                                                <th>Entidad</th>
+                                                <th>Nivel</th>
+                                                <th>Estado</th>
                                             </tr>
-                                            <tr>
-                                                <td class="font-weight-bold"><i
-                                                        class="fas fa-map-marker-alt text-danger"></i> Ubicación:
-                                                </td>
-                                                <td id="resumen-ubicacion-{{ $modalId }}">
-                                                    {{ $isEditMode && $equipo->latitud ? $equipo->latitud . ', ' . $equipo->longitud : '-' }}
-                                                </td>
-                                            </tr>
-                                            <tr>
-                                                <td class="font-weight-bold"><i
-                                                        class="fas fa-info-circle text-success"></i> Estado:</td>
-                                                <td id="resumen-estado-{{ $modalId }}">
-                                                    {{ $isEditMode && $equipo->estados_sistema ? $equipo->estados_sistema->nombre : '-' }}
-                                                </td>
-                                            </tr>
-                                            <tr>
-                                                <td class="font-weight-bold"><i class="fas fa-users text-info"></i>
-                                                    Miembros:</td>
-                                                <td id="resumen-miembros-{{ $modalId }}">
-                                                    {{ $isEditMode ? $equipo->cantidad_integrantes : 0 }}</td>
-                                            </tr>
+                                        </thead>
+                                        <tbody id="members-tbody-{{ $modalId }}">
+                                            @forelse($usuarios as $usuario)
+                                                @php
+                                                    $isChecked =
+                                                        $isEditMode &&
+                                                        isset($miembrosAsignados) &&
+                                                        in_array($usuario->id, $miembrosAsignados);
+                                                @endphp
+                                                <tr class="member-row"
+                                                    data-entidad="{{ strtolower($usuario->entidad_perteneciente ?? '') }}"
+                                                    data-nivel="{{ strtolower($usuario->niveles_entrenamiento->nivel ?? '') }}">
+                                                    <td><input type="checkbox" class="member-checkbox"
+                                                            value="{{ $usuario->id }}" name="miembros[]"
+                                                            {{ $isChecked ? 'checked' : '' }}></td>
+                                                    <td>{{ $usuario->nombre }} {{ $usuario->apellido }}</td>
+                                                    <td>
+                                                        @if ($usuario->entidad_perteneciente)
+                                                            <span
+                                                                class="badge badge-info">{{ $usuario->entidad_perteneciente }}</span>
+                                                        @else
+                                                            <span class="badge badge-secondary">Sin entidad</span>
+                                                        @endif
+                                                    </td>
+                                                    <td>
+                                                        @if ($usuario->niveles_entrenamiento)
+                                                            <span
+                                                                class="badge badge-success">{{ $usuario->niveles_entrenamiento->nivel }}</span>
+                                                        @else
+                                                            <span class="badge badge-secondary">N/A</span>
+                                                        @endif
+                                                    </td>
+                                                    <td>
+                                                        @if ($usuario->estados_sistema)
+                                                            <span class="badge"
+                                                                style="background-color: {{ $usuario->estados_sistema->color ?? '#6c757d' }}; color: white;">
+                                                                {{ $usuario->estados_sistema->nombre }}
+                                                            </span>
+                                                        @else
+                                                            <span class="badge badge-secondary">N/A</span>
+                                                        @endif
+                                                    </td>
+                                                </tr>
+                                            @empty
+                                                <tr>
+                                                    <td colspan="5" class="text-center text-muted">
+                                                        <i class="fas fa-info-circle"></i> No hay usuarios disponibles
+                                                    </td>
+                                                </tr>
+                                            @endforelse
                                         </tbody>
                                     </table>
                                 </div>
                             </div>
                         </div>
 
-                        <div class="col-md-6">
-                            <div class="card card-outline card-success">
-                                <div class="card-header">
-                                    <h5 class="card-title"><i class="fas fa-crown"></i> Seleccionar Líder del
-                                        Equipo</h5>
-                                </div>
-                                <div class="card-body">
-                                    <div class="form-group">
-                                        <label for="lider-equipo-{{ $modalId }}">
-                                            Líder <span class="text-danger">*</span>
-                                        </label>
-                                        <select class="form-control" id="lider-equipo-{{ $modalId }}"
-                                            name="lider_id" required>
-                                            <option value="">Seleccione un líder</option>
-                                        </select>
-                                        <small class="form-text text-muted">
-                                            <i class="fas fa-info-circle"></i> Seleccione un miembro del equipo
-                                            para ser el líder
-                                        </small>
+                        <div class="alert alert-info mt-3">
+                            <i class="fas fa-info-circle"></i> <strong>Nota:</strong> Seleccione los miembros que
+                            formarán parte del equipo. Puede usar los filtros para encontrar usuarios específicos.
+                        </div>
+                    </div>
+
+                    <!-- PASO 3: Seleccionar Líder -->
+                    <div class="tab-pane fade" id="step-lider-{{ $modalId }}" role="tabpanel">
+                        <h4 class="mb-3"><i class="fas fa-user-tie text-primary"></i> Seleccionar Líder del Equipo
+                        </h4>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="card card-outline card-primary">
+                                    <div class="card-header">
+                                        <h5 class="card-title"><i class="fas fa-clipboard-list"></i> Resumen del
+                                            Equipo Actual</h5>
                                     </div>
-
-                                    <div id="lider-info-{{ $modalId }}" class="alert alert-success d-none mt-3">
-                                        <h6 class="alert-heading"><i class="fas fa-user-check"></i> Líder
-                                            Seleccionado</h6>
-                                        <hr>
-                                        <p class="mb-0" id="lider-nombre-display-{{ $modalId }}"></p>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="card mt-3">
-                        <div class="card-header bg-light">
-                            <h6 class="mb-0"><i class="fas fa-list"></i> Lista de Miembros del Equipo</h6>
-                        </div>
-                        <div class="card-body">
-                            <div class="table-responsive">
-                                <table class="table table-sm table-hover">
-                                    <thead class="thead-light">
-                                        <tr>
-                                            <th>#</th>
-                                            <th>Nombre</th>
-                                            <th>Entidad</th>
-                                            <th>Nivel</th>
-                                            <th>Rol</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="selected-members-list-{{ $modalId }}">
-                                        <tr>
-                                            <td colspan="5" class="text-center text-muted">
-                                                <i class="fas fa-info-circle"></i> No hay miembros seleccionados
-                                            </td>
-                                        </tr>
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- PASO 4: Mochila (Opcional) -->
-                <div class="tab-pane fade" id="step-mochila-{{ $modalId }}" role="tabpanel">
-                    <h4 class="mb-3"><i class="fas fa-backpack text-primary"></i> Mochila de Equipos</h4>
-                    <div class="alert alert-info">
-                        <i class="fas fa-info-circle"></i> <strong>Asigna suministros al equipo según su
-                            disponibilidad</strong>
-                    </div>
-
-                    <div class="row">
-                        <div class="col-md-12">
-                            <div class="alert alert-warning">
-                                <i class="fas fa-exclamation-triangle"></i> <strong>Nota:</strong> Esta sección es
-                                opcional y está en desarrollo. Los suministros pueden asignarse posteriormente.
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- PASO 5: Agregar Comunarios Locales -->
-                <div class="tab-pane fade" id="step-comunarios-{{ $modalId }}" role="tabpanel">
-                    <h4 class="mb-3"><i class="fas fa-users text-primary"></i> Agregar Comunarios Locales</h4>
-                    <div class="alert alert-info">
-                        <i class="fas fa-info-circle"></i> <strong>Opcional:</strong> Agregue comunarios locales
-                        que apoyarán al equipo en la zona.
-                    </div>
-
-                    <div class="row">
-                        <div class="col-md-5">
-                            <div class="card">
-                                <div class="card-header bg-light">
-                                    <h6 class="mb-0">Nuevo Comunario</h6>
-                                </div>
-                                <div class="card-body">
-                                    <div class="form-group">
-                                        <label for="nombre_comunario-{{ $modalId }}">Nombre Completo</label>
-                                        <input type="text" class="form-control"
-                                            id="nombre_comunario-{{ $modalId }}"
-                                            placeholder="Nombre del comunario">
-                                    </div>
-                                    <div class="form-group">
-                                        <label for="edad_comunario-{{ $modalId }}">Edad</label>
-                                        <input type="number" class="form-control"
-                                            id="edad_comunario-{{ $modalId }}" placeholder="Edad"
-                                            min="18" max="100">
-                                    </div>
-                                    <button type="button" class="btn btn-success btn-block"
-                                        id="btn-add-comunario-{{ $modalId }}">
-                                        <i class="fas fa-plus"></i> Agregar Comunario
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-7">
-                            <div class="card">
-                                <div class="card-header bg-light">
-                                    <h6 class="mb-0">Comunarios Agregados</h6>
-                                </div>
-                                <div class="card-body p-0">
-                                    <div class="table-responsive" style="max-height: 200px; overflow-y: auto;">
-                                        <table class="table table-sm table-hover mb-0">
-                                            <thead class="thead-light">
+                                    <div class="card-body">
+                                        <table class="table table-sm table-borderless">
+                                            <tbody>
                                                 <tr>
-                                                    <th>Nombre</th>
-                                                    <th>Edad</th>
-                                                    <th style="width: 50px;">Acción</th>
+                                                    <td class="font-weight-bold"><i
+                                                            class="fas fa-tag text-primary"></i>
+                                                        Nombre:</td>
+                                                    <td id="resumen-nombre-{{ $modalId }}">
+                                                        {{ $isEditMode ? $equipo->nombre_equipo : '-' }}</td>
                                                 </tr>
-                                            </thead>
-                                            <tbody id="comunarios-list-{{ $modalId }}">
                                                 <tr>
-                                                    <td colspan="3" class="text-center text-muted py-3">
-                                                        No hay comunarios agregados
+                                                    <td class="font-weight-bold"><i
+                                                            class="fas fa-map-marker-alt text-danger"></i> Ubicación:
                                                     </td>
+                                                    <td id="resumen-ubicacion-{{ $modalId }}">
+                                                        {{ $isEditMode && $equipo->latitud ? $equipo->latitud . ', ' . $equipo->longitud : '-' }}
+                                                    </td>
+                                                </tr>
+                                                <tr>
+                                                    <td class="font-weight-bold"><i
+                                                            class="fas fa-info-circle text-success"></i> Estado:</td>
+                                                    <td id="resumen-estado-{{ $modalId }}">
+                                                        {{ $isEditMode && $equipo->estados_sistema ? $equipo->estados_sistema->nombre : '-' }}
+                                                    </td>
+                                                </tr>
+                                                <tr>
+                                                    <td class="font-weight-bold"><i
+                                                            class="fas fa-users text-info"></i>
+                                                        Miembros:</td>
+                                                    <td id="resumen-miembros-{{ $modalId }}">
+                                                        {{ $isEditMode ? $equipo->cantidad_integrantes : 0 }}</td>
                                                 </tr>
                                             </tbody>
                                         </table>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="col-md-6">
+                                <div class="card card-outline card-success">
+                                    <div class="card-header">
+                                        <h5 class="card-title"><i class="fas fa-crown"></i> Seleccionar Líder del
+                                            Equipo</h5>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="form-group">
+                                            <label for="lider-equipo-{{ $modalId }}">
+                                                Líder <span class="text-danger">*</span>
+                                            </label>
+                                            <select class="form-control" id="lider-equipo-{{ $modalId }}"
+                                                name="lider_id" required>
+                                                <option value="">Seleccione un líder</option>
+                                            </select>
+                                            <small class="form-text text-muted">
+                                                <i class="fas fa-info-circle"></i> Seleccione un miembro del equipo
+                                                para ser el líder
+                                            </small>
+                                        </div>
+
+                                        <div id="lider-info-{{ $modalId }}"
+                                            class="alert alert-success d-none mt-3">
+                                            <h6 class="alert-heading"><i class="fas fa-user-check"></i> Líder
+                                                Seleccionado</h6>
+                                            <hr>
+                                            <p class="mb-0" id="lider-nombre-display-{{ $modalId }}"></p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="card mt-3">
+                            <div class="card-header bg-light">
+                                <h6 class="mb-0"><i class="fas fa-list"></i> Lista de Miembros del Equipo</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="table-responsive">
+                                    <table class="table table-sm table-hover">
+                                        <thead class="thead-light">
+                                            <tr>
+                                                <th>#</th>
+                                                <th>Nombre</th>
+                                                <th>Entidad</th>
+                                                <th>Nivel</th>
+                                                <th>Rol</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="selected-members-list-{{ $modalId }}">
+                                            <tr>
+                                                <td colspan="5" class="text-center text-muted">
+                                                    <i class="fas fa-info-circle"></i> No hay miembros seleccionados
+                                                </td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- PASO 4: Mochila (Opcional) -->
+                    <div class="tab-pane fade" id="step-mochila-{{ $modalId }}" role="tabpanel">
+                        <h4 class="mb-3"><i class="fas fa-backpack text-primary"></i> Mochila de Equipos</h4>
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle"></i> <strong>Asigna suministros al equipo según su
+                                disponibilidad</strong>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-12">
+                                <div class="alert alert-warning">
+                                    <i class="fas fa-exclamation-triangle"></i> <strong>Nota:</strong> Esta sección es
+                                    opcional y está en desarrollo. Los suministros pueden asignarse posteriormente.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- PASO 5: Agregar Comunarios Locales -->
+                    <div class="tab-pane fade" id="step-comunarios-{{ $modalId }}" role="tabpanel">
+                        <h4 class="mb-3"><i class="fas fa-users text-primary"></i> Agregar Comunarios Locales</h4>
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle"></i> <strong>Opcional:</strong> Agregue comunarios locales
+                            que apoyarán al equipo en la zona.
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-5">
+                                <div class="card">
+                                    <div class="card-header bg-light">
+                                        <h6 class="mb-0">Nuevo Comunario</h6>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="form-group">
+                                            <label for="nombre_comunario-{{ $modalId }}">Nombre Completo</label>
+                                            <input type="text" class="form-control"
+                                                id="nombre_comunario-{{ $modalId }}"
+                                                placeholder="Nombre del comunario">
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="edad_comunario-{{ $modalId }}">Edad</label>
+                                            <input type="number" class="form-control"
+                                                id="edad_comunario-{{ $modalId }}" placeholder="Edad"
+                                                min="18" max="100">
+                                        </div>
+                                        <button type="button" class="btn btn-success btn-block"
+                                            id="btn-add-comunario-{{ $modalId }}">
+                                            <i class="fas fa-plus"></i> Agregar Comunario
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-7">
+                                <div class="card">
+                                    <div class="card-header bg-light">
+                                        <h6 class="mb-0">Comunarios Agregados</h6>
+                                    </div>
+                                    <div class="card-body p-0">
+                                        <div class="table-responsive" style="max-height: 200px; overflow-y: auto;">
+                                            <table class="table table-sm table-hover mb-0">
+                                                <thead class="thead-light">
+                                                    <tr>
+                                                        <th>Nombre</th>
+                                                        <th>Edad</th>
+                                                        <th style="width: 50px;">Acción</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody id="comunarios-list-{{ $modalId }}">
+                                                    <tr>
+                                                        <td colspan="3" class="text-center text-muted py-3">
+                                                            No hay comunarios agregados
+                                                        </td>
+                                                    </tr>
+                                                </tbody>
+                                            </table>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -487,25 +508,24 @@
                     </div>
                 </div>
             </div>
-        </div>
-        <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" id="btn-prev-{{ $modalId }}"
-                style="display: none;">
-                <i class="fas fa-arrow-left"></i> Anterior
-            </button>
-            <button type="button" class="btn btn-secondary" data-dismiss="modal">
-                <i class="fas fa-times"></i> Cancelar
-            </button>
-            <button type="button" class="btn btn-primary" id="btn-next-{{ $modalId }}">
-                Siguiente <i class="fas fa-arrow-right"></i>
-            </button>
-            <button type="button" class="btn btn-success" id="btn-save-{{ $modalId }}"
-                style="display: none;">
-                <i class="fas fa-save"></i> {{ $isEditMode ? 'Actualizar' : 'Crear' }} Equipo
-            </button>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" id="btn-prev-{{ $modalId }}"
+                    style="display: none;">
+                    <i class="fas fa-arrow-left"></i> Anterior
+                </button>
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">
+                    <i class="fas fa-times"></i> Cancelar
+                </button>
+                <button type="button" class="btn btn-primary" id="btn-next-{{ $modalId }}">
+                    Siguiente <i class="fas fa-arrow-right"></i>
+                </button>
+                <button type="button" class="btn btn-success" id="btn-save-{{ $modalId }}"
+                    style="display: none;">
+                    <i class="fas fa-save"></i> {{ $isEditMode ? 'Actualizar' : 'Crear' }} Equipo
+                </button>
+            </div>
         </div>
     </div>
-</div>
 </div>
 
 @push('css')
@@ -566,7 +586,9 @@
             const modalId = '{{ $modalId }}';
             const isEditMode = {{ $isEditMode ? 'true' : 'false' }};
 
-            let map, marker;
+            // Variables de mapa compartidas (global dentro de este partial)
+            let map = null;
+            let marker = null;
             let currentStep = 1;
             let selectedMembers = [];
             let comunarios = [];
@@ -578,12 +600,28 @@
                 $('#' + modalId).on('shown.bs.modal', function() {
                     if (!map) {
                         initializeMap();
+                    } else {
+                        // Si el mapa ya existe, recalcular su tamaño
+                        try {
+                            map.invalidateSize(true);
+                        } catch (e) {}
                     }
                     // Populate selected members from any pre-checked checkboxes (edit mode)
                     populateSelectedMembersFromChecked();
+                    // Forzar re-render y recenter tras animación del modal
                     setTimeout(function() {
-                        map.invalidateSize();
-                    }, 100);
+                        if (map) {
+                            try {
+                                map.invalidateSize(true);
+                            } catch (e) {}
+                            // Recentrar si hay marcador
+                            if (marker) {
+                                try {
+                                    map.setView(marker.getLatLng(), map.getZoom());
+                                } catch (e) {}
+                            }
+                        }
+                    }, 350);
                 });
 
                 // Reset on modal hide
@@ -600,22 +638,60 @@
             });
 
             function initializeMap() {
-                const defaultLat =
-                    {{ $isEditMode && isset($equipo) && $equipo->latitud ? $equipo->latitud : -16.5 }};
-                const defaultLng =
-                    {{ $isEditMode && isset($equipo) && $equipo->longitud ? $equipo->longitud : -64.5 }};
-                const defaultZoom = {{ $isEditMode && isset($equipo) && $equipo->latitud ? 13 : 6 }};
+                // Construir posibles nombres de variable global según convención de componente
+                const mapIdStr = 'map-' + modalId; // id del contenedor del mapa
+                const safeMapId = mapIdStr.replace(/-/g, '_'); // map_createTeamModal
 
-                map = L.map('map-' + modalId).setView([defaultLat, defaultLng], defaultZoom);
+                const candidates = [
+                    'map_' + safeMapId,
+                    'mapInstance_' + safeMapId,
+                    'map_' + mapIdStr.replace(/-/g, '_'),
+                    'mapInstance_' + mapIdStr.replace(/-/g, '_'),
+                    'map_' + mapIdStr,
+                    mapIdStr.replace(/-/g, '_'),
+                    mapIdStr
+                ];
 
-                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-                    maxZoom: 19
-                }).addTo(map);
+                let mapInstance = null;
+                for (const key of candidates) {
+                    if (Object.prototype.hasOwnProperty.call(window, key) && window[key]) {
+                        mapInstance = window[key];
+                        break;
+                    }
+                }
+
+                if (!mapInstance) {
+                    // If there's an initialization function exported by the component, call it to create the map
+                    const initFuncKey = 'initLeafletMap_' + safeMapId;
+                    if (window[initFuncKey] && typeof window[initFuncKey] === 'function') {
+                        try {
+                            window[initFuncKey]();
+                        } catch (e) {}
+                    }
+                    // Reintentar hasta encontrar la instancia que creó el componente
+                    setTimeout(initializeMap, 100);
+                    return;
+                }
+
+                map = mapInstance;
+                // Recalcular tamaño y re-centar (útil para modales/animaciones)
+                setTimeout(function() {
+                    try {
+                        map.invalidateSize(true);
+                    } catch (e) {
+                        // si no está disponible por alguna razón, reintentar más tarde
+                    }
+                    // Si existe un marcador, centrar allí; si no, mantener la vista por defecto
+                    if (typeof marker !== 'undefined' && marker) {
+                        try {
+                            map.setView(marker.getLatLng(), map.getZoom());
+                        } catch (e) {}
+                    }
+                }, 300);
 
                 // Add existing marker if in edit mode
                 @if ($isEditMode && isset($equipo) && $equipo->latitud && $equipo->longitud)
-                    marker = L.marker([defaultLat, defaultLng], {
+                    marker = L.marker([{{ $equipo->latitud }}, {{ $equipo->longitud }}], {
                         draggable: true
                     }).addTo(map);
                     marker.on('dragend', function(e) {
@@ -1096,7 +1172,6 @@
                 });
 
                 // Add leader if selected
-                // Add leader if selected
                 const liderSelect = document.getElementById('lider-equipo-' + modalId);
                 if (liderSelect && liderSelect.value) {
                     const liderInput = document.createElement('input');
@@ -1126,7 +1201,6 @@
             }
 
             function resetForm() {
-                currentStep = 1;
                 currentStep = 1;
                 selectedMembers = [];
                 comunarios = [];

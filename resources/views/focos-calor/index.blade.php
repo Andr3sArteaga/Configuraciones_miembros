@@ -66,7 +66,8 @@
                                 </div>
                             </div>
                         </div>
-                        <div id="focos-map" style="height: 600px;"></div>
+                        <x-map.leaflet-map mapId="focos-calor-map" lat="-17.8" lng="-63.1" zoom="6"
+                            minZoom="5" maxZoom="12" height="600px" />
                     </div>
                     <div class="card-footer">
                         <div class="row">
@@ -227,14 +228,13 @@
 
         // Inicializar el mapa
         function initMap() {
-            // Coordenadas de Bolivia (centro aproximado)
-            map = L.map('focos-map').setView([-16.5, -64.5], 6);
+            // Obtener el mapa del componente
+            map = window['mapInstance_focos_calor_map'];
 
-            // Agregar capa base de OpenStreetMap
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                attribution: '© OpenStreetMap contributors',
-                maxZoom: 18
-            }).addTo(map);
+            if (!map) {
+                console.error('Mapa no encontrado');
+                return;
+            }
 
             // Crear grupos de marcadores con clustering
             focosLayer = L.markerClusterGroup({
@@ -640,7 +640,10 @@
 
         // Inicializar cuando el DOM esté listo
         document.addEventListener('DOMContentLoaded', function() {
-            initMap();
+            // Wait for map component to initialize (it has a 50ms delay)
+            setTimeout(function() {
+                initMap();
+            }, 500);
         });
     </script>
 @stop

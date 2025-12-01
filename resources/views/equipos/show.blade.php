@@ -112,7 +112,20 @@
                             </h3>
                         </div>
                         <div class="card-body p-0">
-                            <div id="equipo-map" style="height: 400px;"></div>
+                            @php
+                                $markers = [];
+                                if ($equipo->latitud && $equipo->longitud) {
+                                    $markers[] = [
+                                        'lat' => $equipo->latitud,
+                                        'lng' => $equipo->longitud,
+                                        'popup' => $equipo->nombre_equipo ?? 'Equipo',
+                                    ];
+                                }
+                            @endphp
+                            <x-map.leaflet-map mapId="equipo-show-map" lat="{{ $equipo->latitud ?? -17.8 }}"
+                                lng="{{ $equipo->longitud ?? -63.1 }}"
+                                zoom="{{ $equipo->latitud && $equipo->longitud ? 13 : 6 }}" minZoom="5" maxZoom="18"
+                                height="400px" :markers="$markers" />
                         </div>
                     </div>
                 @endif
@@ -158,47 +171,7 @@
 @stop
 
 @section('css')
-    @if ($equipo->latitud && $equipo->longitud)
-        <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    @endif
 @stop
 
 @section('js')
-    @if ($equipo->latitud && $equipo->longitud)
-        <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-        <script>
-            document.addEventListener('DOMContentLoaded', function() {
-                const lat = {{ $equipo->latitud }};
-                const lng = {{ $equipo->longitud }};
-
-                // Crear el mapa
-                const map = L.map('equipo-map').setView([lat, lng], 13);
-
-                // Agregar capa base
-                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                    attribution: '© OpenStreetMap contributors',
-                    maxZoom: 18
-                }).addTo(map);
-
-                // Agregar marcador del equipo
-                const equipoIcon = L.divIcon({
-                    html: '<div style="background-color: #007bff; color: white; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 3px solid white; box-shadow: 0 0 8px rgba(0,0,0,0.5);"><i class="fas fa-users" style="font-size: 20px;"></i></div>',
-                    className: 'equipo-marker',
-                    iconSize: [40, 40]
-                });
-
-                const marker = L.marker([lat, lng], {
-                    icon: equipoIcon
-                }).addTo(map);
-
-                marker.bindPopup(`
-                <div class="equipo-popup">
-                    <h6><i class="fas fa-users"></i> {{ $equipo->nombre_equipo }}</h6>
-                    <p><strong>Integrantes:</strong> {{ $equipo->cantidad_integrantes ?? 0 }}</p>
-                    <p><strong>Estado:</strong> {{ $equipo->estados_sistema->nombre ?? 'N/A' }}</p>
-                </div>
-            `).openPopup();
-            });
-        </script>
-    @endif
 @stop

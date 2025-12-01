@@ -198,7 +198,24 @@
                         </h3>
                     </div>
                     <div class="card-body">
-                        <div id="map" style="height: 500px; width: 100%;"></div>
+                        @php
+                            $markers = [];
+                            if ($reporte->ubicacion && is_array($reporte->ubicacion)) {
+                                $coords = $reporte->ubicacion['coordinates'] ?? null;
+                                if ($coords && count($coords) >= 2) {
+                                    $markers[] = [
+                                        'lat' => $coords[1],
+                                        'lng' => $coords[0],
+                                        'popup' => $reporte->nombre_lugar ?? 'Ubicación del incidente',
+                                    ];
+                                }
+                            }
+                        @endphp
+                        <x-map.leaflet-map mapId="reporte-show-map"
+                            lat="{{ $reporte->ubicacion ? $reporte->ubicacion['coordinates'][1] : -17.8 }}"
+                            lng="{{ $reporte->ubicacion ? $reporte->ubicacion['coordinates'][0] : -63.1 }}"
+                            zoom="{{ $reporte->ubicacion ? 13 : 6 }}" minZoom="5" maxZoom="18" height="500px"
+                            :markers="$markers" />
                         <p class="text-muted text-center mt-2">
                             <small>Ubicación del incidente reportado</small>
                         </p>
@@ -210,7 +227,6 @@
 @stop
 
 @section('css')
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <style>
         .badge-lg {
             font-size: 1rem;
@@ -220,24 +236,4 @@
 @stop
 
 @section('js')
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <script>
-        $(document).ready(function() {
-            // Inicializar mapa centrado en Bolivia por defecto
-            const map = L.map('map').setView([-17.3895, -66.1568], 6);
-
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                attribution: '© OpenStreetMap contributors'
-            }).addTo(map);
-
-            // Nota: La ubicación PostGIS viene como GeoJSON a través del accesor `ubicacion()`
-            const reporteUbicacion = @json($reporte->ubicacion ?? null);
-            if (reporteUbicacion && Array.isArray(reporteUbicacion.coordinates)) {
-                const lat = reporteUbicacion.coordinates[1];
-                const lng = reporteUbicacion.coordinates[0];
-                L.marker([lat, lng]).addTo(map);
-                map.setView([lat, lng], 13);
-            }
-        });
-    </script>
 @stop

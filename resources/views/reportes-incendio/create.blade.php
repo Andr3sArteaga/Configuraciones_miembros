@@ -35,7 +35,8 @@
                         </div>
                         <div class="card-body">
                             <div class="form-group">
-                                <label for="nombre_incidente">Nombre del Incidente <span class="text-danger">*</span></label>
+                                <label for="nombre_incidente">Nombre del Incidente <span
+                                        class="text-danger">*</span></label>
                                 <input type="text" class="form-control @error('nombre_incidente') is-invalid @enderror"
                                     id="nombre_incidente" name="nombre_incidente" value="{{ old('nombre_incidente') }}"
                                     required maxlength="255" placeholder="Ej: Incendio Forestal en Zona Norte">
@@ -48,14 +49,15 @@
                                 <div class="col-md-6">
                                     <div class="form-group">
                                         <label for="condicion_climatica_id">Condición Climática</label>
-                                        <select class="form-control select2 @error('condicion_climatica_id') is-invalid @enderror"
+                                        <select
+                                            class="form-control select2 @error('condicion_climatica_id') is-invalid @enderror"
                                             id="condicion_climatica_id" name="condicion_climatica_id" style="width: 100%;">
                                             <option value="">Seleccione una condición</option>
                                             @foreach ($condicionesClimaticas as $condicion)
                                                 <option value="{{ $condicion->id }}"
                                                     {{ old('condicion_climatica_id') == $condicion->id ? 'selected' : '' }}>
                                                     {{ $condicion->nombre }}
-                                                    @if($condicion->factor_riesgo)
+                                                    @if ($condicion->factor_riesgo)
                                                         (Riesgo: {{ $condicion->factor_riesgo }})
                                                     @endif
                                                 </option>
@@ -71,8 +73,8 @@
                                     <div class="form-group">
                                         <label for="extension">Extensión (hectáreas)</label>
                                         <input type="number" class="form-control @error('extension') is-invalid @enderror"
-                                            id="extension" name="extension" value="{{ old('extension') }}"
-                                            min="0" step="0.01" placeholder="Ej: 15.50">
+                                            id="extension" name="extension" value="{{ old('extension') }}" min="0"
+                                            step="0.01" placeholder="Ej: 15.50">
                                         @error('extension')
                                             <span class="invalid-feedback">{{ $message }}</span>
                                         @enderror
@@ -84,9 +86,10 @@
                                 <div class="col-md-6">
                                     <div class="form-group">
                                         <label for="numero_bomberos">Número de Bomberos Desplegados</label>
-                                        <input type="number" class="form-control @error('numero_bomberos') is-invalid @enderror"
-                                            id="numero_bomberos" name="numero_bomberos" value="{{ old('numero_bomberos') }}"
-                                            min="0" placeholder="Ej: 10">
+                                        <input type="number"
+                                            class="form-control @error('numero_bomberos') is-invalid @enderror"
+                                            id="numero_bomberos" name="numero_bomberos"
+                                            value="{{ old('numero_bomberos') }}" min="0" placeholder="Ej: 10">
                                         @error('numero_bomberos')
                                             <span class="invalid-feedback">{{ $message }}</span>
                                         @enderror
@@ -114,8 +117,7 @@
                                     <div class="form-group">
                                         <div class="custom-control custom-checkbox">
                                             <input class="custom-control-input" type="checkbox" id="controlado"
-                                                name="controlado" value="1"
-                                                {{ old('controlado') ? 'checked' : '' }}>
+                                                name="controlado" value="1" {{ old('controlado') ? 'checked' : '' }}>
                                             <label for="controlado" class="custom-control-label">
                                                 <i class="fas fa-check-circle text-success mr-1"></i>
                                                 <strong>Marcar incendio como controlado</strong>
@@ -127,9 +129,8 @@
 
                             <div class="form-group">
                                 <label for="equipos_en_uso">Equipos en Uso</label>
-                                <textarea class="form-control @error('equipos_en_uso') is-invalid @enderror"
-                                    id="equipos_en_uso" name="equipos_en_uso" rows="2"
-                                    placeholder="Describa los equipos utilizados (autobombas, helicópteros, etc.)">{{ old('equipos_en_uso') }}</textarea>
+                                <textarea class="form-control @error('equipos_en_uso') is-invalid @enderror" id="equipos_en_uso" name="equipos_en_uso"
+                                    rows="2" placeholder="Describa los equipos utilizados (autobombas, helicópteros, etc.)">{{ old('equipos_en_uso') }}</textarea>
                                 @error('equipos_en_uso')
                                     <span class="invalid-feedback">{{ $message }}</span>
                                 @enderror
@@ -137,9 +138,8 @@
 
                             <div class="form-group">
                                 <label for="apoyo_externo">Apoyo Externo</label>
-                                <textarea class="form-control @error('apoyo_externo') is-invalid @enderror"
-                                    id="apoyo_externo" name="apoyo_externo" rows="2"
-                                    placeholder="Indique si hay apoyo de otros organismos o instituciones">{{ old('apoyo_externo') }}</textarea>
+                                <textarea class="form-control @error('apoyo_externo') is-invalid @enderror" id="apoyo_externo" name="apoyo_externo"
+                                    rows="2" placeholder="Indique si hay apoyo de otros organismos o instituciones">{{ old('apoyo_externo') }}</textarea>
                                 @error('apoyo_externo')
                                     <span class="invalid-feedback">{{ $message }}</span>
                                 @enderror
@@ -147,9 +147,8 @@
 
                             <div class="form-group">
                                 <label for="comentario_adicional">Comentarios Adicionales</label>
-                                <textarea class="form-control @error('comentario_adicional') is-invalid @enderror"
-                                    id="comentario_adicional" name="comentario_adicional" rows="3"
-                                    placeholder="Información adicional relevante del incidente...">{{ old('comentario_adicional') }}</textarea>
+                                <textarea class="form-control @error('comentario_adicional') is-invalid @enderror" id="comentario_adicional"
+                                    name="comentario_adicional" rows="3" placeholder="Información adicional relevante del incidente...">{{ old('comentario_adicional') }}</textarea>
                                 @error('comentario_adicional')
                                     <span class="invalid-feedback">{{ $message }}</span>
                                 @enderror
@@ -196,7 +195,8 @@
                         </div>
                         <div class="card-body">
                             <p class="text-sm mb-0">
-                                Asegúrese de proporcionar información precisa y actualizada para una mejor coordinación de recursos y respuesta ante el incidente.
+                                Asegúrese de proporcionar información precisa y actualizada para una mejor coordinación de
+                                recursos y respuesta ante el incidente.
                             </p>
                         </div>
                     </div>
@@ -224,7 +224,8 @@
 
 @section('css')
     <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
-    <link href="https://cdn.jsdelivr.net/npm/@ttskch/select2-bootstrap4-theme@1.5.2/dist/select2-bootstrap4.min.css" rel="stylesheet" />
+    <link href="https://cdn.jsdelivr.net/npm/@ttskch/select2-bootstrap4-theme@1.5.2/dist/select2-bootstrap4.min.css"
+        rel="stylesheet" />
 @stop
 
 @section('js')
