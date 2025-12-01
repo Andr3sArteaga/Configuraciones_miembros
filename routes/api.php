@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Api\LoginApiController;
 use App\Http\Controllers\FocoCalorController;
+use App\Http\Controllers\ReporteController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\EquipoController;
 
@@ -27,6 +28,10 @@ Route::prefix('v1')->group(function () {
     // Live NASA FIRMS data (real-time from NASA API)
     Route::get('/hotspots/live', [FocoCalorController::class, 'live'])
         ->name('api.hotspots.live');
+    
+    // Reportes (Citizen Fire Reports) API
+    Route::get('/reportes', [ReporteController::class, 'api'])
+        ->name('api.reportes');
 });
 
 

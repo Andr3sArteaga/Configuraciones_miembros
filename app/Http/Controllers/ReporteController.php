@@ -220,4 +220,92 @@ class ReporteController extends Controller
                 ->with('error', 'Error al eliminar el reporte.');
         }
     }
+
+    /**
+     * API endpoint for mobile app - Get all reportes with filters
+     */
+    public function api(Request $request)
+    {
+        try {
+            $query = Reporte::query();
+
+            // Filter by estado_id if provided
+            if ($request->has('estado_id')) {
+                $query->where('estado_id', $request->estado_id);
+            }
+
+            // Filter by tipo_incidente_id if provided
+            if ($request->has('tipo_incidente_id')) {
+                $query->where('tipo_incidente_id', $request->tipo_incidente_id);
+            }
+
+            // Filter by gravedad_id if provided
+            if ($request->has('gravedad_id')) {
+                $query->where('gravedad_id', $request->gravedad_id);
+            }
+
+            // Filter by date range if provided
+            if ($request->has('fecha_desde')) {
+                $query->where('fecha_hora', '>=', $request->fecha_desde);
+            }
+            if ($request->has('fecha_hasta')) {
+                $query->where('fecha_hora', '<=', $request->fecha_hasta);
+            }
+
+            // Order by fecha_hora descending (most recent first)
+            $query->orderBy('fecha_hora', 'desc');
+
+            // Get pagination parameters
+            $perPage = $request->input('per_page', 20);
+            $reportes = $query->paginate($perPage);
+
+            // Load relationships manually to avoid UUID issues
+            $tiposIncidente = TiposIncidente::all()->keyBy('id');
+            $nivelesGravedad = NivelesGravedad::all()->keyBy('id');
+            $estadosSistema = EstadosSistema::all()->keyBy('id');
+
+            // Transform the data to include relationships
+            $reportes->getCollection()->transform(function ($reporte) use ($tiposIncidente, $nivelesGravedad, $estadosSistema) {
+                // Convert to array
+                $reporteArray = $reporte->toArray();
+
+                // Add relationship data
+                if ($reporte->tipo_incidente_id && isset($tiposIncidente[$reporte->tipo_incidente_id])) {
+                    $reporteArray['tipo_incidente'] = $tiposIncidente[$reporte->tipo_incidente_id]->toArray();
+                }
+                if ($reporte->gravedad_id && isset($nivelesGravedad[$reporte->gravedad_id])) {
+                    $reporteArray['nivel_gravedad'] = $nivelesGravedad[$reporte->gravedad_id]->toArray();
+                }
+                if ($reporte->estado_id && isset($estadosSistema[$reporte->estado_id])) {
+                    $reporteArray['estado'] = $estadosSistema[$reporte->estado_id]->toArray();
+                }
+
+                // Format ubicacion if exists
+                if ($reporte->ubicacion) {
+                    $reporteArray['ubicacion'] = $reporte->ubicacion;
+                }
+
+                return $reporteArray;
+            });
+
+            return response()->json([
+                'success' => true,
+                'data' => $reportes->items(),
+                'pagination' => [
+                    'total' => $reportes->total(),
+                    'per_page' => $reportes->perPage(),
+                    'current_page' => $reportes->currentPage(),
+                    'last_page' => $reportes->lastPage(),
+                    'from' => $reportes->firstItem(),
+                    'to' => $reportes->lastItem(),
+                ]
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al obtener los reportes',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
 }
