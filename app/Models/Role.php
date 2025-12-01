@@ -35,7 +35,7 @@ class Role extends Model
 
 	protected $casts = [
 		'id' => 'string',
-		'permisos' => 'binary',
+		'permisos' => 'array',
 		'activo' => 'bool',
 		'creado' => 'datetime',
 		'actualizado' => 'datetime'

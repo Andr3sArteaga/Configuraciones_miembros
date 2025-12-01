@@ -22,6 +22,7 @@ use App\Http\Controllers\TipoRecursoController;
 use App\Http\Controllers\CondicionClimaticaController;
 use App\Http\Controllers\EstadoSistemaController;
 use App\Http\Controllers\PerfilController;
+use App\Http\Controllers\KardexController;
 
 Auth::routes();
 
@@ -70,6 +71,10 @@ Route::middleware(['auth'])->group(function () {
     Route::put('/perfil', [PerfilController::class, 'update'])->name('perfil.update');
     Route::get('/cambiar-password', [PerfilController::class, 'cambiarPassword'])->name('cambiar-password');
     Route::put('/cambiar-password', [PerfilController::class, 'updatePassword'])->name('cambiar-password.update');
+
+    // Kardex del Usuario
+    Route::get('/kardex', [KardexController::class, 'index'])->name('kardex.index');
+    Route::get('/kardex/pdf', [KardexController::class, 'descargarPdf'])->name('kardex.pdf');
 
     // Reportes (Todos los usuarios autenticados pueden ver todos los reportes ciudadanos)
     Route::resource('reportes', ReporteController::class);

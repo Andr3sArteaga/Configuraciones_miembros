@@ -2,7 +2,6 @@
 
 namespace Database\Seeders;
 
-use App\Models\Usuario;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
@@ -15,11 +14,33 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // User::factory(10)->create();
-
-        Usuario::factory()->create([
-            'name' => 'Test User',
-            'email' => 'test@example.com',
+        $this->command->info('🌱 Iniciando la siembra de datos...');
+        
+        // Parametric data seeders (must be run first)
+        $this->command->info('📊 Poblando tablas paramétricas...');
+        
+        $this->call([
+            TiposSangreSeeder::class,
+            NivelesEntrenamientoSeeder::class,
+            GenerosSeeder::class,
+            RolesSeeder::class,
+            TiposIncidenteSeeder::class,
+            NivelesGravedadSeeder::class,
+            TiposRecursoSeeder::class,
+            EstadosSistemaSeeder::class,
+            CondicionesClimaticasSeeder::class,
         ]);
+
+        $this->command->info('✅ Tablas paramétricas pobladas exitosamente.');
+        
+        // Create admin user (depends on parametric data)
+        $this->command->info('👤 Creando usuario administrador...');
+        $this->call(AdminUserSeeder::class);
+        
+        // Optional: Other seeders
+        // $this->call(NoticiasSeeder::class);
+        
+        $this->command->info('🎉 ¡Siembra completada exitosamente!');
     }
 }
+

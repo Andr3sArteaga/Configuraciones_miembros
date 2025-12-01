@@ -508,6 +508,12 @@ return [
             'classes' => 'auth-only',
         ],
         [
+            'text' => 'Mi Kardex',
+            'url' => 'kardex',
+            'icon' => 'fas fa-fw fa-id-card',
+            'classes' => 'auth-only',
+        ],
+        [
             'text' => 'Cambiar Contraseña',
             'url' => 'cambiar-password',
             'icon' => 'fas fa-fw fa-key',
