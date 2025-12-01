@@ -223,65 +223,90 @@ class ReporteController extends Controller
     }
 
     /**
-     * Mostrar formulario público de reporte (para invitados/usuarios no autenticados)
+     * API endpoint for mobile app - Get all reportes with filters
      */
-    public function formularioPublico()
+    public function api(Request $request)
     {
-        $tiposIncidente = TiposIncidente::where('activo', true)->orderBy('nombre')->get();
-        $nivelesGravedad = NivelesGravedad::where('activo', true)->orderBy('orden')->get();
+        try {
+            $query = Reporte::query();
 
-        return view('reportes.publico', compact('tiposIncidente', 'nivelesGravedad'));
-    }
+            // Filter by estado_id if provided
+            if ($request->has('estado_id')) {
+                $query->where('estado_id', $request->estado_id);
+            }
 
-    /**
-     * Guardar reporte público (sin autenticación)
-     */
-    public function storePublico(Request $request)
-    {
-        $request->validate([
-            'nombre_reportante' => 'required|string|max:200',
-            'telefono_contacto' => 'nullable|string|max:20',
-            'fecha_hora' => 'required|date',
-            'nombre_lugar' => 'nullable|string|max:200',
-            'latitud' => 'nullable|numeric|between:-90,90',
-            'longitud' => 'nullable|numeric|between:-180,180',
-            'tipo_incidente_id' => 'nullable|uuid|exists:tipos_incidente,id',
-            'gravedad_id' => 'nullable|uuid|exists:niveles_gravedad,id',
-            'comentario_adicional' => 'nullable|string',
-            'cant_bomberos' => 'nullable|integer|min:0',
-            'cant_paramedicos' => 'nullable|integer|min:0',
-            'cant_veterinarios' => 'nullable|integer|min:0',
-            'cant_autoridades' => 'nullable|integer|min:0',
-        ]);
+            // Filter by tipo_incidente_id if provided
+            if ($request->has('tipo_incidente_id')) {
+                $query->where('tipo_incidente_id', $request->tipo_incidente_id);
+            }
 
-        // Obtener estado "pendiente" para reportes
-        $estadoPendiente = EstadosSistema::where('tabla', 'reportes')
-            ->where('codigo', 'pendiente')
-            ->first();
+            // Filter by gravedad_id if provided
+            if ($request->has('gravedad_id')) {
+                $query->where('gravedad_id', $request->gravedad_id);
+            }
 
-        // Construir el punto geográfico si hay coordenadas
-        $ubicacion = null;
-        if ($request->latitud && $request->longitud) {
-            $ubicacion = "POINT({$request->longitud} {$request->latitud})";
+            // Filter by date range if provided
+            if ($request->has('fecha_desde')) {
+                $query->where('fecha_hora', '>=', $request->fecha_desde);
+            }
+            if ($request->has('fecha_hasta')) {
+                $query->where('fecha_hora', '<=', $request->fecha_hasta);
+            }
+
+            // Order by fecha_hora descending (most recent first)
+            $query->orderBy('fecha_hora', 'desc');
+
+            // Get pagination parameters
+            $perPage = $request->input('per_page', 20);
+            $reportes = $query->paginate($perPage);
+
+            // Load relationships manually to avoid UUID issues
+            $tiposIncidente = TiposIncidente::all()->keyBy('id');
+            $nivelesGravedad = NivelesGravedad::all()->keyBy('id');
+            $estadosSistema = EstadosSistema::all()->keyBy('id');
+
+            // Transform the data to include relationships
+            $reportes->getCollection()->transform(function ($reporte) use ($tiposIncidente, $nivelesGravedad, $estadosSistema) {
+                // Convert to array
+                $reporteArray = $reporte->toArray();
+
+                // Add relationship data
+                if ($reporte->tipo_incidente_id && isset($tiposIncidente[$reporte->tipo_incidente_id])) {
+                    $reporteArray['tipo_incidente'] = $tiposIncidente[$reporte->tipo_incidente_id]->toArray();
+                }
+                if ($reporte->gravedad_id && isset($nivelesGravedad[$reporte->gravedad_id])) {
+                    $reporteArray['nivel_gravedad'] = $nivelesGravedad[$reporte->gravedad_id]->toArray();
+                }
+                if ($reporte->estado_id && isset($estadosSistema[$reporte->estado_id])) {
+                    $reporteArray['estado'] = $estadosSistema[$reporte->estado_id]->toArray();
+                }
+
+                // Format ubicacion if exists
+                if ($reporte->ubicacion) {
+                    $reporteArray['ubicacion'] = $reporte->ubicacion;
+                }
+
+                return $reporteArray;
+            });
+
+            return response()->json([
+                'success' => true,
+                'data' => $reportes->items(),
+                'pagination' => [
+                    'total' => $reportes->total(),
+                    'per_page' => $reportes->perPage(),
+                    'current_page' => $reportes->currentPage(),
+                    'last_page' => $reportes->lastPage(),
+                    'from' => $reportes->firstItem(),
+                    'to' => $reportes->lastItem(),
+                ]
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al obtener los reportes',
+                'error' => $e->getMessage()
+            ], 500);
         }
-
-        Reporte::create([
-            'nombre_reportante' => $request->nombre_reportante,
-            'telefono_contacto' => $request->telefono_contacto,
-            'fecha_hora' => $request->fecha_hora,
-            'nombre_lugar' => $request->nombre_lugar,
-            'ubicacion' => $ubicacion ? DB::raw("ST_GeogFromText('SRID=4326;{$ubicacion}')") : null,
-            'tipo_incidente_id' => $request->tipo_incidente_id,
-            'gravedad_id' => $request->gravedad_id,
-            'comentario_adicional' => $request->comentario_adicional,
-            'cant_bomberos' => $request->cant_bomberos ?? 0,
-            'cant_paramedicos' => $request->cant_paramedicos ?? 0,
-            'cant_veterinarios' => $request->cant_veterinarios ?? 0,
-            'cant_autoridades' => $request->cant_autoridades ?? 0,
-            'estado_id' => $estadoPendiente->id ?? null,
-        ]);
-
-        return redirect()->route('reporte.publico')
-            ->with('success', 'Reporte enviado exitosamente. Gracias por tu colaboración.');
     }
 }

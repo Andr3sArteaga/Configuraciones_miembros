@@ -435,9 +435,34 @@
 
                         <div class="row">
                             <div class="col-md-12">
-                                <div class="alert alert-warning">
+                                <div class="card">
+                                    <div class="card-header bg-light">
+                                        <h6 class="mb-0">
+                                            <i class="fas fa-box"></i> Donaciones Disponibles
+                                        </h6>
+                                    </div>
+                                    <div class="card-body p-0">
+                                        <div class="table-responsive">
+                                            <table class="table table-hover mb-0" id="donations-table-{{ $modalId }}">
+                                                <thead class="thead-light">
+                                                    <tr>
+                                                        <th style="width: 40%;">Artículo</th>
+                                                        <th style="width: 20%;" class="text-center">Stock</th>
+                                                        <th style="width: 20%;" class="text-center">Cantidad</th>
+                                                        <th style="width: 20%;" class="text-center">Acciones</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody id="donations-tbody-{{ $modalId }}">
+                                                    <!-- Donations will be populated by JavaScript -->
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="alert alert-warning mt-3">
                                     <i class="fas fa-exclamation-triangle"></i> <strong>Nota:</strong> Esta sección es
-                                    opcional y está en desarrollo. Los suministros pueden asignarse posteriormente.
+                                    opcional. Los suministros pueden asignarse posteriormente.
                                 </div>
                             </div>
                         </div>
@@ -592,6 +617,13 @@
             let currentStep = 1;
             let selectedMembers = [];
             let comunarios = [];
+            let donations = [
+                { id: 1, name: 'Tanques de Agua (20L)', quantity: 0, stock: 50, icon: 'fa-tint' },
+                { id: 2, name: 'Extintores', quantity: 0, stock: 20, icon: 'fa-fire-extinguisher' },
+                { id: 3, name: 'Trajes Protectores', quantity: 0, stock: 15, icon: 'fa-shield-alt' },
+                { id: 4, name: 'Palas', quantity: 0, stock: 30, icon: 'fa-tools' },
+                { id: 5, name: 'Botiquines de Primeros Auxilios', quantity: 0, stock: 10, icon: 'fa-medkit' }
+            ];
 
             const assignedLeaderId = @json(isset($liderAsignadoId) ? $liderAsignadoId : null);
 
@@ -608,7 +640,7 @@
                     }
                     // Populate selected members from any pre-checked checkboxes (edit mode)
                     populateSelectedMembersFromChecked();
-                    // Forzar re-render y recenter tras animación del modal
+                    renderDonationsList();
                     setTimeout(function() {
                         if (map) {
                             try {
@@ -935,6 +967,75 @@
                         const index = this.getAttribute('data-index');
                         comunarios.splice(index, 1);
                         renderComunariosList();
+                    });
+                });
+            }
+
+            function renderDonationsList() {
+                const tbody = document.getElementById('donations-tbody-' + modalId);
+                
+                // Show all donations
+                const activeDonations = donations;
+                
+                if (activeDonations.length === 0) {
+                    tbody.innerHTML = `
+                        <tr>
+                            <td colspan="4" class="text-center text-muted py-3">
+                                <i class="fas fa-info-circle"></i> No hay donaciones disponibles.
+                            </td>
+                        </tr>
+                    `;
+                    return;
+                }
+
+                tbody.innerHTML = '';
+                activeDonations.forEach((donation) => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>
+                            <i class="fas ${donation.icon} text-primary mr-2"></i>
+                            ${donation.name}
+                        </td>
+                        <td class="text-center">
+                            <span class="badge badge-info badge-lg">${donation.stock}</span>
+                        </td>
+                        <td class="text-center">
+                            <span class="badge badge-primary badge-lg">${donation.quantity}</span>
+                        </td>
+                        <td class="text-center">
+                            <div class="btn-group" role="group">
+                                <button type="button" class="btn btn-sm btn-danger btn-decrease-donation" data-id="${donation.id}">
+                                    <i class="fas fa-minus"></i>
+                                </button>
+                                <button type="button" class="btn btn-sm btn-success btn-increase-donation" data-id="${donation.id}">
+                                    <i class="fas fa-plus"></i>
+                                </button>
+                            </div>
+                        </td>
+                    `;
+                    tbody.appendChild(row);
+                });
+
+                // Add event listeners for increase/decrease buttons
+                document.querySelectorAll('.btn-increase-donation').forEach(btn => {
+                    btn.addEventListener('click', function() {
+                        const donationId = parseInt(this.getAttribute('data-id'));
+                        const donation = donations.find(d => d.id === donationId);
+                        if (donation) {
+                            donation.quantity++;
+                            renderDonationsList();
+                        }
+                    });
+                });
+
+                document.querySelectorAll('.btn-decrease-donation').forEach(btn => {
+                    btn.addEventListener('click', function() {
+                        const donationId = parseInt(this.getAttribute('data-id'));
+                        const donation = donations.find(d => d.id === donationId);
+                        if (donation && donation.quantity > 0) {
+                            donation.quantity--;
+                            renderDonationsList();
+                        }
                     });
                 });
             }
