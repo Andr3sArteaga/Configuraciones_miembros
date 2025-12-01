@@ -444,4 +444,34 @@ class CursoController extends Controller
 
         return view('cursos.comunario', compact('comunario', 'cursosAsignados'));
     }
+
+    /**
+     * API: Obtener cursos para el mapa
+     */
+    public function api()
+    {
+        try {
+            $cursos = Curso::withCount('cursos_asignados')
+                ->get()
+                ->map(function ($curso) {
+                    return [
+                        'id' => $curso->id,
+                        'nombre' => $curso->nombre,
+                        'descripcion' => $curso->descripcion,
+                        'cantidad_asignados' => $curso->cursos_asignados_count,
+                        'fecha_creacion' => $curso->creado ? $curso->creado->format('Y-m-d H:i:s') : null,
+                    ];
+                });
+
+            return response()->json($cursos);
+        } catch (\Exception $e) {
+            return response()->json([
+                'error' => 'Error al obtener cursos',
+                'message' => $e->getMessage(),
+                'line' => $e->getLine(),
+                'file' => basename($e->getFile())
+            ], 500);
+        }
+    }
+ 
 }

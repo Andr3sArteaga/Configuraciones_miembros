@@ -17,31 +17,48 @@ class EquipoController extends Controller
      */
     public function index()
     {
-        $equipos = Equipo::with(['estados_sistema', 'miembros', 'reporte'])
-            ->orderBy('creado', 'desc')
-            ->paginate(20);
+        $user = auth()->user();
+        
+        if ($user->isAdmin()) {
+            // Admin sees all teams
+            $equipos = Equipo::with(['estados_sistema', 'miembros', 'reporte'])
+                ->orderBy('creado', 'desc')
+                ->paginate(20);
 
-        // Get estados for the create modal
-        $estados = EstadosSistema::where('tabla', 'equipos')
-            ->where('activo', true)
-            ->orderBy('orden')
-            ->get();
+            // Get estados for the create modal
+            $estados = EstadosSistema::where('tabla', 'equipos')
+                ->where('activo', true)
+                ->orderBy('orden')
+                ->get();
 
-        // Get available usuarios for the create modal (include users without nivel_entrenamiento)
-        $usuarios = Usuario::with(['niveles_entrenamiento', 'estados_sistema'])
-            ->orderBy('nombre')
-            ->orderBy('apellido')
-            ->get();
+            // Get available usuarios for the create modal
+            $usuarios = Usuario::with(['niveles_entrenamiento', 'estados_sistema'])
+                ->orderBy('nombre')
+                ->orderBy('apellido')
+                ->get();
 
-        // Empty array for create mode (no members assigned yet)
-        $miembrosAsignados = [];
+            // Empty array for create mode
+            $miembrosAsignados = [];
 
-        // Provide reportes to allow selection in team creation modal
-        $reportes = Reporte::whereNotNull('ubicacion')
-            ->orderBy('fecha_hora', 'desc')
-            ->get();
+            // Provide reportes to allow selection in team creation modal
+            $reportes = Reporte::whereNotNull('ubicacion')
+                ->orderBy('fecha_hora', 'desc')
+                ->get();
 
-        return view('equipos.index', compact('equipos', 'estados', 'usuarios', 'miembrosAsignados', 'reportes'));
+            return view('equipos.index', compact('equipos', 'estados', 'usuarios', 'miembrosAsignados', 'reportes'));
+        } else {
+            // Usuario/Voluntario sees only their team
+            $equipo = $user->equipo();
+            
+            if (!$equipo) {
+                return view('equipos.sin-equipo');
+            }
+            
+            // Load relationships
+            $equipo->load(['estados_sistema', 'miembros', 'reporte']);
+            
+            return view('equipos.mi-equipo', compact('equipo'));
+        }
     }
 
     /**

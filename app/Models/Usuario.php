@@ -132,4 +132,51 @@ class Usuario extends Authenticatable
 	{
 		return $this->hasMany(ReportesIncendio::class, 'id_usuario_creador');
 	}
+
+	/**
+	 * Check if user is an administrator
+	 */
+	public function isAdmin(): bool
+	{
+		return $this->role && strtolower($this->role->codigo) === 'admin';
+	}
+
+	/**
+	 * Check if user is a volunteer/firefighter
+	 */
+	public function isVoluntario(): bool
+	{
+		$codigo = $this->role?->codigo;
+		return $codigo && in_array(strtolower($codigo), ['bombero', 'paramedico', 'veterinario', 'voluntario']);
+	}
+
+	/**
+	 * Check if user has one of the specified roles
+	 */
+	public function hasRole(string|array $roles): bool
+	{
+		if (!$this->role) {
+			return false;
+		}
+
+		$roles = is_array($roles) ? $roles : [$roles];
+		$userRole = strtolower($this->role->codigo);
+
+		foreach ($roles as $role) {
+			if (strtolower($role) === $userRole) {
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	/**
+	 * Get user's team (if any)
+	 */
+	public function equipo()
+	{
+		$miembro = $this->miembros_equipos()->first();
+		return $miembro ? $miembro->equipo : null;
+	}
 }

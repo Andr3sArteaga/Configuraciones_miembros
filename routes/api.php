@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\LoginApiController;
+use App\Http\Controllers\CursoController;
 use App\Http\Controllers\FocoCalorController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\EquipoController;
@@ -27,6 +28,9 @@ Route::prefix('v1')->group(function () {
     // Live NASA FIRMS data (real-time from NASA API)
     Route::get('/hotspots/live', [FocoCalorController::class, 'live'])
         ->name('api.hotspots.live');
+
+    Route::get('/cursos', [CursoController::class, 'api'])
+        ->name('api.cursos.api');
 });
 
 

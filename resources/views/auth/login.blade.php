@@ -109,12 +109,20 @@
 
                 {{-- Register link --}}
                 @if($register_url)
-                    <p class="mb-0">
+                    <p class="mb-1">
                         <a href="{{ $register_url }}">
                             {{ __('adminlte::adminlte.register_a_new_membership') }}
                         </a>
                     </p>
                 @endif
+
+                {{-- Guest access link --}}
+                <p class="mb-0">
+                    <a href="{{ route('guest.home') }}" class="text-info">
+                        <i class="fas fa-user-shield"></i>
+                        Acceder como Invitado
+                    </a>
+                </p>
             </div>
         </div>
     </div>

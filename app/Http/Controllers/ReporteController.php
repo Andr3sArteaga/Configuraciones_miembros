@@ -16,7 +16,8 @@ class ReporteController extends Controller
      */
     public function index()
     {
-        // Cargar reportes sin relaciones (para evitar problema de UUID con whereIn en PostgreSQL)
+        // Reportes ciudadanos no están vinculados a usuarios específicos
+        // Todos los usuarios autenticados pueden ver todos los reportes
         $reportes = Reporte::orderBy('fecha_hora', 'desc')
             ->paginate(20);
 
@@ -219,5 +220,68 @@ class ReporteController extends Controller
             return redirect()->route('reportes.index')
                 ->with('error', 'Error al eliminar el reporte.');
         }
+    }
+
+    /**
+     * Mostrar formulario público de reporte (para invitados/usuarios no autenticados)
+     */
+    public function formularioPublico()
+    {
+        $tiposIncidente = TiposIncidente::where('activo', true)->orderBy('nombre')->get();
+        $nivelesGravedad = NivelesGravedad::where('activo', true)->orderBy('orden')->get();
+
+        return view('reportes.publico', compact('tiposIncidente', 'nivelesGravedad'));
+    }
+
+    /**
+     * Guardar reporte público (sin autenticación)
+     */
+    public function storePublico(Request $request)
+    {
+        $request->validate([
+            'nombre_reportante' => 'required|string|max:200',
+            'telefono_contacto' => 'nullable|string|max:20',
+            'fecha_hora' => 'required|date',
+            'nombre_lugar' => 'nullable|string|max:200',
+            'latitud' => 'nullable|numeric|between:-90,90',
+            'longitud' => 'nullable|numeric|between:-180,180',
+            'tipo_incidente_id' => 'nullable|uuid|exists:tipos_incidente,id',
+            'gravedad_id' => 'nullable|uuid|exists:niveles_gravedad,id',
+            'comentario_adicional' => 'nullable|string',
+            'cant_bomberos' => 'nullable|integer|min:0',
+            'cant_paramedicos' => 'nullable|integer|min:0',
+            'cant_veterinarios' => 'nullable|integer|min:0',
+            'cant_autoridades' => 'nullable|integer|min:0',
+        ]);
+
+        // Obtener estado "pendiente" para reportes
+        $estadoPendiente = EstadosSistema::where('tabla', 'reportes')
+            ->where('codigo', 'pendiente')
+            ->first();
+
+        // Construir el punto geográfico si hay coordenadas
+        $ubicacion = null;
+        if ($request->latitud && $request->longitud) {
+            $ubicacion = "POINT({$request->longitud} {$request->latitud})";
+        }
+
+        Reporte::create([
+            'nombre_reportante' => $request->nombre_reportante,
+            'telefono_contacto' => $request->telefono_contacto,
+            'fecha_hora' => $request->fecha_hora,
+            'nombre_lugar' => $request->nombre_lugar,
+            'ubicacion' => $ubicacion ? DB::raw("ST_GeogFromText('SRID=4326;{$ubicacion}')") : null,
+            'tipo_incidente_id' => $request->tipo_incidente_id,
+            'gravedad_id' => $request->gravedad_id,
+            'comentario_adicional' => $request->comentario_adicional,
+            'cant_bomberos' => $request->cant_bomberos ?? 0,
+            'cant_paramedicos' => $request->cant_paramedicos ?? 0,
+            'cant_veterinarios' => $request->cant_veterinarios ?? 0,
+            'cant_autoridades' => $request->cant_autoridades ?? 0,
+            'estado_id' => $estadoPendiente->id ?? null,
+        ]);
+
+        return redirect()->route('reporte.publico')
+            ->with('success', 'Reporte enviado exitosamente. Gracias por tu colaboración.');
     }
 }

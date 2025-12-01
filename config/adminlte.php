@@ -301,27 +301,29 @@ return [
     */
 
     'menu' => [
-        // Navbar items:
+        // Navbar items (authenticated users only):
         [
             'type' => 'navbar-search',
             'text' => 'search',
             'topnav_right' => true,
+            'classes' => 'auth-only',
         ],
         [
             'type' => 'fullscreen-widget',
             'topnav_right' => true,
+            'classes' => 'auth-only',
         ],
-        // Icono visible de usuario y enlace a perfil
         [
-            'text' => '<a class="nav-link text-dark d-flex align-items-center" href="/profile" title="Mi perfil"><i class="fas fa-user-circle fa-lg mr-1"></i><span class="d-none d-md-inline">Perfil</span></a>',
+            'text' => '<a class="nav-link text-dark d-flex align-items-center" href="/perfil" title="Mi perfil"><i class="fas fa-user-circle fa-lg mr-1"></i><span class="d-none d-md-inline">Perfil</span></a>',
             'topnav_right' => true,
             'raw' => true,
+            'classes' => 'auth-only',
         ],
-        // Botón de logout visible (si tu logout requiere POST, reemplazar por el formulario correspondiente)
         [
             'text' => '<a class="nav-link btn btn-danger btn-sm text-white px-2" href="/logout" id="topnav-logout"><i class="fas fa-sign-out-alt mr-1"></i><span class="d-none d-md-inline">Salir</span></a>',
             'topnav_right' => true,
             'raw' => true,
+            'classes' => 'auth-only',
         ],
 
         // Sidebar items:
@@ -330,70 +332,104 @@ return [
             'text' => 'Buscar...',
         ],
 
-        // Dashboard
+        // Dashboard (authenticated users only)
         [
             'text' => 'Dashboard',
             'url' => 'home',
             'icon' => 'fas fa-fw fa-tachometer-alt',
             'icon_color' => 'white',
+            'classes' => 'auth-only',
         ],
 
         // Operaciones
         ['header' => 'OPERACIONES'],
+        
+        // Reporte Rápido (Public - everyone can see)
         [
-            'text' => 'Reportes Rápido',
+            'text' => 'Reporte Rápido',
             'url' => 'reportes',
             'icon' => 'fas fa-fw fa-bullhorn',
             'icon_color' => 'white',
         ],
+        
+        // Reportes (authenticated users only)
         [
             'text' => 'Reportes',
             'url' => 'reportes-incendio',
             'icon' => 'fas fa-fw fa-fire',
             'icon_color' => 'white',
+            'classes' => 'auth-only',
         ],
+        
+        // Mapa en Tiempo Real (Public - everyone can see)
         [
-            'text' => 'Focos de Calor',
+            'text' => 'Mapa en Tiempo Real',
             'url' => 'focos-calor',
             'icon' => 'fas fa-fw fa-map-marked-alt',
             'icon_color' => 'white',
         ],
+        
+        // Recursos (Admin only)
         [
             'text' => 'Recursos',
             'url' => 'recursos',
             'icon' => 'fas fa-fw fa-boxes',
             'icon_color' => 'white',
+            'can' => 'admin-only',
         ],
 
-        // Gestión de Personal
-        ['header' => 'GESTIÓN DE PERSONAL'],
+        // Gestión de Personal (Admin only - header and content)
+        [
+            'header' => 'GESTIÓN DE PERSONAL',
+            'can' => 'admin-only',
+        ],
         [
             'text' => 'Usuarios',
             'url' => 'usuarios',
             'icon' => 'fas fa-fw fa-users',
             'icon_color' => 'white',
+            'can' => 'admin-only',
         ],
         [
             'text' => 'Equipos',
             'url' => 'equipos',
             'icon' => 'fas fa-fw fa-user-friends',
             'icon_color' => 'white',
+            'can' => 'admin-only',
         ],
         [
             'text' => 'Inscritos',
             'url' => 'inscritos',
             'icon' => 'fas fa-fw fa-user-plus',
             'icon_color' => 'white',
+            'can' => 'admin-only',
+        ],
+        
+        // Mi Equipo (for regular authenticated users)
+        [
+            'header' => 'MI EQUIPO',
+            'can' => 'user-only',
+        ],
+        [
+            'text' => 'Mi Equipo',
+            'url' => 'equipos',
+            'icon' => 'fas fa-fw fa-user-friends',
+            'icon_color' => 'white',
+            'can' => 'user-only',
         ],
 
         // Información
         ['header' => 'INFORMACIÓN'],
+        
+        // Noticias (Public - everyone can see)
         [
             'text' => 'Noticias',
             'url' => 'noticias',
             'icon' => 'fas fa-fw fa-newspaper',
             'icon_color' => 'white',
         ],
+        
+        // Cursos (Public - everyone can see)
         [
             'text' => 'Cursos',
             'url' => 'cursos',
@@ -401,12 +437,16 @@ return [
             'icon_color' => 'white',
         ],
 
-        // Catálogos
-        ['header' => 'CATÁLOGOS'],
+        // Catálogos (Admin only)
+        [
+            'header' => 'CATÁLOGOS',
+            'can' => 'admin-only',
+        ],
         [
             'text' => 'Administración',
             'icon' => 'fas fa-fw fa-cog',
             'icon_color' => 'white',
+            'can' => 'admin-only',
             'submenu' => [
                 [
                     'text' => 'Roles',
@@ -456,25 +496,45 @@ return [
             ],
         ],
 
-        // Configuración de Usuario
-        ['header' => 'MI CUENTA'],
+        // Mi Cuenta (authenticated users only)
+        [
+            'header' => 'MI CUENTA',
+            'classes' => 'auth-only',
+        ],
         [
             'text' => 'Perfil',
             'url' => 'perfil',
             'icon' => 'fas fa-fw fa-user-circle',
+            'classes' => 'auth-only',
         ],
         [
             'text' => 'Cambiar Contraseña',
             'url' => 'cambiar-password',
             'icon' => 'fas fa-fw fa-key',
+            'classes' => 'auth-only',
         ],
-        ['header' => 'INFORMACIÓN EXTRA'],
+        
+        // Login button for guests
         [
-            'text' => 'Que es esto?',
+            'header' => 'ACCESO',
+            'can' => 'guest-only',
+        ],
+        [
+            'text' => 'Iniciar Sesión',
+            'url' => 'login',
+            'icon' => 'fas fa-fw fa-sign-in-alt',
             'icon_color' => 'cyan',
-            'url' => '/welcome',
-        ]
+            'can' => 'guest-only',
+        ],
+        [
+            'text' => 'Registrarse',
+            'url' => 'register',
+            'icon' => 'fas fa-fw fa-user-plus',
+            'icon_color' => 'cyan',
+            'can' => 'guest-only',
+        ],
     ],
+
 
     /*
     |--------------------------------------------------------------------------
@@ -489,6 +549,7 @@ return [
     */
 
     'filters' => [
+        App\Menu\Filters\AuthFilter::class,
         JeroenNoten\LaravelAdminLte\Menu\Filters\GateFilter::class,
         JeroenNoten\LaravelAdminLte\Menu\Filters\HrefFilter::class,
         JeroenNoten\LaravelAdminLte\Menu\Filters\SearchFilter::class,

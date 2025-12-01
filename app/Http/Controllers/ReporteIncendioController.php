@@ -15,9 +15,16 @@ class ReporteIncendioController extends Controller
      */
     public function index()
     {
-        $reportes = ReportesIncendio::with(['usuario', 'condiciones_climatica'])
-            ->orderBy('fecha_creacion', 'desc')
-            ->paginate(20);
+        $query = ReportesIncendio::with(['usuario', 'condiciones_climatica'])
+            ->orderBy('fecha_creacion', 'desc');
+        
+        // Si no es Admin, solo mostrar reportes del usuario actual
+        if (!auth()->user()->isAdmin()) {
+            $query->where('id_usuario_creador', auth()->id());
+        }
+        
+        $reportes = $query->paginate(20);
+        
         return view('reportes-incendio.index', compact('reportes'));
     }
 

@@ -103,15 +103,18 @@ class HomeController extends Controller
             ->limit(5)
             ->get();
 
-        // Equipos con relaciones
-        $equipos = Equipo::with('reporte')->orderBy('creado', 'desc')
-            ->limit(10)
-            ->get();
+        // Equipos con relaciones (solo para usuarios autenticados)
+        $equipos = collect([]);
+        if (auth()->check()) {
+            $equipos = Equipo::with('reporte')->orderBy('creado', 'desc')
+                ->limit(10)
+                ->get();
 
-        // Cargar relación estados_sistema manualmente
-        foreach ($equipos as $equipo) {
-            if ($equipo->estado_id && isset($estadosSistema[$equipo->estado_id])) {
-                $equipo->setRelation('estados_sistema', $estadosSistema[$equipo->estado_id]);
+            // Cargar relación estados_sistema manualmente
+            foreach ($equipos as $equipo) {
+                if ($equipo->estado_id && isset($estadosSistema[$equipo->estado_id])) {
+                    $equipo->setRelation('estados_sistema', $estadosSistema[$equipo->estado_id]);
+                }
             }
         }
 
