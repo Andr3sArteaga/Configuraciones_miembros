@@ -13,6 +13,9 @@
                     <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#createCursoModal">
                         <i class="fas fa-plus"></i> Nuevo Curso
                     </button>
+                    <button type="button" class="btn btn-success" data-toggle="modal" data-target="#createCourseStagesModal">
+                        <i class="fas fa-layer-group"></i> Nuevo Curso (con Etapas)
+                    </button>
                     <button type="button" class="btn btn-secondary" id="toggleViewBtn">
                         <i class="fas fa-table"></i> Vista Tabla
                     </button>
@@ -274,6 +277,8 @@
     </script>
 
     @yield('modal-scripts')
+    @yield('course-stages-modal-scripts')
 @stop
 
 @include('cursos.partials.create-modal')
+@include('cursos.partials.create-course-stages-modal')
