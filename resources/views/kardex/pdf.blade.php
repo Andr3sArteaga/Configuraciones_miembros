@@ -15,12 +15,12 @@
         .header {
             text-align: center;
             margin-bottom: 30px;
-            border-bottom: 3px solid #007bff;
+            border-bottom: 3px solid #F97727;
             padding-bottom: 10px;
         }
         
         .header h1 {
-            color: #007bff;
+            color: #F97727;
             margin: 0;
             font-size: 24px;
         }
@@ -36,7 +36,7 @@
         }
         
         .section-title {
-            background-color: #007bff;
+            background-color: #e28e59ff;
             color: white;
             padding: 8px 12px;
             margin-bottom: 10px;
@@ -82,7 +82,7 @@
         .stat-box .number {
             font-size: 24px;
             font-weight: bold;
-            color: #007bff;
+            color: #F97727;
         }
         
         .stat-box .label {
