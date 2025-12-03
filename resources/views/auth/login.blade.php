@@ -100,14 +100,14 @@
                     </div>
                 </form>
 
-                {{-- Password reset link --}}
+                {{-- Password reset link
                 @if ($password_reset_url)
                     <p class="mb-1">
                         <a href="{{ $password_reset_url }}">
                             {{ __('adminlte::adminlte.i_forgot_my_password') }}
                         </a>
                     </p>
-                @endif
+                @endif --}}
 
                 {{-- Register link --}}
                 @if ($register_url)
@@ -195,6 +195,7 @@
 
         /* Style the logo area */
         .login-logo {
+            background: rgba(255, 255, 255, 0.9);
             backdrop-filter: blur(10px);
             padding: 20px;
             border-radius: 8px 8px 0 0;
