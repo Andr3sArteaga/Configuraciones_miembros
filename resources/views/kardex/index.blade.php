@@ -43,11 +43,11 @@
                     <table class="table table-sm table-borderless">
                         <tr>
                             <th width="40%">Género:</th>
-                            <td>{{ $usuario->genero->nombre ?? 'No especificado' }}</td>
+                            <td>{{ $usuario->genero->descripcion ?? 'No especificado' }}</td>
                         </tr>
                         <tr>
                             <th>Tipo de Sangre:</th>
-                            <td>{{ $usuario->tipos_sangre->nombre ?? 'No especificado' }}</td>
+                            <td>{{ $usuario->tipos_sangre->codigo ?? 'No especificado' }}</td>
                         </tr>
                         <tr>
                             <th>Rol:</th>
@@ -55,7 +55,9 @@
                         </tr>
                         <tr>
                             <th>Nivel de Entrenamiento:</th>
-                            <td><span class="badge badge-success">{{ $usuario->niveles_entrenamiento->nombre ?? 'Sin nivel' }}</span></td>
+                            <td><span
+                                    class="badge badge-success">{{ $usuario->niveles_entrenamiento->nivel ?? 'Sin nivel' }}</span>
+                            </td>
                         </tr>
                     </table>
                 </div>
@@ -117,7 +119,7 @@
             <h3 class="card-title"><i class="fas fa-users"></i> Mis Equipos</h3>
         </div>
         <div class="card-body">
-            @if($equipos->count() > 0)
+            @if ($equipos->count() > 0)
                 <div class="table-responsive">
                     <table class="table table-striped table-hover">
                         <thead>
@@ -130,13 +132,14 @@
                             </tr>
                         </thead>
                         <tbody>
-                            @foreach($equipos as $equipo)
+                            @foreach ($equipos as $equipo)
                                 <tr>
                                     <td><strong>{{ $equipo->nombre }}</strong></td>
                                     <td>{{ $equipo->especialidad ?? 'No especificada' }}</td>
                                     <td>
-                                        @if($equipo->estado_id)
-                                            <span class="badge badge-{{ $equipo->estados_sistema->codigo == 'activo' ? 'success' : 'secondary' }}">
+                                        @if ($equipo->estado_id)
+                                            <span
+                                                class="badge badge-{{ $equipo->estados_sistema->codigo == 'activo' ? 'success' : 'secondary' }}">
                                                 {{ $equipo->estados_sistema->nombre ?? 'Sin estado' }}
                                             </span>
                                         @else
@@ -168,7 +171,7 @@
             <h3 class="card-title"><i class="fas fa-fire"></i> Mis Reportes de Incendio</h3>
         </div>
         <div class="card-body">
-            @if($reportes->count() > 0)
+            @if ($reportes->count() > 0)
                 <div class="table-responsive">
                     <table class="table table-striped table-hover">
                         <thead>
@@ -182,14 +185,16 @@
                             </tr>
                         </thead>
                         <tbody>
-                            @foreach($reportes as $reporte)
+                            @foreach ($reportes as $reporte)
                                 <tr>
-                                    <td>{{ $reporte->fecha_creacion ? $reporte->fecha_creacion->format('d/m/Y H:i') : 'No especificada' }}</td>
+                                    <td>{{ $reporte->fecha_creacion ? $reporte->fecha_creacion->format('d/m/Y H:i') : 'No especificada' }}
+                                    </td>
                                     <td><strong>{{ $reporte->nombre_incidente }}</strong></td>
-                                    <td>{{ $reporte->extension ? number_format($reporte->extension, 2) . ' ha' : 'No especificada' }}</td>
+                                    <td>{{ $reporte->extension ? number_format($reporte->extension, 2) . ' ha' : 'No especificada' }}
+                                    </td>
                                     <td>{{ $reporte->numero_bomberos ?? 'N/A' }}</td>
                                     <td>
-                                        @if($reporte->controlado)
+                                        @if ($reporte->controlado)
                                             <span class="badge badge-success">
                                                 <i class="fas fa-check"></i> Controlado
                                             </span>
@@ -200,7 +205,8 @@
                                         @endif
                                     </td>
                                     <td>
-                                        <a href="{{ route('reportes-incendio.show', $reporte->id) }}" class="btn btn-sm btn-primary">
+                                        <a href="{{ route('reportes-incendio.show', $reporte->id) }}"
+                                            class="btn btn-sm btn-primary">
                                             <i class="fas fa-eye"></i> Ver
                                         </a>
                                     </td>
@@ -223,7 +229,7 @@
             <h3 class="card-title"><i class="fas fa-graduation-cap"></i> Mis Cursos</h3>
         </div>
         <div class="card-body">
-            @if($cursos->count() > 0)
+            @if ($cursos->count() > 0)
                 <div class="table-responsive">
                     <table class="table table-striped table-hover">
                         <thead>
@@ -235,12 +241,12 @@
                             </tr>
                         </thead>
                         <tbody>
-                            @foreach($cursos as $cursoAsignado)
+                            @foreach ($cursos as $cursoAsignado)
                                 <tr>
                                     <td><strong>{{ $cursoAsignado->curso->nombre ?? 'Curso no disponible' }}</strong></td>
                                     <td>{{ Str::limit($cursoAsignado->curso->descripcion ?? 'Sin descripción', 60) }}</td>
                                     <td>
-                                        @if($cursoAsignado->fecha_asignacion)
+                                        @if ($cursoAsignado->fecha_asignacion)
                                             <span class="badge badge-info">
                                                 <i class="fas fa-calendar"></i>
                                                 {{ $cursoAsignado->fecha_asignacion->format('d/m/Y') }}
@@ -250,7 +256,8 @@
                                         @endif
                                     </td>
                                     <td>
-                                        <a href="{{ route('cursos.show', $cursoAsignado->curso_id) }}" class="btn btn-sm btn-primary">
+                                        <a href="{{ route('cursos.show', $cursoAsignado->curso_id) }}"
+                                            class="btn btn-sm btn-primary">
                                             <i class="fas fa-eye"></i> Ver Curso
                                         </a>
                                     </td>
@@ -274,26 +281,26 @@
         .small-box {
             border-radius: 10px;
         }
-        
+
         .small-box .icon {
             top: -10px;
             font-size: 70px;
         }
-        
+
         .card {
             border-radius: 10px;
-            box-shadow: 0 0 1px rgba(0,0,0,.125), 0 1px 3px rgba(0,0,0,.2);
+            box-shadow: 0 0 1px rgba(0, 0, 0, .125), 0 1px 3px rgba(0, 0, 0, .2);
         }
-        
+
         .table th {
             font-weight: 600;
             color: #495057;
         }
-        
+
         .bg-purple {
             background-color: #6f42c1 !important;
         }
-        
+
         .card-purple .card-header {
             background-color: #6f42c1;
             color: white;

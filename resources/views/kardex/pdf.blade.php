@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -11,30 +12,30 @@
             color: #333;
             margin: 20px;
         }
-        
+
         .header {
             text-align: center;
             margin-bottom: 30px;
             border-bottom: 3px solid #F97727;
             padding-bottom: 10px;
         }
-        
+
         .header h1 {
             color: #F97727;
             margin: 0;
             font-size: 24px;
         }
-        
+
         .header p {
             margin: 5px 0;
             color: #666;
         }
-        
+
         .section {
             margin-bottom: 25px;
             page-break-inside: avoid;
         }
-        
+
         .section-title {
             background-color: #e28e59ff;
             color: white;
@@ -43,13 +44,13 @@
             font-size: 14px;
             font-weight: bold;
         }
-        
+
         .info-table {
             width: 100%;
             border-collapse: collapse;
             margin-bottom: 15px;
         }
-        
+
         .info-table th {
             background-color: #f8f9fa;
             text-align: left;
@@ -58,18 +59,18 @@
             font-weight: bold;
             border: 1px solid #dee2e6;
         }
-        
+
         .info-table td {
             padding: 8px;
             border: 1px solid #dee2e6;
         }
-        
+
         .stats-container {
             display: table;
             width: 100%;
             margin-bottom: 15px;
         }
-        
+
         .stat-box {
             display: table-cell;
             width: 25%;
@@ -78,41 +79,41 @@
             background-color: #f8f9fa;
             border: 1px solid #dee2e6;
         }
-        
+
         .stat-box .number {
             font-size: 24px;
             font-weight: bold;
             color: #F97727;
         }
-        
+
         .stat-box .label {
             font-size: 11px;
             color: #666;
             margin-top: 5px;
         }
-        
+
         .data-table {
             width: 100%;
             border-collapse: collapse;
             margin-bottom: 15px;
         }
-        
+
         .data-table thead {
             background-color: #343a40;
             color: white;
         }
-        
+
         .data-table th,
         .data-table td {
             padding: 8px;
             border: 1px solid #dee2e6;
             text-align: left;
         }
-        
+
         .data-table tbody tr:nth-child(even) {
             background-color: #f8f9fa;
         }
-        
+
         .badge {
             display: inline-block;
             padding: 3px 8px;
@@ -120,34 +121,34 @@
             font-size: 10px;
             font-weight: bold;
         }
-        
+
         .badge-success {
             background-color: #28a745;
             color: white;
         }
-        
+
         .badge-warning {
             background-color: #ffc107;
             color: #333;
         }
-        
+
         .badge-info {
             background-color: #17a2b8;
             color: white;
         }
-        
+
         .badge-secondary {
             background-color: #6c757d;
             color: white;
         }
-        
+
         .no-data {
             text-align: center;
             padding: 20px;
             color: #666;
             font-style: italic;
         }
-        
+
         .footer {
             position: fixed;
             bottom: 0;
@@ -160,6 +161,7 @@
         }
     </style>
 </head>
+
 <body>
     {{-- Header --}}
     <div class="header">
@@ -186,9 +188,9 @@
             </tr>
             <tr>
                 <th>Género:</th>
-                <td>{{ $usuario->genero->nombre ?? 'No especificado' }}</td>
+                <td>{{ $usuario->genero->descripcion ?? 'No especificado' }}</td>
                 <th>Tipo de Sangre:</th>
-                <td>{{ $usuario->tipos_sangre->nombre ?? 'No especificado' }}</td>
+                <td>{{ $usuario->tipos_sangre->descripcion ?? 'No especificado' }}</td>
             </tr>
             <tr>
                 <th>Rol:</th>
@@ -225,7 +227,7 @@
     {{-- Equipos --}}
     <div class="section">
         <div class="section-title">MIS EQUIPOS</div>
-        @if($equipos->count() > 0)
+        @if ($equipos->count() > 0)
             <table class="data-table">
                 <thead>
                     <tr>
@@ -236,12 +238,12 @@
                     </tr>
                 </thead>
                 <tbody>
-                    @foreach($equipos as $equipo)
+                    @foreach ($equipos as $equipo)
                         <tr>
                             <td>{{ $equipo->nombre }}</td>
                             <td>{{ $equipo->especialidad ?? 'No especificada' }}</td>
                             <td>
-                                @if($equipo->estado_id && $equipo->estados_sistema)
+                                @if ($equipo->estado_id && $equipo->estados_sistema)
                                     {{ $equipo->estados_sistema->nombre }}
                                 @else
                                     Sin estado
@@ -260,7 +262,7 @@
     {{-- Reportes de Incendio --}}
     <div class="section">
         <div class="section-title">MIS REPORTES DE INCENDIO</div>
-        @if($reportes->count() > 0)
+        @if ($reportes->count() > 0)
             <table class="data-table">
                 <thead>
                     <tr>
@@ -272,14 +274,15 @@
                     </tr>
                 </thead>
                 <tbody>
-                    @foreach($reportes as $reporte)
+                    @foreach ($reportes as $reporte)
                         <tr>
-                            <td>{{ $reporte->fecha_creacion ? $reporte->fecha_creacion->format('d/m/Y H:i') : 'N/A' }}</td>
+                            <td>{{ $reporte->fecha_creacion ? $reporte->fecha_creacion->format('d/m/Y H:i') : 'N/A' }}
+                            </td>
                             <td>{{ $reporte->nombre_incidente }}</td>
                             <td>{{ $reporte->extension ? number_format($reporte->extension, 2) . ' ha' : 'N/A' }}</td>
                             <td>{{ $reporte->numero_bomberos ?? 'N/A' }}</td>
                             <td>
-                                @if($reporte->controlado)
+                                @if ($reporte->controlado)
                                     Controlado
                                 @else
                                     Activo
@@ -297,7 +300,7 @@
     {{-- Cursos --}}
     <div class="section">
         <div class="section-title">MIS CURSOS</div>
-        @if($cursos->count() > 0)
+        @if ($cursos->count() > 0)
             <table class="data-table">
                 <thead>
                     <tr>
@@ -307,11 +310,12 @@
                     </tr>
                 </thead>
                 <tbody>
-                    @foreach($cursos as $cursoAsignado)
+                    @foreach ($cursos as $cursoAsignado)
                         <tr>
                             <td>{{ $cursoAsignado->curso->nombre ?? 'N/A' }}</td>
                             <td>{{ \Str::limit($cursoAsignado->curso->descripcion ?? 'Sin descripción', 80) }}</td>
-                            <td>{{ $cursoAsignado->fecha_asignacion ? $cursoAsignado->fecha_asignacion->format('d/m/Y') : 'N/A' }}</td>
+                            <td>{{ $cursoAsignado->fecha_asignacion ? $cursoAsignado->fecha_asignacion->format('d/m/Y') : 'N/A' }}
+                            </td>
                         </tr>
                     @endforeach
                 </tbody>
@@ -325,4 +329,5 @@
         <p>Sistema de Gestión de Bomberos - Alas Chiquitanas | Documento generado automáticamente</p>
     </div>
 </body>
+
 </html>
