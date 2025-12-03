@@ -179,4 +179,19 @@ class Usuario extends Authenticatable
 		$miembro = $this->miembros_equipos()->first();
 		return $miembro ? $miembro->equipo : null;
 	}
+
+	public function adminlte_image()
+	{
+		return 'https://picsum.photos/300/300';
+	}
+
+	public function adminlte_desc()
+	{
+		return $this->role ? $this->role->nombre : 'Usuario';
+	}
+
+	public function adminlte_profile_url()
+	{
+		return 'perfil';
+	}
 }
