@@ -25,7 +25,7 @@ class AuthFilter implements FilterInterface
         }
         
         // Check for 'guest-only' gate - hide if authenticated
-        if (isset($item['can']) && $item['can'] === 'guest-only') {
+        if (isset($item['classes']) && strpos($item['classes'], 'guest-only') !== false) {
             if (Auth::check()) {
                 $item['restricted'] = true;
             }

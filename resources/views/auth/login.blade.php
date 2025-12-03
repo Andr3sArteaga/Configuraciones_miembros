@@ -4,18 +4,18 @@
     <link rel="stylesheet" href="{{ asset('vendor/icheck-bootstrap/icheck-bootstrap.min.css') }}">
 @stop
 
-@php( $login_url = View::getSection('login_url') ?? config('adminlte.login_url', 'login') )
-@php( $register_url = View::getSection('register_url') ?? config('adminlte.register_url', 'register') )
-@php( $password_reset_url = View::getSection('password_reset_url') ?? config('adminlte.password_reset_url', 'password/reset') )
+@php($login_url = View::getSection('login_url') ?? config('adminlte.login_url', 'login'))
+@php($register_url = View::getSection('register_url') ?? config('adminlte.register_url', 'register'))
+@php($password_reset_url = View::getSection('password_reset_url') ?? config('adminlte.password_reset_url', 'password/reset'))
 
 @if (config('adminlte.use_route_url', false))
-    @php( $login_url = $login_url ? route($login_url) : '' )
-    @php( $register_url = $register_url ? route($register_url) : '' )
-    @php( $password_reset_url = $password_reset_url ? route($password_reset_url) : '' )
+    @php($login_url = $login_url ? route($login_url) : '')
+    @php($register_url = $register_url ? route($register_url) : '')
+    @php($password_reset_url = $password_reset_url ? route($password_reset_url) : '')
 @else
-    @php( $login_url = $login_url ? url($login_url) : '' )
-    @php( $register_url = $register_url ? url($register_url) : '' )
-    @php( $password_reset_url = $password_reset_url ? url($password_reset_url) : '' )
+    @php($login_url = $login_url ? url($login_url) : '')
+    @php($register_url = $register_url ? url($register_url) : '')
+    @php($password_reset_url = $password_reset_url ? url($password_reset_url) : '')
 @endif
 
 @section('classes_body', 'login-page')
@@ -32,7 +32,8 @@
         {{-- Logo --}}
         <div class="login-logo">
             <a href="{{ config('adminlte.dashboard_url', 'home') }}">
-                <img src="{{ asset(config('adminlte.logo_img')) }}" alt="{{ config('adminlte.logo_img_alt') }}" height="50">
+                <img src="{{ asset(config('adminlte.logo_img')) }}" alt="{{ config('adminlte.logo_img_alt') }}"
+                    height="50">
                 {!! config('adminlte.logo', '<b>Admin</b>LTE') !!}
             </a>
         </div>
@@ -49,7 +50,7 @@
                     {{-- Email field --}}
                     <div class="input-group mb-3">
                         <input type="email" name="email" class="form-control @error('email') is-invalid @enderror"
-                               value="{{ old('email') }}" placeholder="{{ __('adminlte::adminlte.email') }}" autofocus>
+                            value="{{ old('email') }}" placeholder="{{ __('adminlte::adminlte.email') }}" autofocus>
                         <div class="input-group-append">
                             <div class="input-group-text">
                                 <span class="fas fa-envelope"></span>
@@ -65,7 +66,7 @@
                     {{-- Password field --}}
                     <div class="input-group mb-3">
                         <input type="password" name="password" class="form-control @error('password') is-invalid @enderror"
-                               placeholder="{{ __('adminlte::adminlte.password') }}">
+                            placeholder="{{ __('adminlte::adminlte.password') }}">
                         <div class="input-group-append">
                             <div class="input-group-text">
                                 <span class="fas fa-lock"></span>
@@ -82,7 +83,8 @@
                     <div class="row">
                         <div class="col-7">
                             <div class="icheck-primary" title="{{ __('adminlte::adminlte.remember_me_hint') }}">
-                                <input type="checkbox" name="remember" id="remember" {{ old('remember') ? 'checked' : '' }}>
+                                <input type="checkbox" name="remember" id="remember"
+                                    {{ old('remember') ? 'checked' : '' }}>
                                 <label for="remember">
                                     {{ __('adminlte::adminlte.remember_me') }}
                                 </label>
@@ -99,7 +101,7 @@
                 </form>
 
                 {{-- Password reset link --}}
-                @if($password_reset_url)
+                @if ($password_reset_url)
                     <p class="mb-1">
                         <a href="{{ $password_reset_url }}">
                             {{ __('adminlte::adminlte.i_forgot_my_password') }}
@@ -108,7 +110,7 @@
                 @endif
 
                 {{-- Register link --}}
-                @if($register_url)
+                @if ($register_url)
                     <p class="mb-1">
                         <a href="{{ $register_url }}">
                             {{ __('adminlte::adminlte.register_a_new_membership') }}
@@ -144,7 +146,8 @@
             height: 100%;
             z-index: -1;
             overflow: hidden;
-            background-color: #e9ecef; /* Fallback color */
+            background-color: #e9ecef;
+            /* Fallback color */
         }
 
         /* Individual background images */
@@ -192,7 +195,6 @@
 
         /* Style the logo area */
         .login-logo {
-            background: rgba(255, 255, 255, 0.9);
             backdrop-filter: blur(10px);
             padding: 20px;
             border-radius: 8px 8px 0 0;
@@ -215,10 +217,10 @@
             function cycleImages() {
                 // Remove active class from current image
                 images[currentIndex].classList.remove('active');
-                
+
                 // Move to next image
                 currentIndex = (currentIndex + 1) % images.length;
-                
+
                 // Add active class to next image
                 images[currentIndex].classList.add('active');
             }
@@ -228,4 +230,3 @@
         });
     </script>
 @stop
-

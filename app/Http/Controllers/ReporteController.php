@@ -223,6 +223,61 @@ class ReporteController extends Controller
     }
 
     /**
+     * Show public form for quick reports (for guests)
+     */
+    public function formularioPublico()
+    {
+        $tiposIncidente = TiposIncidente::where('activo', true)->orderBy('nombre')->get();
+        $nivelesGravedad = NivelesGravedad::where('activo', true)->orderBy('orden')->get();
+
+        return view('reportes.publico', compact('tiposIncidente', 'nivelesGravedad'));
+    }
+
+    /**
+     * Store a public quick report (for guests)
+     */
+    public function storePublico(Request $request)
+    {
+        $request->validate([
+            'nombre_reportante' => 'required|string|max:200',
+            'telefono_contacto' => 'nullable|string|max:20',
+            'nombre_lugar' => 'nullable|string|max:200',
+            'latitud' => 'required|numeric|between:-90,90',
+            'longitud' => 'required|numeric|between:-180,180',
+            'tipo_incidente_id' => 'nullable|uuid|exists:tipos_incidente,id',
+            'gravedad_id' => 'nullable|uuid|exists:niveles_gravedad,id',
+            'comentario_adicional' => 'nullable|string',
+        ]);
+
+        // Obtener estado "pendiente" para reportes
+        $estadoPendiente = EstadosSistema::where('tabla', 'reportes')
+            ->where('codigo', 'pendiente')
+            ->first();
+
+        // Construir el punto geográfico
+        $ubicacion = "POINT({$request->longitud} {$request->latitud})";
+
+        Reporte::create([
+            'nombre_reportante' => $request->nombre_reportante,
+            'telefono_contacto' => $request->telefono_contacto,
+            'fecha_hora' => now(),
+            'nombre_lugar' => $request->nombre_lugar,
+            'ubicacion' => DB::raw("ST_GeogFromText('SRID=4326;{$ubicacion}')"),
+            'tipo_incidente_id' => $request->tipo_incidente_id,
+            'gravedad_id' => $request->gravedad_id,
+            'comentario_adicional' => $request->comentario_adicional,
+            'cant_bomberos' => 0,
+            'cant_paramedicos' => 0,
+            'cant_veterinarios' => 0,
+            'cant_autoridades' => 0,
+            'estado_id' => $estadoPendiente->id ?? null,
+        ]);
+
+        return redirect()->route('focos-calor.index')
+            ->with('success', 'Reporte enviado exitosamente. Gracias por su colaboración.');
+    }
+
+    /**
      * API endpoint for mobile app - Get all reportes with filters
      */
     public function api(Request $request)

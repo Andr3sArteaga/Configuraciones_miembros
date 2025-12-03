@@ -33,6 +33,10 @@ Route::get('/invitado', function () {
     return redirect()->route('focos-calor.index');
 })->name('guest.home');
 
+Route::get('/welcome', function () {
+    return view('welcome');
+})->name('welcome');
+
 // Reporte Rápido Público
 Route::get('/reporte-publico', [ReporteController::class, 'formularioPublico'])->name('reporte.publico');
 Route::post('/reporte-publico', [ReporteController::class, 'storePublico'])->name('reporte.publico.store');
@@ -57,11 +61,6 @@ Route::middleware(['auth'])->group(function () {
         return redirect('/home');
     });
 
-    // Welcome
-    Route::get('/welcome', function () {
-        return view('welcome');
-    })->name('welcome');
-    
     // Dashboard
     Route::get('/home', [HomeController::class, 'index'])->name('home');
     Route::get('/dashboard', [HomeController::class, 'index'])->name('dashboard');

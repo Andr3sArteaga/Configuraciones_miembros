@@ -61,9 +61,6 @@
             --secondary-color: #6c757d;
             --background-color: #f8f9fa;
             --text-color: #212529;
-
-            /* Variables para controlar colores del sidebar */
-            --sidebar-bg: #ff470a;
             /* color de fondo por defecto del sidebar */
             --sidebar-hover-color: rgba(0, 0, 0, 0.08);
             /* color al pasar el cursor */
@@ -72,7 +69,6 @@
             --sidebar-active-color: rgba(0, 0, 0, 0.14);
             /* color del item activo */
             --sidebar-active-text-color: #ffffff;
-            /* color del texto del item activo */
         }
 
         .nav-sidebar .nav-link.active {
@@ -163,9 +159,6 @@
             color: #6c757d !important;
         }
 
-        .main-sidebar {
-            background-color: var(--sidebar-bg) !important;
-        }
 
         /* Override: hover y activo en el sidebar (más específico que AdminLTE por si se usa clases globales) */
         .main-sidebar .nav-sidebar .nav-link:hover {
@@ -187,14 +180,6 @@
         .sidebar-light .main-sidebar .nav-sidebar .nav-link:hover,
         .sidebar-light .main-sidebar .nav-sidebar .nav-link.active {
             color: var(--sidebar-hover-text-color) !important;
-        }
-
-        .input-group .form-control {
-            background-color: #ff400036 !important;
-        }
-
-        .input-group-append .btn {
-            background-color: #ff40002f !important;
         }
 
         /* Estilos para ajustar el tamaño del logo sin romper el layout */

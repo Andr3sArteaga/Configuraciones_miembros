@@ -64,7 +64,7 @@ return [
     */
 
     'logo' => '<b>Alas</b> Chiquitanas',
-    'logo_img' => 'vendor/adminlte/dist/img/fire2.png',
+    'logo_img' => 'vendor/adminlte/dist/img/alas.png',
     'logo_img_class' => 'brand-image img-circle elevation-3',
     'logo_img_xl' => null,
     'logo_img_xl_class' => 'brand-image-xs',
@@ -343,15 +343,17 @@ return [
 
         // Operaciones
         ['header' => 'OPERACIONES'],
-        
+
         // Reporte Rápido (Public - everyone can see)
         [
             'text' => 'Reporte Rápido',
             'url' => 'reportes',
             'icon' => 'fas fa-fw fa-bullhorn',
             'icon_color' => 'white',
+            'classes' => 'auth-only',
+
         ],
-        
+
         // Reportes (authenticated users only)
         [
             'text' => 'Reportes',
@@ -360,7 +362,16 @@ return [
             'icon_color' => 'white',
             'classes' => 'auth-only',
         ],
-        
+
+        // Reportes (Public - everyone can see)
+        [
+            'text' => 'Reporte Público',
+            'url' => 'reporte-publico',
+            'icon' => 'fas fa-fw fa-globe',
+            'icon_color' => 'white',
+            'classes' => 'guest-only', // solo invitados
+        ],
+
         // Mapa en Tiempo Real (Public - everyone can see)
         [
             'text' => 'Mapa en Tiempo Real',
@@ -368,7 +379,7 @@ return [
             'icon' => 'fas fa-fw fa-map-marked-alt',
             'icon_color' => 'white',
         ],
-        
+
         // Recursos (Admin only)
         [
             'text' => 'Recursos',
@@ -404,7 +415,7 @@ return [
             'icon_color' => 'white',
             'can' => 'admin-only',
         ],
-        
+
         // Mi Equipo (for regular authenticated users)
         [
             'header' => 'MI EQUIPO',
@@ -420,7 +431,7 @@ return [
 
         // Información
         ['header' => 'INFORMACIÓN'],
-        
+
         // Noticias (Public - everyone can see)
         [
             'text' => 'Noticias',
@@ -428,7 +439,7 @@ return [
             'icon' => 'fas fa-fw fa-newspaper',
             'icon_color' => 'white',
         ],
-        
+
         // Cursos (Public - everyone can see)
         [
             'text' => 'Cursos',
@@ -519,7 +530,7 @@ return [
             'icon' => 'fas fa-fw fa-key',
             'classes' => 'auth-only',
         ],
-        
+
         // Login button for guests
         [
             'header' => 'ACCESO',
@@ -548,7 +559,7 @@ return [
         [
             'text' => 'Bienvenido',
             'url' => 'welcome',
-            'icon'=> 'fas fa-fw fa-home',
+            'icon' => 'fas fa-fw fa-home',
             'icon_color' => 'white',
         ],
     ],
