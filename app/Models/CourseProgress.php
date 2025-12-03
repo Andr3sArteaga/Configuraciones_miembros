@@ -46,6 +46,7 @@ class CourseProgress extends Model
     ];
 
     protected $fillable = [
+        'id',
         'curso_id',
         'course_stage_id',
         'usuario_id',
@@ -79,6 +80,76 @@ class CourseProgress extends Model
     public function assignment()
     {
         return $this->belongsTo(CursoAsignado::class, 'assignment_id');
+    }
+
+    public function reviewer()
+    {
+        return $this->belongsTo(Usuario::class, 'reviewed_by');
+    }
+
+    /**
+     * Check if stage is locked (not yet available)
+     */
+    public function isLocked(): bool
+    {
+        return $this->estado === 'bloqueado';
+    }
+
+    /**
+     * Check if stage is available to user
+     */
+    public function isAvailable(): bool
+    {
+        return $this->estado === 'disponible';
+    }
+
+    /**
+     * Check if user has marked stage as completed
+     */
+    public function isCompleted(): bool
+    {
+        return in_array($this->estado, ['completado', 'aprobado']);
+    }
+
+    /**
+     * Check if admin has approved the stage
+     */
+    public function isApproved(): bool
+    {
+        return $this->estado === 'aprobado';
+    }
+
+    /**
+     * Check if stage is pending admin approval
+     */
+    public function isPending(): bool
+    {
+        return $this->estado === 'completado' && !$this->isApproved();
+    }
+
+    /**
+     * Scope for available stages
+     */
+    public function scopeAvailable($query)
+    {
+        return $query->where('estado', 'disponible');
+    }
+
+    /**
+     * Scope for pending approval
+     */
+    public function scopePending($query)
+    {
+        return $query->where('estado', 'completado')
+            ->whereNull('reviewed_at');
+    }
+
+    /**
+     * Scope for approved stages
+     */
+    public function scopeApproved($query)
+    {
+        return $query->where('estado', 'aprobado');
     }
 }
 

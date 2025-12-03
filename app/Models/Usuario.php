@@ -134,6 +134,23 @@ class Usuario extends Authenticatable
 	}
 
 	/**
+	 * User's notifications
+	 */
+	public function notifications()
+	{
+		return $this->hasMany(Notification::class, 'usuario_id')
+			->orderBy('created_at', 'desc');
+	}
+
+	/**
+	 * User's course progress records
+	 */
+	public function courseProgress()
+	{
+		return $this->hasMany(CourseProgress::class, 'usuario_id');
+	}
+
+	/**
 	 * Check if user is an administrator
 	 */
 	public function isAdmin(): bool

@@ -448,6 +448,15 @@ return [
             'icon_color' => 'white',
         ],
 
+        // Course Progress (Admin only)
+        [
+            'text' => 'Progreso de Cursos',
+            'url' => 'admin/course-progress',
+            'icon' => 'fas fa-fw fa-tasks',
+            'icon_color' => 'white',
+            'can' => 'admin-only',
+        ],
+
         // Catálogos (Admin only)
         [
             'header' => 'CATÁLOGOS',

@@ -23,6 +23,8 @@ use App\Http\Controllers\CondicionClimaticaController;
 use App\Http\Controllers\EstadoSistemaController;
 use App\Http\Controllers\PerfilController;
 use App\Http\Controllers\KardexController;
+use App\Http\Controllers\AdminCourseProgressController;
+use App\Http\Controllers\NotificationController;
 
 Auth::routes();
 
@@ -90,6 +92,15 @@ Route::middleware(['auth'])->group(function () {
 
     // Inscripción a Cursos (Usuarios/Voluntarios pueden inscribirse)
     Route::post('cursos/{curso}/inscribirme', [CursoController::class, 'inscribirme'])->name('cursos.inscribirme');
+
+    // Marcar etapa como completada
+    Route::post('cursos/{curso}/stages/{stage}/complete', [CursoController::class, 'markStageComplete'])->name('cursos.stages.complete');
+
+    // Notificaciones
+    Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
+    Route::post('/notifications/{notification}/read', [NotificationController::class, 'markAsRead'])->name('notifications.read');
+    Route::post('/notifications/read-all', [NotificationController::class, 'markAllAsRead'])->name('notifications.read-all');
+    Route::get('/notifications/unread-count', [NotificationController::class, 'unreadCount'])->name('notifications.unread-count');
 });
 
 // ========== RUTAS SOLO ADMIN ==========
@@ -140,6 +151,11 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
     Route::delete('cursos/{curso}/asignacion/{asignacion}', [CursoController::class, 'removerAsignacion'])->name('cursos.remover-asignacion');
     Route::get('usuarios/{usuario}/cursos', [CursoController::class, 'cursosUsuario'])->name('usuarios.cursos');
     Route::get('comunarios/{comunario}/cursos', [CursoController::class, 'cursosComunario'])->name('comunarios.cursos');
+
+    // Admin: Course Progress Management
+    Route::get('admin/course-progress', [AdminCourseProgressController::class, 'index'])->name('admin.course-progress.index');
+    Route::get('admin/course-progress/{curso}', [AdminCourseProgressController::class, 'show'])->name('admin.course-progress.show');
+    Route::post('admin/course-progress/{progress}/approve', [AdminCourseProgressController::class, 'approve'])->name('admin.course-progress.approve');
 
     // Inscritos - CRUD para Admin
     Route::resource('inscritos', InscritoController::class);

@@ -9,6 +9,7 @@ use App\Models\CourseResource;
 use App\Models\Usuario;
 use App\Models\ComunariosApoyo;
 use App\Models\Inscrito;
+use App\Services\CourseProgressService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Log;
@@ -18,6 +19,12 @@ use Illuminate\Support\Facades\Storage;
 
 class CursoController extends Controller
 {
+    protected $progressService;
+
+    public function __construct(CourseProgressService $progressService)
+    {
+        $this->progressService = $progressService;
+    }
     /**
      * Display a listing of the resource.
      */
@@ -185,14 +192,23 @@ class CursoController extends Controller
 
         // Determinar si el usuario autenticado ya está asignado como 'usuario'
         $authUsuarioAsignado = false;
+        $userProgress = [];
+        $courseCompleted = false;
+
         if (Auth::check()) {
             $authUsuarioAsignado = CursoAsignado::where('curso_id', $id)
                 ->where('entidad_tipo', 'usuario')
                 ->where('entidad_id', Auth::id())
                 ->exists();
+
+            // If user is enrolled, get their progress
+            if ($authUsuarioAsignado) {
+                $userProgress = $this->progressService->getUserStageStatus(Auth::id(), $id);
+                $courseCompleted = $this->progressService->checkCourseCompletion(Auth::id(), $id);
+            }
         }
 
-        return view('cursos.show', compact('curso', 'asignaciones', 'authUsuarioAsignado'));
+        return view('cursos.show', compact('curso', 'asignaciones', 'authUsuarioAsignado', 'userProgress', 'courseCompleted'));
     }
 
     /**
@@ -226,6 +242,9 @@ class CursoController extends Controller
                 'entidad_id' => Auth::id(),
                 'fecha_asignacion' => now()
             ]);
+
+            // Initialize user progress for all stages
+            $this->progressService->initializeUserProgress(Auth::id(), $id);
 
             return redirect()->route('cursos.show', $id)->with('success', 'Te has inscrito al curso correctamente');
         } catch (\Exception $e) {
@@ -272,6 +291,9 @@ class CursoController extends Controller
                 'entidad_id' => Auth::id(),
                 'fecha_asignacion' => now()
             ]);
+
+            // Initialize user progress for all stages
+            $this->progressService->initializeUserProgress(Auth::id(), $id);
 
             return response()->json([
                 'success' => true,
@@ -759,4 +781,88 @@ class CursoController extends Controller
         }
     }
  
+    /**
+     * Devuelve el estado de inscripción del usuario autenticado en un curso.
+     * Endpoint: GET /api/cursos/{id}/inscripcion
+     */
+    public function apiInscripcionEstado($id)
+    {
+        $user = auth()->user();
+        $curso = \App\Models\Curso::findOrFail($id);
+        // Verifica si el usuario está asignado al curso (entidad_tipo = 'usuario')
+        $inscrito = $curso->cursos_asignados()
+            ->where('entidad_tipo', 'usuario')
+            ->where('entidad_id', $user->id)
+            ->exists();
+
+        return response()->json(['inscrito' => $inscrito]);
+    }
+
+    /**
+     * Marks cuadno esta completado (Web)
+     */
+    public function markStageComplete(Request $request, string $cursoId, string $stageId)
+    {
+        if (!Auth::check()) {
+            return redirect()->route('cursos.show', $cursoId)
+                ->with('error', 'Debe iniciar sesión.');
+        }
+
+        $result = $this->progressService->markStageCompleted(Auth::id(), $stageId);
+
+        if ($result['success']) {
+            return redirect()->route('cursos.show', $cursoId)
+                ->with('success', $result['message']);
+        } else {
+            return redirect()->route('cursos.show', $cursoId)
+                ->with('error', $result['message']);
+        }
+    }
+
+    /**
+     * User marks a stage as completed (API)
+     */
+    public function apiMarkStageComplete(Request $request, string $cursoId, string $stageId)
+    {
+        if (!Auth::check()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Debe iniciar sesión.'
+            ], 401);
+        }
+
+        $result = $this->progressService->markStageCompleted(Auth::id(), $stageId);
+
+        return response()->json($result, $result['success'] ? 200 : 400);
+    }
+
+    /**
+     * Get user's progress for a course (API)
+     */
+    public function getStageProgress(Request $request, string $cursoId)
+    {
+        if (!Auth::check()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Debe iniciar sesión.'
+            ], 401);
+        }
+
+        try {
+            $progress = $this->progressService->getUserStageStatus(Auth::id(), $cursoId);
+            $isComplete = $this->progressService->checkCourseCompletion(Auth::id(), $cursoId);
+
+            return response()->json([
+                'success' => true,
+                'progress' => $progress,
+                'course_completed' => $isComplete,
+            ], 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al obtener progreso',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
 }

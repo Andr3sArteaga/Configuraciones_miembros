@@ -18,6 +18,26 @@ Route::middleware('auth:sanctum')->group(function () {
     // Inscribirse a un curso (para móvil)
     Route::post('/cursos/{id}/inscribirme', [CursoController::class, 'apiInscribirme'])
         ->name('api.cursos.inscribirme');
+
+    // Estado de inscripción a un curso (para móvil)
+    Route::get('/cursos/{id}/inscripcion', [CursoController::class, 'apiInscripcionEstado'])
+        ->name('api.cursos.inscripcion.estado');
+
+    // Stage completion and progress
+    Route::post('/cursos/{curso}/stages/{stage}/complete', [CursoController::class, 'apiMarkStageComplete'])
+        ->name('api.cursos.stages.complete');
+    Route::get('/cursos/{curso}/progress', [CursoController::class, 'getStageProgress'])
+        ->name('api.cursos.progress');
+
+    // Notifications
+    Route::get('/notifications', [\App\Http\Controllers\NotificationController::class, 'index'])
+        ->name('api.notifications.index');
+    Route::post('/notifications/{notification}/read', [\App\Http\Controllers\NotificationController::class, 'markAsRead'])
+        ->name('api.notifications.read');
+    Route::post('/notifications/read-all', [\App\Http\Controllers\NotificationController::class, 'markAllAsRead'])
+        ->name('api.notifications.read-all');
+    Route::get('/notifications/unread-count', [\App\Http\Controllers\NotificationController::class, 'unreadCount'])
+        ->name('api.notifications.unread-count');
 });
 
 // Public API endpoints (no authentication required)
