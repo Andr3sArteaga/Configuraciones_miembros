@@ -11,7 +11,7 @@ use App\Models\FocosCalor;
 use App\Models\NoticiasIncendio;
 use App\Models\EstadosSistema;
 use App\Models\TiposIncidente;
-use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Auth;
 
 class HomeController extends Controller
 {
@@ -105,7 +105,7 @@ class HomeController extends Controller
 
         // Equipos con relaciones (solo para usuarios autenticados)
         $equipos = collect([]);
-        if (auth()->check()) {
+        if (Auth::check()) {
             $equipos = Equipo::with('reporte')->orderBy('creado', 'desc')
                 ->limit(10)
                 ->get();

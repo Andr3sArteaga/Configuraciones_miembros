@@ -8,6 +8,7 @@ use App\Models\EstadosSistema;
 use App\Models\Reporte;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Auth;
 
 
 class EquipoController extends Controller
@@ -17,8 +18,9 @@ class EquipoController extends Controller
      */
     public function index()
     {
-        $user = auth()->user();
-        
+        /** @var \App\Models\Usuario $user */
+        $user = Auth::user();
+
         if ($user->isAdmin()) {
             // Admin sees all teams
             $equipos = Equipo::with(['estados_sistema', 'miembros', 'reporte'])
@@ -49,14 +51,14 @@ class EquipoController extends Controller
         } else {
             // Usuario/Voluntario sees only their team
             $equipo = $user->equipo();
-            
+
             if (!$equipo) {
                 return view('equipos.sin-equipo');
             }
-            
+
             // Load relationships
             $equipo->load(['estados_sistema', 'miembros', 'reporte']);
-            
+
             return view('equipos.mi-equipo', compact('equipo'));
         }
     }
