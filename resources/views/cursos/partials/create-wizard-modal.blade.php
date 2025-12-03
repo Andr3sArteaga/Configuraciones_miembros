@@ -19,9 +19,9 @@
                         <div class="progress-bar progress-bar-striped progress-bar-animated bg-primary"
                              role="progressbar"
                              id="cursoProgressBar"
-                             style="width: 33%;"
+                             style="width: 33%; font-size: 14px; line-height: 25px;"
                              aria-valuenow="33" aria-valuemin="0" aria-valuemax="100">
-                            Paso <span data-step-indicator>1</span> de 3
+                            <span style="white-space: nowrap;">Paso <span data-step-indicator>1</span> de 3</span>
                         </div>
                     </div>
 
@@ -156,7 +156,7 @@
                                                 </div>
                                                 <div class="form-group col-md-4 text-right">
                                                     <button type="button" class="btn btn-primary" id="cursoAddStageBtn">
-                                                        <i class="fas fa-plus mr-1"></i> Agregar +
+                                                        <i class="fas fa-plus mr-1"></i> Agregar
                                                     </button>
                                                 </div>
                                             </div>
@@ -294,7 +294,7 @@
                 const $progressBar = $('#cursoProgressBar');
                 $progressBar.css('width', progress + '%');
                 $progressBar.attr('aria-valuenow', progress);
-                $progressBar.html('Paso <span data-step-indicator>' + currentStep + '</span> de 3');
+                $progressBar.html('<span style="white-space: nowrap;">Paso <span data-step-indicator>' + currentStep + '</span> de 3</span>');
 
                 // Botones de pie
                 const $prevBtn = $('#cursoPrevStepBtn');
@@ -447,11 +447,12 @@
                                         <div class="form-group col-md-4">
                                             <label class="font-weight-semibold">Documento</label>
                                             <div class="input-group input-group-sm file-uploader-wrapper mb-2">
-                                                <input type="text" class="form-control file-uploader-display" placeholder="Ningún archivo seleccionado" readonly>
+                                                <input type="text" class="form-control file-uploader-display" placeholder="Ningún archivo seleccionado" readonly style="background-color: white !important;">
                                                 <div class="input-group-append">
-                                                    <button class="btn btn-outline-primary file-uploader-trigger"
+                                                    <button class="btn btn-primary file-uploader-trigger"
                                                             type="button"
-                                                            data-target="wizard_stage_doc_${stageId}">
+                                                            data-target="wizard_stage_doc_${stageId}"
+                                                            style="background-color: #e9ecef; border-color: #ced4da; color: #007bff;">
                                                         Buscar
                                                     </button>
                                                 </div>
@@ -505,13 +506,13 @@
 
                 const card = `
                     <div class="card mb-2 curso-stage-card" data-stage-id="${stageId}">
-                        <div class="card-body py-2 px-3 d-flex justify-content-between align-items-center">
-                            <div>
-                                <div class="font-weight-bold" data-stage-title="${stageLabel}">${stageLabel}</div>
-                                <div class="small text-muted" data-stage-module>${moduleName}</div>
-                            </div>
-                            <div class="d-flex align-items-center">
-                                <button type="button" class="btn btn-sm btn-outline-danger curso-remove-stage-btn">
+                        <div class="card-body py-2 px-3">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <div class="font-weight-bold" data-stage-title="${stageLabel}">${stageLabel}</div>
+                                    <div class="small text-muted" data-stage-module>${moduleName}</div>
+                                </div>
+                                <button type="button" class="btn btn-sm btn-outline-danger curso-remove-stage-btn ml-auto">
                                     <i class="fas fa-trash"></i>
                                 </button>
                             </div>
