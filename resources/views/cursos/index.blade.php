@@ -10,7 +10,7 @@
             </div>
             <div class="col-sm-6">
                 <div class="float-sm-right">
-                    <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#createCursoModal">
+                    <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#createCursoWizardModal">
                         <i class="fas fa-plus"></i> Nuevo Curso
                     </button>
                     <button type="button" class="btn btn-secondary" id="toggleViewBtn">
@@ -114,7 +114,7 @@
                 <div class="card-header">
                     <h3 class="card-title">Listado de Cursos</h3>
                     <div class="card-tools">
-                        <button type="button" class="btn btn-primary btn-sm" data-toggle="modal" data-target="#createCursoModal">
+                        <button type="button" class="btn btn-primary btn-sm" data-toggle="modal" data-target="#createCursoWizardModal">
                             <i class="fas fa-plus"></i> Nuevo Curso
                         </button>
                     </div>
@@ -276,4 +276,5 @@
     @yield('modal-scripts')
 @stop
 
+@include('cursos.partials.create-wizard-modal')
 @include('cursos.partials.create-modal')

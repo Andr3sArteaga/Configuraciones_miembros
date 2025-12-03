@@ -16,9 +16,24 @@ use Illuminate\Database\Eloquent\Model;
  * @property string $id
  * @property string $nombre
  * @property string|null $descripcion
+ * @property string|null $slug
+ * @property string|null $objetivos
+ * @property Carbon|null $inicio_programado
+ * @property Carbon|null $fin_programado
+ * @property int|null $max_participantes
+ * @property string|null $estado
+ * @property string|null $visibilidad
+ * @property string|null $nivel_requerido_id
+ * @property string|null $created_by
+ * @property string|null $updated_by
+ * @property string|null $approved_by
+ * @property Carbon|null $fecha_aprobacion
  * @property Carbon|null $creado
+ * @property Carbon|null $actualizado
  *
  * @property Collection|CursoAsignado[] $cursos_asignados
+ * @property Collection|\App\Models\CourseStage[] $course_stages
+ * @property Collection|\App\Models\CourseProgress[] $course_progress
  *
  * @package App\Models
  */
@@ -31,13 +46,32 @@ class Curso extends Model
 
 	protected $casts = [
 		'id' => 'string',
-		'creado' => 'datetime'
+		'inicio_programado' => 'date',
+		'fin_programado' => 'date',
+		'max_participantes' => 'int',
+		'fecha_aprobacion' => 'datetime',
+		'creado' => 'datetime',
+		'actualizado' => 'datetime',
 	];
 
 	protected $fillable = [
+        'id',
 		'nombre',
 		'descripcion',
-		'creado'
+		'slug',
+		'objetivos',
+		'inicio_programado',
+		'fin_programado',
+		'max_participantes',
+		'estado',
+		'visibilidad',
+		'nivel_requerido_id',
+		'created_by',
+		'updated_by',
+		'approved_by',
+		'fecha_aprobacion',
+		'creado',
+		'actualizado',
 	];
 
 	/**
@@ -47,6 +81,23 @@ class Curso extends Model
 	{
 		return $this->hasMany(CursoAsignado::class, 'curso_id');
 	}
+
+    /**
+     * Etapas del curso (course_stages).
+     */
+    public function stages()
+    {
+        return $this->hasMany(\App\Models\CourseStage::class, 'curso_id')
+            ->orderBy('orden');
+    }
+
+    /**
+     * Progreso de usuarios en el curso.
+     */
+    public function progress()
+    {
+        return $this->hasMany(\App\Models\CourseProgress::class, 'curso_id');
+    }
 
 	/**
 	 * Obtener usuarios asignados a este curso
