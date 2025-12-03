@@ -15,10 +15,10 @@ class DatabaseSeeder extends Seeder
     public function run(): void
     {
         $this->command->info('🌱 Iniciando la siembra de datos...');
-        
+
         // Parametric data seeders (must be run first)
         $this->command->info('📊 Poblando tablas paramétricas...');
-        
+
         $this->call([
             TiposSangreSeeder::class,
             NivelesEntrenamientoSeeder::class,
@@ -32,15 +32,16 @@ class DatabaseSeeder extends Seeder
         ]);
 
         $this->command->info('✅ Tablas paramétricas pobladas exitosamente.');
-        
+
         // Create admin user (depends on parametric data)
         $this->command->info('👤 Creando usuario administrador...');
         $this->call(AdminUserSeeder::class);
-        
+
         // Optional: Other seeders
+        $this->command->info('📋 Poblando reportes de ejemplo...');
+        $this->call(ReportesSeeder::class);
         // $this->call(NoticiasSeeder::class);
-        
+
         $this->command->info('🎉 ¡Siembra completada exitosamente!');
     }
 }
-
