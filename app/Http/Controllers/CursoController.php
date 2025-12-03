@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Models\Curso;
 use App\Models\CursoAsignado;
+use App\Models\CourseStage;
+use App\Models\CourseResource;
 use App\Models\Usuario;
 use App\Models\ComunariosApoyo;
 use App\Models\Inscrito;
@@ -12,6 +14,7 @@ use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
 
 class CursoController extends Controller
 {
@@ -43,21 +46,111 @@ class CursoController extends Controller
         $validated = $request->validate([
             'nombre' => 'required|string|max:200',
             'descripcion' => 'nullable|string',
+            'objetivos' => 'nullable|string',
+            'inicio_programado' => 'required|date|after_or_equal:today',
+            'fin_programado' => 'required|date|after_or_equal:inicio_programado',
         ], [
             'nombre.required' => 'El nombre del curso es obligatorio.',
             'nombre.max' => 'El nombre no puede superar los 200 caracteres.',
+            'inicio_programado.required' => 'La fecha de inicio es obligatoria.',
+            'fin_programado.required' => 'La fecha de finalización es obligatoria.',
         ]);
 
         try {
-            Curso::create([
+            DB::beginTransaction();
+
+            $userId = auth()->check() ? auth()->user()->id : null;
+
+            // Crear curso base
+            $curso = Curso::create([
                 'id' => Str::uuid()->toString(),
                 'nombre' => $validated['nombre'],
                 'descripcion' => $validated['descripcion'] ?? null,
+                'objetivos' => $validated['objetivos'] ?? null,
+                'inicio_programado' => $validated['inicio_programado'],
+                'fin_programado' => $validated['fin_programado'],
+                // No manejamos estados lógicos complejos, simplemente se considera publicado
+                'visibilidad' => 'usuarios',
+                'created_by' => $userId,
+                'updated_by' => $userId,
             ]);
+
+            // Crear etapas (stages_order proviene del wizard)
+            $stageModules = $request->input('stages_order', []);
+            $totalStages = count($stageModules);
+
+            foreach ($stageModules as $index => $moduleName) {
+                $stageNumber = $index + 1;
+
+                $stage = CourseStage::create([
+                    'id' => Str::uuid()->toString(),
+                    'curso_id' => $curso->id,
+                    'stage_number' => $stageNumber,
+                    'titulo_autogenerado' => 'Etapa ' . $stageNumber,
+                    'module_name' => $moduleName,
+                    'descripcion' => null,
+                    'duracion_minutos' => null,
+                    'delivery_mode' => null,
+                    'is_final_stage' => $stageNumber === $totalStages,
+                    'orden' => $stageNumber,
+                ]);
+
+                // Recursos asociados a la etapa (videos, documentos, lecturas, material extra)
+                $key = $stageNumber;
+                $videoUrl = $request->input("stages.$key.video");
+                $readingUrl = $request->input("stages.$key.reading");
+                $extraText = $request->input("stages.$key.extra");
+
+                if ($videoUrl) {
+                    CourseResource::create([
+                        'id' => Str::uuid()->toString(),
+                        'stage_id' => $stage->id,
+                        'resource_type' => 'video',
+                        'titulo' => 'Video ' . $stageNumber,
+                        'resource_url' => $videoUrl,
+                    ]);
+                }
+
+                if ($readingUrl) {
+                    CourseResource::create([
+                        'id' => Str::uuid()->toString(),
+                        'stage_id' => $stage->id,
+                        'resource_type' => 'lectura',
+                        'titulo' => 'Lectura ' . $stageNumber,
+                        'resource_url' => $readingUrl,
+                    ]);
+                }
+
+                if ($extraText) {
+                    CourseResource::create([
+                        'id' => Str::uuid()->toString(),
+                        'stage_id' => $stage->id,
+                        'resource_type' => 'material_extra',
+                        'titulo' => 'Material extra ' . $stageNumber,
+                        'descripcion' => $extraText,
+                    ]);
+                }
+
+                if ($request->hasFile("stages.$key.doc")) {
+                    $file = $request->file("stages.$key.doc");
+                    $path = $file->store('cursos/recursos', 'public');
+
+                    CourseResource::create([
+                        'id' => Str::uuid()->toString(),
+                        'stage_id' => $stage->id,
+                        'resource_type' => 'documento',
+                        'titulo' => $file->getClientOriginalName(),
+                        'file_path' => $path,
+                    ]);
+                }
+            }
+
+            DB::commit();
 
             return redirect()->route('cursos.index')
                 ->with('success', 'Curso creado exitosamente.');
         } catch (\Exception $e) {
+            DB::rollBack();
             return redirect()->route('cursos.index')
                 ->with('error', 'Error al crear el curso: ' . $e->getMessage())
                 ->withInput();
@@ -69,7 +162,8 @@ class CursoController extends Controller
      */
     public function show(string $id)
     {
-        $curso = Curso::findOrFail($id);
+        // Load course with stages and resources
+        $curso = Curso::with(['stages.resources'])->findOrFail($id);
 
         // Obtener asignaciones sin relaciones eager loaded
         // Las cargaremos dinámicamente en la vista
@@ -141,11 +235,68 @@ class CursoController extends Controller
     }
 
     /**
+     * API: Permitir al usuario autenticado inscribirse al curso (para móvil)
+     */
+    public function apiInscribirme(Request $request, string $id)
+    {
+        try {
+            // Verificar autenticación
+            if (!Auth::check()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Debe iniciar sesión para inscribirse.'
+                ], 401);
+            }
+
+            $curso = Curso::findOrFail($id);
+
+            // Comprobar si ya está inscrito
+            $existe = CursoAsignado::where('curso_id', $id)
+                ->where('entidad_tipo', 'usuario')
+                ->where('entidad_id', Auth::id())
+                ->exists();
+
+            if ($existe) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Ya estás inscrito en este curso',
+                    'ya_inscrito' => true
+                ], 400);
+            }
+
+            // Crear asignación
+            CursoAsignado::create([
+                'id' => Str::uuid()->toString(),
+                'curso_id' => $id,
+                'entidad_tipo' => 'usuario',
+                'entidad_id' => Auth::id(),
+                'fecha_asignacion' => now()
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Te has inscrito al curso correctamente',
+                'curso' => [
+                    'id' => $curso->id,
+                    'nombre' => $curso->nombre,
+                    'descripcion' => $curso->descripcion,
+                ]
+            ], 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al inscribirte al curso',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
      * Show the form for editing the specified resource.
      */
     public function edit(string $id)
     {
-        $curso = Curso::findOrFail($id);
+        $curso = Curso::with(['stages.resources'])->findOrFail($id);
         return view('cursos.edit', compact('curso'));
     }
 
@@ -156,18 +307,125 @@ class CursoController extends Controller
     {
         $curso = Curso::findOrFail($id);
 
-        $request->validate([
+        $validated = $request->validate([
             'nombre' => 'required|string|max:200',
             'descripcion' => 'nullable|string',
+            'objetivos' => 'nullable|string',
+            'inicio_programado' => 'required|date|after_or_equal:today',
+            'fin_programado' => 'required|date|after_or_equal:inicio_programado',
         ]);
 
-        $curso->update([
-            'nombre' => $request->nombre,
-            'descripcion' => $request->descripcion,
-        ]);
+        try {
+            DB::beginTransaction();
 
-        return redirect()->route('cursos.index')
-            ->with('success', 'Curso actualizado exitosamente.');
+            $userId = auth()->check() ? auth()->user()->id : null;
+
+            // Actualizar datos base del curso
+            $curso->update([
+                'nombre' => $validated['nombre'],
+                'descripcion' => $validated['descripcion'] ?? null,
+                'objetivos' => $validated['objetivos'] ?? null,
+                'inicio_programado' => $validated['inicio_programado'],
+                'fin_programado' => $validated['fin_programado'],
+                'updated_by' => $userId,
+            ]);
+
+            // Actualizar recursos por cada etapa existente
+            $stages = $curso->stages()->orderBy('orden')->get();
+
+            foreach ($stages as $stage) {
+                $key = $stage->stage_number; // los campos vienen indexados por número de etapa
+
+                $videoUrl = $request->input("stages.$key.video");
+                $readingUrl = $request->input("stages.$key.reading");
+                $extraText = $request->input("stages.$key.extra");
+
+                // VIDEO
+                $videoRes = $stage->resources()->where('resource_type', 'video')->first();
+                if ($videoUrl) {
+                    if (!$videoRes) {
+                        $videoRes = new CourseResource([
+                            'id' => Str::uuid()->toString(),
+                            'resource_type' => 'video',
+                            'titulo' => 'Video ' . $key,
+                        ]);
+                        $videoRes->stage_id = $stage->id;
+                    }
+                    $videoRes->resource_url = $videoUrl;
+                    $videoRes->save();
+                } elseif ($videoRes) {
+                    $videoRes->delete();
+                }
+
+                // LECTURA
+                $readingRes = $stage->resources()->where('resource_type', 'lectura')->first();
+                if ($readingUrl) {
+                    if (!$readingRes) {
+                        $readingRes = new CourseResource([
+                            'id' => Str::uuid()->toString(),
+                            'resource_type' => 'lectura',
+                            'titulo' => 'Lectura ' . $key,
+                        ]);
+                        $readingRes->stage_id = $stage->id;
+                    }
+                    $readingRes->resource_url = $readingUrl;
+                    $readingRes->save();
+                } elseif ($readingRes) {
+                    $readingRes->delete();
+                }
+
+                // MATERIAL EXTRA
+                $extraRes = $stage->resources()->where('resource_type', 'material_extra')->first();
+                if ($extraText) {
+                    if (!$extraRes) {
+                        $extraRes = new CourseResource([
+                            'id' => Str::uuid()->toString(),
+                            'resource_type' => 'material_extra',
+                            'titulo' => 'Material extra ' . $key,
+                        ]);
+                        $extraRes->stage_id = $stage->id;
+                    }
+                    $extraRes->descripcion = $extraText;
+                    $extraRes->save();
+                } elseif ($extraRes) {
+                    $extraRes->delete();
+                }
+
+                // DOCUMENTO (archivo)
+                $docRes = $stage->resources()->where('resource_type', 'documento')->first();
+                if ($request->hasFile("stages.$key.doc")) {
+                    // Borrar archivo anterior si existe
+                    if ($docRes && $docRes->file_path) {
+                        Storage::disk('public')->delete($docRes->file_path);
+                    }
+
+                    $file = $request->file("stages.$key.doc");
+                    $path = $file->store('cursos/recursos', 'public');
+
+                    if (!$docRes) {
+                        $docRes = new CourseResource([
+                            'id' => Str::uuid()->toString(),
+                            'resource_type' => 'documento',
+                        ]);
+                        $docRes->stage_id = $stage->id;
+                    }
+
+                    $docRes->titulo = $file->getClientOriginalName();
+                    $docRes->file_path = $path;
+                    $docRes->save();
+                }
+            }
+
+            DB::commit();
+
+            return redirect()->route('cursos.index')
+                ->with('success', 'Curso actualizado exitosamente.');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return redirect()->route('cursos.index')
+                ->with('error', 'Error al actualizar el curso: ' . $e->getMessage())
+                ->withInput();
+        }
     }
 
     /**
@@ -451,15 +709,42 @@ class CursoController extends Controller
     public function api()
     {
         try {
-            $cursos = Curso::withCount('cursos_asignados')
+            $cursos = Curso::with(['stages.resources'])
+                ->withCount('cursos_asignados')
                 ->get()
                 ->map(function ($curso) {
                     return [
                         'id' => $curso->id,
                         'nombre' => $curso->nombre,
                         'descripcion' => $curso->descripcion,
+                        'objetivos' => $curso->objetivos,
+                        'fecha_inicio' => $curso->inicio_programado ? $curso->inicio_programado->format('Y-m-d') : null,
+                        'fecha_fin' => $curso->fin_programado ? $curso->fin_programado->format('Y-m-d') : null,
                         'cantidad_asignados' => $curso->cursos_asignados_count,
                         'fecha_creacion' => $curso->creado ? $curso->creado->format('Y-m-d H:i:s') : null,
+                        'etapas' => $curso->stages->map(function ($stage) {
+                            return [
+                                'id' => $stage->id,
+                                'numero_etapa' => $stage->stage_number,
+                                'titulo' => $stage->titulo_autogenerado,
+                                'nombre_modulo' => $stage->module_name,
+                                'descripcion' => $stage->descripcion,
+                                'duracion_minutos' => $stage->duracion_minutos,
+                                'modalidad' => $stage->delivery_mode,
+                                'es_etapa_final' => $stage->is_final_stage,
+                                'recursos' => $stage->resources->map(function ($resource) {
+                                    return [
+                                        'id' => $resource->id,
+                                        'tipo' => $resource->resource_type,
+                                        'titulo' => $resource->titulo,
+                                        'url' => $resource->resource_url,
+                                        'archivo' => $resource->file_path ? asset('storage/' . $resource->file_path) : null,
+                                        'descripcion' => $resource->descripcion,
+                                        'requiere_confirmacion' => $resource->requires_ack,
+                                    ];
+                                }),
+                            ];
+                        }),
                     ];
                 });
 

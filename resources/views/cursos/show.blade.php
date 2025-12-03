@@ -54,10 +54,17 @@
 
                         <div class="row">
                             <div class="col-md-6">
-                                <p><strong>Fecha de Creación:</strong></p>
-                                <p>{{ $curso->creado ? $curso->creado->format('d/m/Y H:i') : 'N/A' }}</p>
+                                <p><strong>Fecha de Inicio:</strong></p>
+                                <p>{{ $curso->inicio_programado ? $curso->inicio_programado->format('d/m/Y') : 'N/A' }}</p>
                             </div>
                             <div class="col-md-6">
+                                <p><strong>Fecha de Fin:</strong></p>
+                                <p>{{ $curso->fin_programado ? $curso->fin_programado->format('d/m/Y') : 'N/A' }}</p>
+                            </div>
+                        </div>
+
+                        <div class="row mt-2">
+                            <div class="col-md-12">
                                 <p><strong>Total de Asignados:</strong></p>
                                 <p>
                                     <span class="badge badge-info" style="font-size: 1.1em;">
@@ -68,12 +75,16 @@
                         </div>
                     </div>
                     <div class="card-footer">
-                        <a href="{{ route('cursos.asignar', $curso->id) }}" class="btn btn-success">
-                            <i class="fas fa-user-plus"></i> Asignar Personas
-                        </a>
-                        <a href="{{ route('cursos.edit', $curso->id) }}" class="btn btn-info">
-                            <i class="fas fa-edit"></i> Editar
-                        </a>
+                        @auth
+                            @if(auth()->user()->isAdmin())
+                                <a href="{{ route('cursos.asignar', $curso->id) }}" class="btn btn-success">
+                                    <i class="fas fa-user-plus"></i> Asignar Personas
+                                </a>
+                                <a href="{{ route('cursos.edit', $curso->id) }}" class="btn btn-info">
+                                    <i class="fas fa-edit"></i> Editar
+                                </a>
+                            @endif
+                        @endauth
                         <a href="{{ route('cursos.index') }}" class="btn btn-secondary">
                             <i class="fas fa-arrow-left"></i> Volver
                         </a>
@@ -165,6 +176,100 @@
                 </div>
             @endif
         @endauth
+
+        {{-- Etapas del Curso --}}
+        @if($curso->stages && $curso->stages->count() > 0)
+            <div class="row mt-3">
+                <div class="col-md-12">
+                    <div class="card card-success">
+                        <div class="card-header">
+                            <h3 class="card-title">
+                                <i class="fas fa-layer-group"></i> Etapas del Curso
+                            </h3>
+                        </div>
+                        <div class="card-body">
+                            <div class="accordion" id="stagesAccordion">
+                                @foreach($curso->stages as $stage)
+                                    <div class="card">
+                                        <div class="card-header" id="heading{{ $stage->id }}">
+                                            <h2 class="mb-0">
+                                                <button class="btn btn-link btn-block text-left" type="button" data-toggle="collapse" data-target="#collapse{{ $stage->id }}" aria-expanded="{{ $loop->first ? 'true' : 'false' }}" aria-controls="collapse{{ $stage->id }}">
+                                                    <i class="fas fa-book-open"></i> <strong>{{ $stage->titulo_autogenerado }}</strong>
+                                                    @if($stage->module_name)
+                                                        <span class="badge badge-primary ml-2">{{ $stage->module_name }}</span>
+                                                    @endif
+                                                </button>
+                                            </h2>
+                                        </div>
+
+                                        <div id="collapse{{ $stage->id }}" class="collapse {{ $loop->first ? 'show' : '' }}" aria-labelledby="heading{{ $stage->id }}" data-parent="#stagesAccordion">
+                                            <div class="card-body">
+                                                @if($stage->descripcion)
+                                                    <p><strong>Descripción:</strong> {{ $stage->descripcion }}</p>
+                                                @endif
+                                                
+                                                @if($stage->duracion_minutos)
+                                                    <p><strong>Duración:</strong> {{ $stage->duracion_minutos }} minutos</p>
+                                                @endif
+
+                                                @if($stage->delivery_mode)
+                                                    <p><strong>Modalidad:</strong> {{ $stage->delivery_mode }}</p>
+                                                @endif
+
+                                                {{-- Recursos de esta etapa --}}
+                                                @if($stage->resources && $stage->resources->count() > 0)
+                                                    <hr>
+                                                    <h5><i class="fas fa-file-alt"></i> Recursos:</h5>
+                                                    <div class="list-group">
+                                                        @foreach($stage->resources as $resource)
+                                                            <div class="list-group-item">
+                                                                <div class="d-flex w-100 justify-content-between">
+                                                                    <h6 class="mb-1">
+                                                                        @if($resource->resource_type === 'video')
+                                                                            <i class="fas fa-video text-danger"></i>
+                                                                        @elseif($resource->resource_type === 'documento')
+                                                                            <i class="fas fa-file-pdf text-primary"></i>
+                                                                        @elseif($resource->resource_type === 'lectura')
+                                                                            <i class="fas fa-book text-success"></i>
+                                                                        @else
+                                                                            <i class="fas fa-file text-secondary"></i>
+                                                                        @endif
+                                                                        {{ $resource->titulo ?? 'Recurso sin título' }}
+                                                                    </h6>
+                                                                    <small>
+                                                                        <span class="badge badge-info">{{ ucfirst($resource->resource_type) }}</span>
+                                                                    </small>
+                                                                </div>
+                                                                @if($resource->descripcion)
+                                                                    <p class="mb-1 text-muted">{{ $resource->descripcion }}</p>
+                                                                @endif
+                                                                @if($resource->resource_url)
+                                                                    <a href="{{ $resource->resource_url }}" target="_blank" class="btn btn-sm btn-outline-primary mt-2">
+                                                                        <i class="fas fa-external-link-alt"></i> Ver recurso
+                                                                    </a>
+                                                                @endif
+                                                                @if($resource->file_path)
+                                                                    <a href="{{ asset('storage/' . $resource->file_path) }}" target="_blank" class="btn btn-sm btn-outline-success mt-2">
+                                                                        <i class="fas fa-download"></i> Descargar
+                                                                    </a>
+                                                                @endif
+                                                            </div>
+                                                        @endforeach
+                                                    </div>
+                                                @else
+                                                    <p class="text-muted"><i>No hay recursos disponibles para esta etapa.</i></p>
+                                                @endif
+                                            </div>
+                                        </div>
+                                    </div>
+                                @endforeach
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        @endif
+
         <div class="row mt-3">
             <div class="col-md-12">
                 <div class="card">
