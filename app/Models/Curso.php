@@ -142,4 +142,16 @@ class Curso extends Model
 	{
 		return $this->cursos_asignados()->where('entidad_tipo', 'comunario')->count();
 	}
+
+	/**
+	 * Get user's progress for this course
+	 */
+	public function getUserProgress($userId)
+	{
+		return $this->progress()
+			->where('usuario_id', $userId)
+			->with('stage')
+			->orderBy('creado')
+			->get();
+	}
 }
