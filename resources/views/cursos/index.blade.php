@@ -10,9 +10,13 @@
             </div>
             <div class="col-sm-6">
                 <div class="float-sm-right">
-                    <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#createCursoWizardModal">
-                        <i class="fas fa-plus"></i> Nuevo Curso
-                    </button>
+                    @auth
+                        @if(auth()->user()->isAdmin())
+                            <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#createCursoWizardModal">
+                                <i class="fas fa-plus"></i> Nuevo Curso
+                            </button>
+                        @endif
+                    @endauth
                     <button type="button" class="btn btn-secondary" id="toggleViewBtn">
                         <i class="fas fa-table"></i> Vista Tabla
                     </button>
@@ -74,20 +78,24 @@
                                 <a href="{{ route('cursos.show', $curso->id) }}" class="btn btn-warning text-white btn-sm">
                                     <i class="fas fa-info-circle"></i> Ver detalle
                                 </a>
-                                <a href="{{ route('cursos.asignar', $curso->id) }}" class="btn btn-success btn-sm">
-                                    <i class="fas fa-user-plus"></i> Asignar personas
-                                </a>
-                                <a href="{{ route('cursos.edit', $curso->id) }}" class="btn btn-info btn-sm">
-                                    <i class="fas fa-edit"></i> Editar
-                                </a>
-                                <form action="{{ route('cursos.destroy', $curso->id) }}" method="POST"
-                                    style="display: inline-block;" class="form-delete">
-                                    @csrf
-                                    @method('DELETE')
-                                    <button type="submit" class="btn btn-danger btn-sm">
-                                        <i class="fas fa-trash"></i> Eliminar
-                                    </button>
-                                </form>
+                                @auth
+                                    @if(auth()->user()->isAdmin())
+                                        <a href="{{ route('cursos.asignar', $curso->id) }}" class="btn btn-success btn-sm">
+                                            <i class="fas fa-user-plus"></i> Asignar personas
+                                        </a>
+                                        <a href="{{ route('cursos.edit', $curso->id) }}" class="btn btn-info btn-sm">
+                                            <i class="fas fa-edit"></i> Editar
+                                        </a>
+                                        <form action="{{ route('cursos.destroy', $curso->id) }}" method="POST"
+                                            style="display: inline-block;" class="form-delete">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button type="submit" class="btn btn-danger btn-sm">
+                                                <i class="fas fa-trash"></i> Eliminar
+                                            </button>
+                                        </form>
+                                    @endif
+                                @endauth
                             </div>
                         </div>
                     @empty
@@ -113,11 +121,15 @@
             <div class="card">
                 <div class="card-header">
                     <h3 class="card-title">Listado de Cursos</h3>
-                    <div class="card-tools">
-                        <button type="button" class="btn btn-primary btn-sm" data-toggle="modal" data-target="#createCursoWizardModal">
-                            <i class="fas fa-plus"></i> Nuevo Curso
-                        </button>
-                    </div>
+                    @auth
+                        @if(auth()->user()->isAdmin())
+                            <div class="card-tools">
+                                <button type="button" class="btn btn-primary btn-sm" data-toggle="modal" data-target="#createCursoWizardModal">
+                                    <i class="fas fa-plus"></i> Nuevo Curso
+                                </button>
+                            </div>
+                        @endif
+                    @endauth
                 </div>
                 <div class="card-body">
                     <table id="cursos-table" class="table table-bordered table-striped table-hover">
@@ -146,22 +158,26 @@
                                             title="Ver detalle">
                                             <i class="fas fa-eye"></i>
                                         </a>
-                                        <a href="{{ route('cursos.asignar', $curso->id) }}" class="btn btn-sm btn-success"
-                                            title="Asignar">
-                                            <i class="fas fa-user-plus"></i>
-                                        </a>
-                                        <a href="{{ route('cursos.edit', $curso->id) }}" class="btn btn-sm btn-info"
-                                            title="Editar">
-                                            <i class="fas fa-edit"></i>
-                                        </a>
-                                        <form action="{{ route('cursos.destroy', $curso->id) }}" method="POST"
-                                            style="display: inline-block;" class="form-delete-table">
-                                            @csrf
-                                            @method('DELETE')
-                                            <button type="submit" class="btn btn-sm btn-danger" title="Eliminar">
-                                                <i class="fas fa-trash"></i>
-                                            </button>
-                                        </form>
+                                        @auth
+                                            @if(auth()->user()->isAdmin())
+                                                <a href="{{ route('cursos.asignar', $curso->id) }}" class="btn btn-sm btn-success"
+                                                    title="Asignar">
+                                                    <i class="fas fa-user-plus"></i>
+                                                </a>
+                                                <a href="{{ route('cursos.edit', $curso->id) }}" class="btn btn-sm btn-info"
+                                                    title="Editar">
+                                                    <i class="fas fa-edit"></i>
+                                                </a>
+                                                <form action="{{ route('cursos.destroy', $curso->id) }}" method="POST"
+                                                    style="display: inline-block;" class="form-delete-table">
+                                                    @csrf
+                                                    @method('DELETE')
+                                                    <button type="submit" class="btn btn-sm btn-danger" title="Eliminar">
+                                                        <i class="fas fa-trash"></i>
+                                                    </button>
+                                                </form>
+                                            @endif
+                                        @endauth
                                     </td>
                                 </tr>
                             @endforeach

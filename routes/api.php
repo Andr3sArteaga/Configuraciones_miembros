@@ -14,6 +14,10 @@ Route::middleware('auth:sanctum')->group(function () {
     // Obtener equipos con ubicación (para apps móviles/APIs externas)
     Route::get('/equipos', [EquipoController::class, 'api'])
         ->name('api.equipos');
+    
+    // Inscribirse a un curso (para móvil)
+    Route::post('/cursos/{id}/inscribirme', [CursoController::class, 'apiInscribirme'])
+        ->name('api.cursos.inscribirme');
 });
 
 // Public API endpoints (no authentication required)

@@ -75,12 +75,16 @@
                         </div>
                     </div>
                     <div class="card-footer">
-                        <a href="{{ route('cursos.asignar', $curso->id) }}" class="btn btn-success">
-                            <i class="fas fa-user-plus"></i> Asignar Personas
-                        </a>
-                        <a href="{{ route('cursos.edit', $curso->id) }}" class="btn btn-info">
-                            <i class="fas fa-edit"></i> Editar
-                        </a>
+                        @auth
+                            @if(auth()->user()->isAdmin())
+                                <a href="{{ route('cursos.asignar', $curso->id) }}" class="btn btn-success">
+                                    <i class="fas fa-user-plus"></i> Asignar Personas
+                                </a>
+                                <a href="{{ route('cursos.edit', $curso->id) }}" class="btn btn-info">
+                                    <i class="fas fa-edit"></i> Editar
+                                </a>
+                            @endif
+                        @endauth
                         <a href="{{ route('cursos.index') }}" class="btn btn-secondary">
                             <i class="fas fa-arrow-left"></i> Volver
                         </a>

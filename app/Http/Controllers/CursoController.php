@@ -235,6 +235,63 @@ class CursoController extends Controller
     }
 
     /**
+     * API: Permitir al usuario autenticado inscribirse al curso (para móvil)
+     */
+    public function apiInscribirme(Request $request, string $id)
+    {
+        try {
+            // Verificar autenticación
+            if (!Auth::check()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Debe iniciar sesión para inscribirse.'
+                ], 401);
+            }
+
+            $curso = Curso::findOrFail($id);
+
+            // Comprobar si ya está inscrito
+            $existe = CursoAsignado::where('curso_id', $id)
+                ->where('entidad_tipo', 'usuario')
+                ->where('entidad_id', Auth::id())
+                ->exists();
+
+            if ($existe) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Ya estás inscrito en este curso',
+                    'ya_inscrito' => true
+                ], 400);
+            }
+
+            // Crear asignación
+            CursoAsignado::create([
+                'id' => Str::uuid()->toString(),
+                'curso_id' => $id,
+                'entidad_tipo' => 'usuario',
+                'entidad_id' => Auth::id(),
+                'fecha_asignacion' => now()
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Te has inscrito al curso correctamente',
+                'curso' => [
+                    'id' => $curso->id,
+                    'nombre' => $curso->nombre,
+                    'descripcion' => $curso->descripcion,
+                ]
+            ], 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al inscribirte al curso',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
      * Show the form for editing the specified resource.
      */
     public function edit(string $id)
@@ -652,15 +709,42 @@ class CursoController extends Controller
     public function api()
     {
         try {
-            $cursos = Curso::withCount('cursos_asignados')
+            $cursos = Curso::with(['stages.resources'])
+                ->withCount('cursos_asignados')
                 ->get()
                 ->map(function ($curso) {
                     return [
                         'id' => $curso->id,
                         'nombre' => $curso->nombre,
                         'descripcion' => $curso->descripcion,
+                        'objetivos' => $curso->objetivos,
+                        'fecha_inicio' => $curso->inicio_programado ? $curso->inicio_programado->format('Y-m-d') : null,
+                        'fecha_fin' => $curso->fin_programado ? $curso->fin_programado->format('Y-m-d') : null,
                         'cantidad_asignados' => $curso->cursos_asignados_count,
                         'fecha_creacion' => $curso->creado ? $curso->creado->format('Y-m-d H:i:s') : null,
+                        'etapas' => $curso->stages->map(function ($stage) {
+                            return [
+                                'id' => $stage->id,
+                                'numero_etapa' => $stage->stage_number,
+                                'titulo' => $stage->titulo_autogenerado,
+                                'nombre_modulo' => $stage->module_name,
+                                'descripcion' => $stage->descripcion,
+                                'duracion_minutos' => $stage->duracion_minutos,
+                                'modalidad' => $stage->delivery_mode,
+                                'es_etapa_final' => $stage->is_final_stage,
+                                'recursos' => $stage->resources->map(function ($resource) {
+                                    return [
+                                        'id' => $resource->id,
+                                        'tipo' => $resource->resource_type,
+                                        'titulo' => $resource->titulo,
+                                        'url' => $resource->resource_url,
+                                        'archivo' => $resource->file_path ? asset('storage/' . $resource->file_path) : null,
+                                        'descripcion' => $resource->descripcion,
+                                        'requiere_confirmacion' => $resource->requires_ack,
+                                    ];
+                                }),
+                            ];
+                        }),
                     ];
                 });
 
