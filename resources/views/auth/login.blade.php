@@ -65,11 +65,17 @@
 
                     {{-- Password field --}}
                     <div class="input-group mb-3">
-                        <input type="password" name="password" class="form-control @error('password') is-invalid @enderror"
+                        <input type="password" name="password" id="password"
+                            class="form-control @error('password') is-invalid @enderror"
                             placeholder="{{ __('adminlte::adminlte.password') }}">
                         <div class="input-group-append">
                             <div class="input-group-text">
                                 <span class="fas fa-lock"></span>
+                            </div>
+                        </div>
+                        <div class="input-group-append">
+                            <div class="input-group-text">
+                                <span class="fas fa-eye" id="togglePassword" style="cursor: pointer;"></span>
                             </div>
                         </div>
                         @error('password')
@@ -229,5 +235,19 @@
             // Change image every 5 seconds
             setInterval(cycleImages, 5000);
         });
+
+        // Toggle password visibility
+        const togglePassword = document.querySelector('#togglePassword');
+        const password = document.querySelector('#password');
+
+        if (togglePassword && password) {
+            togglePassword.addEventListener('click', function(e) {
+                // toggle the type attribute
+                const type = password.getAttribute('type') === 'password' ? 'text' : 'password';
+                password.setAttribute('type', type);
+                // toggle the eye slash icon
+                this.classList.toggle('fa-eye-slash');
+            });
+        }
     </script>
 @stop
