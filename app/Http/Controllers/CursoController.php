@@ -162,7 +162,8 @@ class CursoController extends Controller
      */
     public function show(string $id)
     {
-        $curso = Curso::findOrFail($id);
+        // Load course with stages and resources
+        $curso = Curso::with(['stages.resources'])->findOrFail($id);
 
         // Obtener asignaciones sin relaciones eager loaded
         // Las cargaremos dinámicamente en la vista
