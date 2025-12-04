@@ -4,6 +4,27 @@
 
 @section('content_header')
     <div class="container-fluid">
+        @php
+            $pendientesCount = 0;
+            foreach ($reportes as $reporteItem) {
+                if (
+                    isset($reporteItem->estados_sistema) &&
+                    strcasecmp($reporteItem->estados_sistema->nombre ?? '', 'pendiente') === 0
+                ) {
+                    $pendientesCount++;
+                }
+            }
+            $sinEstadoCount = $reportes->whereNull('estado_id')->count();
+        @endphp
+
+        @if ($pendientesCount > 0)
+            <x-adminlte-alert theme="warning" title="Pendientes">
+                {{ $pendientesCount == 1
+                    ? 'Existe 1 reporte pendiente'
+                    : 'Existen ' . $pendientesCount . ' reportes pendientes' }}
+                {{ $sinEstadoCount > 0 ? ' y ' . $sinEstadoCount . ' sin estado asignado' : '' }}.
+            </x-adminlte-alert>
+        @endif
         <div class="row mb-2">
             <div class="col-sm-6">
                 <h1>Reportes Rapidos</h1>

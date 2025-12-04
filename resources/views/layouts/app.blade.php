@@ -243,5 +243,46 @@
         .select2-container--bootstrap4 .select2-selection--single .select2-selection__placeholder {
             color: #6c757d;
         }
+
+        /* Estilo para el badge de warning en el menú lateral */
+        .sidebar .nav-sidebar .nav-link .badge.badge-warning {
+            background-color: #ffc107 !important;
+            color: #000 !important;
+            font-weight: 600;
+            font-size: 0.70rem;
+            padding: 0.25em 0.5em;
+            border-radius: 10px;
+            min-width: 20px;
+            text-align: center;
+            animation: pulse-warning 2s infinite;
+        }
+
+        @keyframes pulse-warning {
+            0% {
+                box-shadow: 0 0 0 0 rgba(255, 193, 7, 0.7);
+            }
+
+            50% {
+                box-shadow: 0 0 0 6px rgba(255, 193, 7, 0);
+            }
+
+            100% {
+                box-shadow: 0 0 0 0 rgba(255, 193, 7, 0);
+            }
+        }
+
+        /* Hover effect para el ítem del menú con indicador */
+        .menu-item-with-indicator:hover .badge.badge-warning {
+            background-color: #ffcd39 !important;
+            transform: scale(1.1);
+            transition: all 0.2s ease;
+        }
+
+        /* Asegurar que el badge sea visible en modo oscuro */
+        .dark-mode .sidebar .nav-sidebar .nav-link .badge.badge-warning {
+            background-color: #ffc107 !important;
+            color: #000 !important;
+            border: 1px solid rgba(255, 193, 7, 0.5);
+        }
     </style>
 @endpush
