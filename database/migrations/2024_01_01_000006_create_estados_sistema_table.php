@@ -18,7 +18,7 @@ return new class extends Migration
             $table->string('codigo', 50);
             $table->string('nombre', 100);
             $table->text('descripcion')->nullable();
-            $table->string('color', 7)->nullable();
+            $table->string('color', 9)->nullable();
             $table->boolean('es_final')->nullable()->default(false);
             $table->integer('orden')->nullable();
             $table->boolean('activo')->nullable()->default(true);

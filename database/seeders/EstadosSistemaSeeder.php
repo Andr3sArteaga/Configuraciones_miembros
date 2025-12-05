@@ -115,6 +115,24 @@ class EstadosSistemaSeeder extends Seeder
                 'orden' => 4,
                 'es_final' => true
             ],
+            [
+                'tabla' => 'reportes',
+                'codigo' => 'RECHAZADO',
+                'nombre' => 'Rechazado',
+                'descripcion' => 'Reporte rechazado',
+                'color' => '#DC3545',
+                'orden' => 5,
+                'es_final' => true
+            ],
+            [
+                'tabla' => 'reportes',
+                'codigo' => 'FALSO_POSITIVO',
+                'nombre' => 'Falso Positivo',
+                'descripcion' => 'Reporte clasificado como falso positivo',
+                'color' => '#35dcb2ff',
+                'orden' => 6,
+                'es_final' => true
+            ],
             // Estados para recursos
             [
                 'tabla' => 'recursos',
