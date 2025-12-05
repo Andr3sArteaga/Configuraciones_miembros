@@ -90,7 +90,7 @@ class EquipoController extends Controller
         $validated = $request->validate([
             'nombre_equipo' => 'required|string|max:100',
             'estado_id' => 'required|uuid|exists:estados_sistema,id',
-            'reporte_id' => 'required|uuid|exists:reportes,id',
+            'reporte_id' => 'nullable|uuid|exists:reportes,id',
             'miembros' => 'nullable|array',
             'miembros.*' => 'uuid|exists:usuarios,id',
             'lider_id' => 'nullable|uuid|exists:usuarios,id',
@@ -99,7 +99,6 @@ class EquipoController extends Controller
             'nombre_equipo.max' => 'El nombre del equipo no puede exceder 100 caracteres',
             'estado_id.required' => 'Debe seleccionar un estado',
             'estado_id.exists' => 'El estado seleccionado no es válido',
-            'reporte_id.required' => 'Debe seleccionar el reporte asociado al equipo',
             'reporte_id.exists' => 'El reporte seleccionado no es válido',
             'miembros.array' => 'Los miembros deben ser un array válido',
             'miembros.*.uuid' => 'Cada miembro debe tener un ID válido',
@@ -117,11 +116,12 @@ class EquipoController extends Controller
             // Calcular cantidad de integrantes
             $cantidadMiembros = ($request->filled('miembros') && is_array($request->miembros)) ? count($request->miembros) : 0;
 
-            // Insertar con reporte asociado (reporte_id obligatorio)
+            // Insertar con reporte asociado (reporte_id opcional)
+            $reporteId = $request->filled('reporte_id') ? $validated['reporte_id'] : null;
             DB::statement(
                 "INSERT INTO equipos (id, nombre_equipo, estado_id, cantidad_integrantes, reporte_id, creado)
                      VALUES (?, ?, ?, ?, ?, NOW())",
-                [$equipoId, $validated['nombre_equipo'], $validated['estado_id'], $cantidadMiembros, $validated['reporte_id']]
+                [$equipoId, $validated['nombre_equipo'], $validated['estado_id'], $cantidadMiembros, $reporteId]
             );
 
 
@@ -211,7 +211,7 @@ class EquipoController extends Controller
         $validated = $request->validate([
             'nombre_equipo' => 'required|string|max:100',
             'estado_id' => 'required|uuid|exists:estados_sistema,id',
-            'reporte_id' => 'required|uuid|exists:reportes,id',
+            'reporte_id' => 'nullable|uuid|exists:reportes,id',
             'miembros' => 'nullable|array',
             'miembros.*' => 'uuid|exists:usuarios,id',
             'lider_id' => 'nullable|uuid|exists:usuarios,id',
@@ -220,6 +220,7 @@ class EquipoController extends Controller
             'nombre_equipo.max' => 'El nombre del equipo no puede exceder 100 caracteres',
             'estado_id.required' => 'Debe seleccionar un estado',
             'estado_id.exists' => 'El estado seleccionado no es válido',
+            'reporte_id.exists' => 'El reporte seleccionado no es válido',
             'latitud.numeric' => 'La latitud debe ser un número',
             'latitud.min' => 'La latitud debe estar entre -90 y 90',
             'latitud.max' => 'La latitud debe estar entre -90 y 90',
@@ -241,9 +242,8 @@ class EquipoController extends Controller
             $equipo->estado_id = $validated['estado_id'];
 
             // Actualizar reporte asociado
-            if ($request->filled('reporte_id')) {
-                DB::statement("UPDATE equipos SET reporte_id = ? WHERE id = ?", [$validated['reporte_id'], $equipo->id]);
-            }
+            $reporteId = $request->filled('reporte_id') ? $validated['reporte_id'] : null;
+            DB::statement("UPDATE equipos SET reporte_id = ? WHERE id = ?", [$reporteId, $equipo->id]);
 
             $equipo->save();
 

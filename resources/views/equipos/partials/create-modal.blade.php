@@ -53,7 +53,7 @@
                     <li class="nav-item">
                         <a class="nav-link active" id="tab-ubicacion-{{ $modalId }}" data-toggle="tab"
                             href="#step-ubicacion-{{ $modalId }}" role="tab">
-                            <i class="fas fa-map-marker-alt"></i> 1. Seleccionar Reporte
+                            <i class="fas fa-map-marker-alt"></i> 1. Reporte (Opcional)
                         </a>
                     </li>
                     <li class="nav-item">
@@ -86,12 +86,14 @@
                 <div class="tab-content mt-3" id="teamTabsContent-{{ $modalId }}">
                     <!-- PASO 1: Seleccionar Ubicación -->
                     <div class="tab-pane fade show active" id="step-ubicacion-{{ $modalId }}" role="tabpanel">
-                        <h5 class="mb-3"><i class="fas fa-map-marker-alt text-primary"></i> Seleccionar Reporte de
-                            Incendio</h5>
+                        <h5 class="mb-3"><i class="fas fa-map-marker-alt text-primary"></i> Vincular Reporte de
+                            Incendio (Opcional)</h5>
 
                         <div class="alert alert-info">
-                            <i class="fas fa-info-circle"></i> Seleccione un reporte haciendo clic en un marcador del
-                            mapa o en la lista lateral.
+                            <i class="fas fa-info-circle"></i> Opcionalmente puede vincular el equipo a un reporte
+                            haciendo clic en un marcador del
+                            mapa o en la lista lateral. Puede omitir este paso si desea crear el equipo sin asignarlo a
+                            un reporte.
                         </div>
 
                         <div class="row">
@@ -108,7 +110,8 @@
                                     }
                                 @endphp
                                 <x-map.leaflet-map mapId="map-{{ $modalId }}" lat="{{ $mapLat }}"
-                                    lng="{{ $mapLng }}" zoom="{{ $mapZoom }}" height="300px" />
+                                    lng="{{ $mapLng }}" zoom="{{ $mapZoom }}" height="300px"
+                                    :draggable="false" />
                                 <input type="hidden" id="reporte_id-{{ $modalId }}" name="reporte_id"
                                     value="{{ $isEditMode ? $equipo->reporte_id ?? '' : '' }}">
                             </div>
@@ -443,7 +446,8 @@
                                     </div>
                                     <div class="card-body p-0">
                                         <div class="table-responsive">
-                                            <table class="table table-hover mb-0" id="donations-table-{{ $modalId }}">
+                                            <table class="table table-hover mb-0"
+                                                id="donations-table-{{ $modalId }}">
                                                 <thead class="thead-light">
                                                     <tr>
                                                         <th style="width: 40%;">Artículo</th>
@@ -459,7 +463,7 @@
                                         </div>
                                     </div>
                                 </div>
-                                
+
                                 <div class="alert alert-warning mt-3">
                                     <i class="fas fa-exclamation-triangle"></i> <strong>Nota:</strong> Esta sección es
                                     opcional. Los suministros pueden asignarse posteriormente.
@@ -614,15 +618,46 @@
             // Variables de mapa compartidas (global dentro de este partial)
             let map = null;
             let marker = null;
+            let editMarker = null; // Variable compartida para el marcador de edición
+            let selectedMarker = null; // Variable compartida para el marcador seleccionado
             let currentStep = 1;
             let selectedMembers = [];
             let comunarios = [];
-            let donations = [
-                { id: 1, name: 'Tanques de Agua (20L)', quantity: 0, stock: 50, icon: 'fa-tint' },
-                { id: 2, name: 'Extintores', quantity: 0, stock: 20, icon: 'fa-fire-extinguisher' },
-                { id: 3, name: 'Trajes Protectores', quantity: 0, stock: 15, icon: 'fa-shield-alt' },
-                { id: 4, name: 'Palas', quantity: 0, stock: 30, icon: 'fa-tools' },
-                { id: 5, name: 'Botiquines de Primeros Auxilios', quantity: 0, stock: 10, icon: 'fa-medkit' }
+            let donations = [{
+                    id: 1,
+                    name: 'Tanques de Agua (20L)',
+                    quantity: 0,
+                    stock: 50,
+                    icon: 'fa-tint'
+                },
+                {
+                    id: 2,
+                    name: 'Extintores',
+                    quantity: 0,
+                    stock: 20,
+                    icon: 'fa-fire-extinguisher'
+                },
+                {
+                    id: 3,
+                    name: 'Trajes Protectores',
+                    quantity: 0,
+                    stock: 15,
+                    icon: 'fa-shield-alt'
+                },
+                {
+                    id: 4,
+                    name: 'Palas',
+                    quantity: 0,
+                    stock: 30,
+                    icon: 'fa-tools'
+                },
+                {
+                    id: 5,
+                    name: 'Botiquines de Primeros Auxilios',
+                    quantity: 0,
+                    stock: 10,
+                    icon: 'fa-medkit'
+                }
             ];
 
             const assignedLeaderId = @json(isset($liderAsignadoId) ? $liderAsignadoId : null);
@@ -706,6 +741,10 @@
                 }
 
                 map = mapInstance;
+
+                // Desactivar el comportamiento de clic del componente que crea marcadores
+                map.off('click');
+
                 // Recalcular tamaño y re-centar (útil para modales/animaciones)
                 setTimeout(function() {
                     try {
@@ -713,21 +752,18 @@
                     } catch (e) {
                         // si no está disponible por alguna razón, reintentar más tarde
                     }
-                    // Si existe un marcador, centrar allí; si no, mantener la vista por defecto
-                    if (typeof marker !== 'undefined' && marker) {
-                        try {
-                            map.setView(marker.getLatLng(), map.getZoom());
-                        } catch (e) {}
-                    }
                 }, 300);
+
+                // Variable para el marcador de edición (solo en modo edición)
+                // let editMarker = null; // MOVIDO AL SCOPE SUPERIOR
 
                 // Add existing marker if in edit mode
                 @if ($isEditMode && isset($equipo) && $equipo->latitud && $equipo->longitud)
-                    marker = L.marker([{{ $equipo->latitud }}, {{ $equipo->longitud }}], {
+                    editMarker = L.marker([{{ $equipo->latitud }}, {{ $equipo->longitud }}], {
                         draggable: true
                     }).addTo(map);
-                    marker.on('dragend', function(e) {
-                        const position = marker.getLatLng();
+                    editMarker.on('dragend', function(e) {
+                        const position = editMarker.getLatLng();
                         updateCoordinates(position.lat, position.lng);
                     });
                 @endif
@@ -736,6 +772,7 @@
                 const reportesData = @json(isset($reportes) ? $reportes : []);
                 const reporteMarkers = {};
                 let selectedReporteId = document.getElementById('reporte_id-' + modalId).value || null;
+                // let selectedMarker = null; // MOVIDO AL SCOPE SUPERIOR
 
                 reportesData.forEach(function(reporte) {
                     if (!reporte.ubicacion || !reporte.ubicacion.coordinates) return;
@@ -756,11 +793,30 @@
                     reporteMarkers[reporte.id] = m;
 
                     m.on('click', function() {
+                        // Restaurar estilo del marcador previamente seleccionado
+                        if (selectedMarker && selectedMarker !== m) {
+                            selectedMarker.setStyle({
+                                radius: 7,
+                                color: '#dc3545',
+                                fillColor: '#dc3545',
+                                fillOpacity: 0.9
+                            });
+                        }
+
                         // Seleccionar reporte
                         selectedReporteId = this.reporteId;
+                        selectedMarker = m;
                         document.getElementById('reporte_id-' + modalId).value = selectedReporteId;
-                        // Resaltar marcador seleccionado (simple bounce)
+
+                        // Resaltar marcador seleccionado
+                        m.setStyle({
+                            radius: 10,
+                            color: '#007bff',
+                            fillColor: '#007bff',
+                            fillOpacity: 0.9
+                        });
                         m.openPopup();
+
                         // Update resumen with report info
                         document.getElementById('resumen-ubicacion-' + modalId).textContent = (reporte
                                 .nombre_lugar ?? '-') + ' (' + lat.toFixed(4) + ', ' + lng.toFixed(4) +
@@ -787,13 +843,6 @@
                     m.openPopup();
                     map.setView(m.getLatLng(), 13);
                 }
-
-                // Remover selección de reporte
-                document.getElementById('btn-remove-marker-' + modalId).addEventListener('click', function() {
-                    document.getElementById('reporte_id-' + modalId).value = '';
-                    selectedReporteId = null;
-                    document.getElementById('resumen-ubicacion-' + modalId).textContent = '-';
-                });
             }
 
             function populateSelectedMembersFromChecked() {
@@ -846,6 +895,36 @@
                 document.getElementById('btn-next-' + modalId).addEventListener('click', nextStep);
                 document.getElementById('btn-prev-' + modalId).addEventListener('click', prevStep);
                 document.getElementById('btn-save-' + modalId).addEventListener('click', saveTeam);
+
+                // Remove marker/report selection
+                document.getElementById('btn-remove-marker-' + modalId).addEventListener('click', function() {
+                    document.getElementById('reporte_id-' + modalId).value = '';
+                    const resumenUbicacion = document.getElementById('resumen-ubicacion-' + modalId);
+                    if (resumenUbicacion) {
+                        resumenUbicacion.textContent = '-';
+                    }
+                    // Cerrar todos los popups abiertos en el mapa
+                    if (map) {
+                        map.closePopup();
+                    }
+                    // Restaurar estilo del marcador seleccionado si existe
+                    if (typeof selectedMarker !== 'undefined' && selectedMarker) {
+                        selectedMarker.setStyle({
+                            radius: 7,
+                            color: '#dc3545',
+                            fillColor: '#dc3545',
+                            fillOpacity: 0.9
+                        });
+                        selectedMarker = null;
+                    }
+                    // Remover el marcador azul (de edición) si existe
+                    if (typeof editMarker !== 'undefined' && editMarker) {
+                        try {
+                            map.removeLayer(editMarker);
+                        } catch (e) {}
+                        editMarker = null;
+                    }
+                });
 
                 // Member selection
                 document.querySelectorAll('#members-tbody-' + modalId + ' .member-checkbox').forEach(checkbox => {
@@ -973,10 +1052,10 @@
 
             function renderDonationsList() {
                 const tbody = document.getElementById('donations-tbody-' + modalId);
-                
+
                 // Show all donations
                 const activeDonations = donations;
-                
+
                 if (activeDonations.length === 0) {
                     tbody.innerHTML = `
                         <tr>
@@ -1197,6 +1276,9 @@
 
             function updateLeaderSelect() {
                 const liderSelect = document.getElementById('lider-equipo-' + modalId);
+                // Guardar el valor seleccionado actualmente
+                const currentValue = liderSelect.value;
+
                 liderSelect.innerHTML = '<option value="">Seleccione un líder</option>';
 
                 selectedMembers.forEach(member => {
@@ -1205,6 +1287,11 @@
                     option.textContent = member.nombre;
                     liderSelect.appendChild(option);
                 });
+
+                // Restaurar el valor seleccionado si aún existe en la lista
+                if (currentValue && selectedMembers.some(m => m.id === currentValue)) {
+                    liderSelect.value = currentValue;
+                }
             }
 
             function saveTeam() {
@@ -1219,13 +1306,6 @@
 
                 if (!estado) {
                     alert('Por favor, seleccione el estado del equipo');
-                    return;
-                }
-
-                // Verificar reporte seleccionado
-                const reporteId = document.getElementById('reporte_id-' + modalId).value;
-                if (!reporteId) {
-                    alert('Por favor, seleccione un reporte en el mapa para vincular el equipo.');
                     return;
                 }
 

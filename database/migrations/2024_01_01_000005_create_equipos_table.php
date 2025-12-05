@@ -18,9 +18,9 @@ return new class extends Migration
             //$table->geography('ubicacion', 'point')->nullable(); // eliminado: ubicación heredada de reporte
             $table->integer('cantidad_integrantes')->nullable()->default(0);
             $table->uuid('estado_id')->nullable()->index('idx_equipos_estado');
-            // Relación obligatoria al reporte
-            $table->uuid('reporte_id')->index('idx_equipos_reporte_id');
-            $table->foreign('reporte_id', 'fk_equipos_reporte')->references('id')->on('reportes')->onDelete('cascade');
+            // Relación opcional al reporte
+            $table->uuid('reporte_id')->nullable()->index('idx_equipos_reporte_id');
+            $table->foreign('reporte_id', 'fk_equipos_reporte')->references('id')->on('reportes')->onDelete('set null');
             $table->timestamp('creado')->nullable()->useCurrent();
             $table->timestamp('actualizado')->nullable()->useCurrent();
 
