@@ -36,6 +36,8 @@ class LoginApiController extends Controller
                 'message' => 'Credenciales incorrectas'
             ], 401);
         }
+        
+        $user->load(['genero', 'tipos_sangre', 'niveles_entrenamiento', 'role', 'estados_sistema']);
 
         // Crear token named "api-token"
         $token = $user->createToken('api-token')->plainTextToken;
