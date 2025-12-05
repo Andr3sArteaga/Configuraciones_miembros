@@ -346,7 +346,11 @@
 
                 $('[data-summary-name]').text(nombre);
                 if (inicio && fin) {
-                    $('[data-summary-dates]').text(inicio + ' al ' + fin);
+                    const formatDate = (dateStr) => {
+                        const [year, month, day] = dateStr.split('-');
+                        return `${day}/${month}/${year}`;
+                    };
+                    $('[data-summary-dates]').text(formatDate(inicio) + ' al ' + formatDate(fin));
                 } else {
                     $('[data-summary-dates]').text('—');
                 }
