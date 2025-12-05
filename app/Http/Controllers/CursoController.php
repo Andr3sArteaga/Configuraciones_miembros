@@ -66,7 +66,7 @@ class CursoController extends Controller
         try {
             DB::beginTransaction();
 
-            $userId = auth()->check() ? auth()->user()->id : null;
+            $userId = Auth::check() ? Auth::user()->id : null;
 
             // Crear curso base
             $curso = Curso::create([
@@ -340,7 +340,7 @@ class CursoController extends Controller
         try {
             DB::beginTransaction();
 
-            $userId = auth()->check() ? auth()->user()->id : null;
+            $userId = Auth::check() ? Auth::user()->id : null;
 
             // Actualizar datos base del curso
             $curso->update([
@@ -780,14 +780,14 @@ class CursoController extends Controller
             ], 500);
         }
     }
- 
+
     /**
      * Devuelve el estado de inscripción del usuario autenticado en un curso.
      * Endpoint: GET /api/cursos/{id}/inscripcion
      */
     public function apiInscripcionEstado($id)
     {
-        $user = auth()->user();
+        $user = Auth::user();
         $curso = \App\Models\Curso::findOrFail($id);
         // Verifica si el usuario está asignado al curso (entidad_tipo = 'usuario')
         $inscrito = $curso->cursos_asignados()

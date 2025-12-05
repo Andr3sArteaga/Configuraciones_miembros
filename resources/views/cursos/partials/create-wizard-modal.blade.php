@@ -267,6 +267,17 @@
 
             const $modal = $('#createCursoWizardModal');
             const $form = $('#createCursoWizardForm');
+            
+            // Elementos de fecha
+            const $inicio = $('#curso_inicio_programado');
+            const $fin = $('#curso_fin_programado');
+
+            // Calcular fecha actual YYYY-MM-DD
+            const now = new Date();
+            const year = now.getFullYear();
+            const month = String(now.getMonth() + 1).padStart(2, '0');
+            const day = String(now.getDate()).padStart(2, '0');
+            const today = `${year}-${month}-${day}`;
 
             function updateStepUI() {
                 // Indicador numérico
@@ -314,16 +325,32 @@
             function validateCurrentStep() {
                 if (currentStep === 1) {
                     const nombre = $('#curso_nombre').val().trim();
-                    const inicio = $('#curso_inicio_programado').val();
-                    const fin = $('#curso_fin_programado').val();
+                    const inicio = $inicio.val();
+                    const fin = $fin.val();
 
+                    // 1. Validar campos vacíos
                     if (!nombre || !inicio || !fin) {
                         alert('Por favor complete nombre y fechas del curso.');
                         return false;
                     }
 
+                    // 2. Validar que las fechas no sean pasadas (Validación manual estricta)
+                    if (inicio < today) {
+                        alert(`La fecha de inicio no puede ser anterior a hoy (${today}).`);
+                        $inicio.focus();
+                        return false;
+                    }
+
+                    if (fin < today) {
+                        alert(`La fecha de finalización no puede ser anterior a hoy (${today}).`);
+                        $fin.focus();
+                        return false;
+                    }
+
+                    // 3. Validar coherencia entre fechas
                     if (fin < inicio) {
                         alert('La fecha de finalización debe ser posterior o igual a la fecha de inicio.');
+                        $fin.focus();
                         return false;
                     }
                 }
@@ -341,8 +368,8 @@
 
             function refreshSummary() {
                 const nombre = $('#curso_nombre').val() || '—';
-                const inicio = $('#curso_inicio_programado').val();
-                const fin = $('#curso_fin_programado').val();
+                const inicio = $inicio.val();
+                const fin = $fin.val();
 
                 $('[data-summary-name]').text(nombre);
                 if (inicio && fin) {
@@ -561,6 +588,10 @@
             }
 
             $(document).ready(function () {
+                // Inicializar fechas mínimas
+                $inicio.attr('min', today);
+                $fin.attr('min', today);
+
                 // Abrir modal si hubo errores en validación de cursos
                 @if ($errors->any() && session('modal') === 'curso-wizard')
                     $modal.modal('show');
@@ -579,7 +610,27 @@
                     updateStepUI();
                 });
 
-                $('#curso_nombre, #curso_inicio_programado, #curso_fin_programado').on('change keyup', function () {
+                // Lógica de fechas dinámica
+                $inicio.on('change', function() {
+                    const val = $(this).val();
+                    refreshSummary();
+                    if(val) {
+                        // Al cambiar inicio, el fin no puede ser menor
+                        $fin.attr('min', val);
+                        // Si fin ya tenía valor y es menor, limpiarlo o avisar
+                        if($fin.val() && $fin.val() < val) {
+                            $fin.val(val); // Ajustar automáticamente
+                        }
+                    } else {
+                        $fin.attr('min', today);
+                    }
+                });
+
+                $fin.on('change keyup', function () {
+                    refreshSummary();
+                });
+                
+                $('#curso_nombre').on('change keyup', function () {
                     refreshSummary();
                 });
 
@@ -623,6 +674,9 @@
                     refreshSummary();
                     refreshStageSummary();
                     refreshResourcesSummary();
+                    // Re-asegurar min dates al abrir
+                    $inicio.attr('min', today);
+                    $fin.attr('min', today);
                 });
             });
         })();
