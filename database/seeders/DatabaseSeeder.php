@@ -36,6 +36,7 @@ class DatabaseSeeder extends Seeder
         // Create admin user (depends on parametric data)
         $this->command->info('👤 Creando usuario administrador...');
         $this->call(AdminUserSeeder::class);
+        $this->call(RolesAndPermissionsSeeder::class);
 
         // Optional: Other seeders
         $this->command->info('📋 Poblando reportes de ejemplo...');

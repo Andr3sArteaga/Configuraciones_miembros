@@ -57,7 +57,10 @@ Route::prefix('v1')->group(function () {
     // Reportes (Citizen Fire Reports) API
     Route::get('/reportes', [ReporteController::class, 'api'])
         ->name('api.reportes');
+    Route::post('/reportes', [ReporteController::class, 'storePublico'])
+        ->name('api.reportes.store');
 
     Route::get('/cursos', [CursoController::class, 'api'])
         ->name('api.cursos.api');
 });
+ 

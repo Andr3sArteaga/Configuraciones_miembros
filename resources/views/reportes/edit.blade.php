@@ -330,6 +330,16 @@
                     document.getElementById('latitud').value = lat.toFixed(6);
                     document.getElementById('longitud').value = lng.toFixed(6);
 
+                    // Reverse Geocoding con Nominatim
+                    fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lng}`)
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data && data.display_name) {
+                                document.getElementById('nombre_lugar').value = data.display_name;
+                            }
+                        })
+                        .catch(error => console.error('Error en geocoding:', error));
+
                     if (marker) {
                         map.removeLayer(marker);
                     }

@@ -13,6 +13,8 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Laravel\Sanctum\HasApiTokens;
 
+use Spatie\Permission\Traits\HasRoles;
+
 /**
  * Class Usuario
  * 
@@ -48,7 +50,7 @@ use Laravel\Sanctum\HasApiTokens;
  */
 class Usuario extends Authenticatable
 {
-	use HasApiTokens;
+	use HasApiTokens, HasRoles;
 
 	protected $table = 'usuarios';
 	public $incrementing = false;
