@@ -62,5 +62,9 @@ Route::prefix('v1')->group(function () {
 
     Route::get('/cursos', [CursoController::class, 'api'])
         ->name('api.cursos.api');
+
+    // Animal Injury Reports
+    Route::post('/reports', [\App\Http\Controllers\Api\ReporteAnimalController::class, 'store'])
+        ->name('api.reports.animal');
 });
  

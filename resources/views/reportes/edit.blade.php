@@ -134,6 +134,39 @@
                         </div>
                     </div>
 
+                    <!-- Reporte de Animales -->
+                    <div class="card card-danger">
+                        <div class="card-header">
+                            <h3 class="card-title">Reporte de Animales</h3>
+                        </div>
+                        <div class="card-body">
+                            <div class="form-group">
+                                <label>¿Hay algún animal herido presente?</label>
+                                <div class="custom-control custom-radio">
+                                    <input class="custom-control-input" type="radio" id="animal_si"
+                                        name="animal_presente" value="si"
+                                        {{ $reporte->animal_report ? 'checked' : '' }}>
+                                    <label for="animal_si" class="custom-control-label">Sí</label>
+                                </div>
+                                <div class="custom-control custom-radio">
+                                    <input class="custom-control-input" type="radio" id="animal_no"
+                                        name="animal_presente" value="no"
+                                        {{ !$reporte->animal_report ? 'checked' : '' }}>
+                                    <label for="animal_no" class="custom-control-label">No</label>
+                                </div>
+                            </div>
+                            @if ($reporte->animal_report)
+                                <div class="alert alert-info">
+                                    Existe un reporte de animal asociado.
+                                    <button type="button" class="btn btn-sm btn-light ml-2" data-toggle="modal"
+                                        data-target="#animalModal">
+                                        Ver/Editar Detalles del Animal
+                                    </button>
+                                </div>
+                            @endif
+                        </div>
+                    </div>
+
                     <!-- Recursos Necesarios -->
                     <div class="card card-warning">
                         <div class="card-header">
@@ -298,6 +331,63 @@
                 </div>
             </div>
         </form>
+
+        <!-- Modal Animales -->
+        <div class="modal fade" id="animalModal" tabindex="-1" role="dialog" aria-labelledby="animalModalLabel"
+            aria-hidden="true">
+            <div class="modal-dialog modal-lg" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="animalModalLabel">Detalles del Animal Herido</h5>
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        <!-- Alert for separation (Edit Mode) -->
+                        <div class="alert alert-warning">
+                            <i class="icon fas fa-exclamation-triangle"></i> La edición de animales se maneja por separado.
+                            Los cambios aquí no se guardan automáticamente al cerrar.
+                        </div>
+
+                        <!-- Imagen -->
+                        <div class="form-group">
+                            <label>Imagen Actual</label>
+                            @if ($reporte->animal_report && $reporte->animal_report->imagen_path)
+                                <div class="mb-2">
+                                    <img src="{{ asset('storage/' . $reporte->animal_report->imagen_path) }}"
+                                        alt="Animal" class="img-fluid" style="max-height: 200px">
+                                </div>
+                            @else
+                                <p class="text-muted">No hay imagen registrada.</p>
+                            @endif
+                            
+                            <!-- NOTE: File upload for edit not implemented in this pass, purely display -->
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label>Condición</label>
+                                    <input type="text" class="form-control" readonly
+                                        value="{{ $reporte->animal_report->condicion_inicial_id ?? 'N/A' }}">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label>Tamaño</label>
+                                    <input type="text" class="form-control" readonly
+                                        value="{{ $reporte->animal_report->tamano ?? 'N/A' }}">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Cerrar</button>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 @stop
 
@@ -360,6 +450,13 @@
                     map.setView([latInit, lngInit], 13);
                 }
             }, 50);
+
+            // Mostrar modal si se selecciona "Sí" en animal herido (Only if no report exists yet, or purely for interaction)
+            $('input[name="animal_presente"]').change(function() {
+                if (this.value === 'si') {
+                    $('#animalModal').modal('show');
+                }
+            });
         });
     </script>
 @stop

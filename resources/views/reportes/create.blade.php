@@ -455,6 +455,124 @@
                 var fileName = $(this).val().split('\\').pop();
                 $(this).next('.custom-file-label').addClass("selected").html(fileName);
             });
+
+            // Intercept form submission
+            $('form').on('submit', function(e) {
+                const animalPresente = $('input[name="animal_presente"]:checked').val();
+                
+                if (animalPresente === 'si') {
+                    e.preventDefault(); // Stop normal submission
+                    
+                    // 1. Submit Main Report via AJAX
+                    const mainForm = $(this);
+                    const mainFormData = new FormData(this);
+                    
+                    // Show loading state (optional but good UI)
+                    const submitBtn = mainForm.find('button[type="submit"]');
+                    const originalBtnText = submitBtn.html();
+                    submitBtn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Guardando...');
+
+                    $.ajax({
+                        url: mainForm.attr('action'),
+                        method: 'POST',
+                        data: mainFormData,
+                        processData: false,
+                        contentType: false,
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest', // Force JSON response from our Controller
+                            'Accept': 'application/json'
+                        },
+                        success: function(response) {
+                            if (response.success && response.id) {
+                                // 2. Send Animal Report
+                                sendAnimalReport(response.id, submitBtn, originalBtnText);
+                            } else {
+                                alert('Error al guardar el reporte principal: ' + (response.message || 'Desconocido'));
+                                submitBtn.prop('disabled', false).html(originalBtnText);
+                            }
+                        },
+                        error: function(xhr) {
+                            console.error(xhr);
+                            alert('Error al guardar el reporte: ' + (xhr.responseJSON?.message || 'Error de servidor'));
+                            submitBtn.prop('disabled', false).html(originalBtnText);
+                        }
+                    });
+                }
+                // If 'no', let it submit normally
+            });
+
+            function sendAnimalReport(incendioId, btn, originalText) {
+                const animalFormData = new FormData();
+                
+                // Static mappings for IDs (Simulated for Microservice)
+                const conditionMap = {
+                    'Atascado / atrapado': 1,
+                    'Desconocido': 2,
+                    'Deshidratado': 3,
+                    'Desorientado / shock': 4,
+                    'Difícil acceso': 5,
+                    'Herido grave': 6,
+                    'Herido leve': 7,
+                    'Inconsciente': 8,
+                    'Quemaduras': 9
+                };
+                
+                const incidentTypeMap = {
+                    'Incendio cercano - Alto': 1
+                };
+
+                // Prepare Data
+                const estado = $('select[name="estado_animal"]').val();
+                const tipo = $('select[name="tipo_incidente_animal"]').val();
+                const tamano = $('input[name="tamano_animal"]:checked').val();
+                const moverse = $('input[name="puede_moverse"]:checked').val() === 'si';
+                const imagen = $('#imagen_animal')[0].files[0];
+                
+                // Get lat/lon from main form
+                const lat = $('#latitud').val();
+                const lng = $('#longitud').val();
+                const obs = $('#comentario_adicional').val(); // Using main comment or add new field? Prompt said "observaciones" -> string. I'll use a placeholder or reuse main comment.
+                
+                // Append fields as per requirement
+                animalFormData.append('incendio_id', incendioId);
+                animalFormData.append('latitud', lat);
+                animalFormData.append('longitud', lng);
+                animalFormData.append('direccion', $('#nombre_lugar').val() || '');
+                animalFormData.append('observaciones', obs || 'Sin observaciones adicionales');
+                animalFormData.append('condicion_inicial_id', conditionMap[estado] || 2);
+                animalFormData.append('tipo_incidente_id', incidentTypeMap[tipo] || 1);
+                animalFormData.append('tamano', tamano);
+                animalFormData.append('puede_moverse', moverse ? 1 : 0);
+                animalFormData.append('traslado_inmediato', 0); // Default false or add input
+                animalFormData.append('centro_id', ''); // Default empty (becomes null)
+                
+                if (imagen) {
+                    animalFormData.append('imagen', imagen);
+                } else {
+                    alert('Debe subir una imagen del animal.');
+                    btn.prop('disabled', false).html(originalText);
+                    return;
+                }
+
+                // Send to Microservice Endpoint
+                $.ajax({
+                    url: '{{ route("api.reports.animal") }}', // Using our new API route
+                    method: 'POST',
+                    data: animalFormData,
+                    processData: false,
+                    contentType: false,
+                    success: function(response) {
+                        // Success! Redirect
+                        window.location.href = '{{ route("reportes.index") }}?success=Reporte+y+Animal+guardados';
+                    },
+                    error: function(xhr) {
+                        console.error('Animal Report Error:', xhr);
+                        // Even if animal fails, main report was saved. Redirect with warning.
+                        alert('Reporte de incendio guardado, pero falló el reporte animal: ' + (xhr.responseJSON?.message || 'Error'));
+                        window.location.href = '{{ route("reportes.index") }}';
+                    }
+                });
+            }
         });
     </script>
 @stop
