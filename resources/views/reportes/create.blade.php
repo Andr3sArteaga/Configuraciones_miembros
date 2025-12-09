@@ -304,6 +304,9 @@
                                         <span class="input-group-text">Subir</span>
                                     </div>
                                 </div>
+                                <div class="mt-2 text-center" id="imagen_preview_container" style="display: none;">
+                                    <img id="imagen_preview" src="#" alt="Vista previa" class="img-fluid rounded" style="max-height: 200px;">
+                                </div>
                             </div>
 
                             <div class="row">
@@ -450,10 +453,24 @@
                 }
             });
 
-            // Actualizar label del input file
+            // Actualizar label del input file y mostrar preview
             $('.custom-file-input').on('change', function() {
+                // Update label
                 var fileName = $(this).val().split('\\').pop();
                 $(this).next('.custom-file-label').addClass("selected").html(fileName);
+
+                // Show preview
+                var file = this.files[0];
+                if (file) {
+                    var reader = new FileReader();
+                    reader.onload = function(e) {
+                        $('#imagen_preview').attr('src', e.target.result);
+                        $('#imagen_preview_container').show();
+                    }
+                    reader.readAsDataURL(file);
+                } else {
+                    $('#imagen_preview_container').hide();
+                }
             });
 
             // Intercept form submission
