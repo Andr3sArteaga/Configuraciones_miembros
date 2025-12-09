@@ -428,12 +428,15 @@
                         </div>
                     </div>
 
-                    <!-- PASO 4: Mochila (Opcional) -->
+<!-- PASO 4: Mochila -->
                     <div class="tab-pane fade" id="step-mochila-{{ $modalId }}" role="tabpanel">
                         <h4 class="mb-3"><i class="fas fa-backpack text-primary"></i> Mochila de Equipos</h4>
-                        <div class="alert alert-info">
-                            <i class="fas fa-info-circle"></i> <strong>Asigna suministros al equipo según su
-                                disponibilidad</strong>
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-12 text-right">
+                                <label class="mr-2">Código de Seguimiento:</label>
+                                <input type="text" class="form-control d-inline-block w-auto bg-light" id="codigo_seguimiento-{{ $modalId }}" name="codigo_seguimiento" readonly>
+                            </div>
                         </div>
 
                         <div class="row">
@@ -441,33 +444,28 @@
                                 <div class="card">
                                     <div class="card-header bg-light">
                                         <h6 class="mb-0">
-                                            <i class="fas fa-box"></i> Donaciones Disponibles
+                                            <i class="fas fa-box"></i> Suministros y Productos
                                         </h6>
                                     </div>
                                     <div class="card-body p-0">
                                         <div class="table-responsive">
-                                            <table class="table table-hover mb-0"
-                                                id="donations-table-{{ $modalId }}">
+                                            <table class="table table-hover mb-0" id="mochila-table-{{ $modalId }}">
                                                 <thead class="thead-light">
                                                     <tr>
                                                         <th style="width: 40%;">Artículo</th>
-                                                        <th style="width: 20%;" class="text-center">Stock</th>
-                                                        <th style="width: 20%;" class="text-center">Cantidad</th>
+                                                        <th style="width: 15%;" class="text-center">Stock / Sugerido</th>
+                                                        <th style="width: 25%;" class="text-center">Cantidad</th>
                                                         <th style="width: 20%;" class="text-center">Acciones</th>
                                                     </tr>
                                                 </thead>
-                                                <tbody id="donations-tbody-{{ $modalId }}">
-                                                    <!-- Donations will be populated by JavaScript -->
+                                                <tbody id="mochila-tbody-{{ $modalId }}">
+                                                    <!-- Items populated by JS -->
                                                 </tbody>
                                             </table>
                                         </div>
                                     </div>
                                 </div>
-
-                                <div class="alert alert-warning mt-3">
-                                    <i class="fas fa-exclamation-triangle"></i> <strong>Nota:</strong> Esta sección es
-                                    opcional. Los suministros pueden asignarse posteriormente.
-                                </div>
+                                <input type="hidden" name="insumos_necesarios" id="insumos-necesarios-{{ $modalId }}">
                             </div>
                         </div>
                     </div>
@@ -556,7 +554,6 @@
         </div>
     </div>
 </div>
-
 @push('css')
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <style>
@@ -615,77 +612,67 @@
             const modalId = '{{ $modalId }}';
             const isEditMode = {{ $isEditMode ? 'true' : 'false' }};
 
-            // Variables de mapa compartidas (global dentro de este partial)
+            // Variables globals
             let map = null;
             let marker = null;
-            let editMarker = null; // Variable compartida para el marcador de edición
-            let selectedMarker = null; // Variable compartida para el marcador seleccionado
+            let editMarker = null;
+            let selectedMarker = null;
             let currentStep = 1;
+
+            // Arrays state
             let selectedMembers = [];
             let comunarios = [];
-            let donations = [{
-                    id: 1,
-                    name: 'Tanques de Agua (20L)',
-                    quantity: 0,
-                    stock: 50,
-                    icon: 'fa-tint'
-                },
-                {
-                    id: 2,
-                    name: 'Extintores',
-                    quantity: 0,
-                    stock: 20,
-                    icon: 'fa-fire-extinguisher'
-                },
-                {
-                    id: 3,
-                    name: 'Trajes Protectores',
-                    quantity: 0,
-                    stock: 15,
-                    icon: 'fa-shield-alt'
-                },
-                {
-                    id: 4,
-                    name: 'Palas',
-                    quantity: 0,
-                    stock: 30,
-                    icon: 'fa-tools'
-                },
-                {
-                    id: 5,
-                    name: 'Botiquines de Primeros Auxilios',
-                    quantity: 0,
-                    stock: 10,
-                    icon: 'fa-medkit'
-                }
+            
+            // Available items
+            // Donations (Insumos Mochila base)
+            let donations = [
+                { id: 1, name: 'Tanques de Agua (20L)', stock: 50, quantity: 0, icon: 'fa-tint' },
+                { id: 2, name: 'Extintores', stock: 20, quantity: 0, icon: 'fa-fire-extinguisher' },
+                { id: 3, name: 'Trajes Protectores', stock: 15, quantity: 0, icon: 'fa-shield-alt' },
+                { id: 4, name: 'Palas', stock: 30, quantity: 0, icon: 'fa-tools' },
+                { id: 5, name: 'Botiquines', stock: 10, quantity: 0, icon: 'fa-medkit' }
             ];
+
+            // Products list for the second modal
+            let products = [
+                { id: 101, name: 'Arroz', suggested: 18, quantity: 0 },
+                { id: 102, name: 'Pañal', suggested: 24, quantity: 0 },
+                { id: 103, name: 'Aceite', suggested: 12, quantity: 0 },
+                { id: 104, name: 'Fideo', suggested: 20, quantity: 0 },
+                { id: 105, name: 'Leche en Polvo', suggested: 10, quantity: 0 },
+                { id: 106, name: 'Jabón', suggested: 30, quantity: 0 }
+            ];
+
+            // Helper to generate BRI code
+            function generateBRICode() {
+                const random = Math.floor(1000 + Math.random() * 9000);
+                return `BRI-${random}`;
+            }
 
             const assignedLeaderId = @json(isset($liderAsignadoId) ? $liderAsignadoId : null);
 
             document.addEventListener('DOMContentLoaded', function() {
                 // Initialize when modal is shown
                 $('#' + modalId).on('shown.bs.modal', function() {
+                    // Generate tracking code if empty
+                    const codeField = document.getElementById('codigo_seguimiento-' + modalId);
+                    if (!codeField.value) {
+                         codeField.value = generateBRICode();
+                    }
+
                     if (!map) {
                         initializeMap();
                     } else {
-                        // Si el mapa ya existe, recalcular su tamaño
-                        try {
-                            map.invalidateSize(true);
-                        } catch (e) {}
+                        try { map.invalidateSize(true); } catch (e) {}
                     }
-                    // Populate selected members from any pre-checked checkboxes (edit mode)
                     populateSelectedMembersFromChecked();
-                    renderDonationsList();
+                    renderMochilaTable(); // Initial render
+                    
                     setTimeout(function() {
                         if (map) {
-                            try {
-                                map.invalidateSize(true);
-                            } catch (e) {}
-                            // Recentrar si hay marcador
+                            try { map.invalidateSize(true); } catch (e) {}
                             if (marker) {
-                                try {
-                                    map.setView(marker.getLatLng(), map.getZoom());
-                                } catch (e) {}
+                                try { map.setView(marker.getLatLng(), map.getZoom()); } catch (e) {}
                             }
                         }
                     }, 350);
@@ -698,133 +685,76 @@
 
                 initializeEventListeners();
 
-                // Show modal if there are validation errors
+                // Show modal if validation errors
                 @if ($errors->any() && !$isEditMode)
                     $('#' + modalId).modal('show');
                 @endif
             });
 
+            // --- MAP LOGIC (Kept same as before) ---
             function initializeMap() {
-                // Construir posibles nombres de variable global según convención de componente
-                const mapIdStr = 'map-' + modalId; // id del contenedor del mapa
-                const safeMapId = mapIdStr.replace(/-/g, '_'); // map_createTeamModal
-
+                const mapIdStr = 'map-' + modalId;
+                const safeMapId = mapIdStr.replace(/-/g, '_');
                 const candidates = [
-                    'map_' + safeMapId,
-                    'mapInstance_' + safeMapId,
-                    'map_' + mapIdStr.replace(/-/g, '_'),
-                    'mapInstance_' + mapIdStr.replace(/-/g, '_'),
-                    'map_' + mapIdStr,
-                    mapIdStr.replace(/-/g, '_'),
-                    mapIdStr
+                    'map_' + safeMapId, 'mapInstance_' + safeMapId, 'map_' + mapIdStr.replace(/-/g, '_'),
+                    'mapInstance_' + mapIdStr.replace(/-/g, '_'), 'map_' + mapIdStr, mapIdStr.replace(/-/g, '_'), mapIdStr
                 ];
-
                 let mapInstance = null;
                 for (const key of candidates) {
                     if (Object.prototype.hasOwnProperty.call(window, key) && window[key]) {
-                        mapInstance = window[key];
-                        break;
+                        mapInstance = window[key]; break;
                     }
                 }
-
                 if (!mapInstance) {
-                    // If there's an initialization function exported by the component, call it to create the map
                     const initFuncKey = 'initLeafletMap_' + safeMapId;
                     if (window[initFuncKey] && typeof window[initFuncKey] === 'function') {
-                        try {
-                            window[initFuncKey]();
-                        } catch (e) {}
+                        try { window[initFuncKey](); } catch (e) {}
                     }
-                    // Reintentar hasta encontrar la instancia que creó el componente
-                    setTimeout(initializeMap, 100);
-                    return;
+                    setTimeout(initializeMap, 100); return;
                 }
-
                 map = mapInstance;
-
-                // Desactivar el comportamiento de clic del componente que crea marcadores
                 map.off('click');
+                setTimeout(function() { try { map.invalidateSize(true); } catch (e) {} }, 300);
 
-                // Recalcular tamaño y re-centar (útil para modales/animaciones)
-                setTimeout(function() {
-                    try {
-                        map.invalidateSize(true);
-                    } catch (e) {
-                        // si no está disponible por alguna razón, reintentar más tarde
-                    }
-                }, 300);
-
-                // Variable para el marcador de edición (solo en modo edición)
-                // let editMarker = null; // MOVIDO AL SCOPE SUPERIOR
-
-                // Add existing marker if in edit mode
                 @if ($isEditMode && isset($equipo) && $equipo->latitud && $equipo->longitud)
-                    editMarker = L.marker([{{ $equipo->latitud }}, {{ $equipo->longitud }}], {
-                        draggable: true
-                    }).addTo(map);
+                    editMarker = L.marker([{{ $equipo->latitud }}, {{ $equipo->longitud }}], { draggable: true }).addTo(map);
                     editMarker.on('dragend', function(e) {
                         const position = editMarker.getLatLng();
                         updateCoordinates(position.lat, position.lng);
                     });
                 @endif
 
-                // Mostrar reportes como marcadores y dar opción de selección
                 const reportesData = @json(isset($reportes) ? $reportes : []);
                 const reporteMarkers = {};
                 let selectedReporteId = document.getElementById('reporte_id-' + modalId).value || null;
-                // let selectedMarker = null; // MOVIDO AL SCOPE SUPERIOR
 
                 reportesData.forEach(function(reporte) {
                     if (!reporte.ubicacion || !reporte.ubicacion.coordinates) return;
-
                     const lng = reporte.ubicacion.coordinates[0];
                     const lat = reporte.ubicacion.coordinates[1];
-
-                    const m = L.circleMarker([lat, lng], {
-                        radius: 7,
-                        color: '#dc3545',
-                        fillColor: '#dc3545',
-                        fillOpacity: 0.9
-                    }).addTo(map);
-                    m.bindPopup(
-                        `<strong>${reporte.nombre_lugar ?? 'Reporte'}</strong><br/><small>${reporte.nombre_reportante ?? ''}</small>`
-                    );
+                    const m = L.circleMarker([lat, lng], { radius: 7, color: '#dc3545', fillColor: '#dc3545', fillOpacity: 0.9 }).addTo(map);
+                    m.bindPopup(`<strong>${reporte.nombre_lugar ?? 'Reporte'}</strong><br/><small>${reporte.nombre_reportante ?? ''}</small>`);
                     m.reporteId = reporte.id;
                     reporteMarkers[reporte.id] = m;
 
                     m.on('click', function() {
-                        // Restaurar estilo del marcador previamente seleccionado
                         if (selectedMarker && selectedMarker !== m) {
-                            selectedMarker.setStyle({
-                                radius: 7,
-                                color: '#dc3545',
-                                fillColor: '#dc3545',
-                                fillOpacity: 0.9
-                            });
+                            selectedMarker.setStyle({ radius: 7, color: '#dc3545', fillColor: '#dc3545', fillOpacity: 0.9 });
                         }
-
-                        // Seleccionar reporte
                         selectedReporteId = this.reporteId;
                         selectedMarker = m;
                         document.getElementById('reporte_id-' + modalId).value = selectedReporteId;
-
-                        // Resaltar marcador seleccionado
-                        m.setStyle({
-                            radius: 10,
-                            color: '#007bff',
-                            fillColor: '#007bff',
-                            fillOpacity: 0.9
-                        });
+                        m.setStyle({ radius: 10, color: '#007bff', fillColor: '#007bff', fillOpacity: 0.9 });
                         m.openPopup();
-
-                        // Update resumen with report info
-                        document.getElementById('resumen-ubicacion-' + modalId).textContent = (reporte
-                                .nombre_lugar ?? '-') + ' (' + lat.toFixed(4) + ', ' + lng.toFixed(4) +
-                            ')';
+                        document.getElementById('resumen-ubicacion-' + modalId).textContent = (reporte.nombre_lugar ?? '-') + ' (' + lat.toFixed(4) + ', ' + lng.toFixed(4) + ')';
+                        
+                        // Autofill hidden fields if they exist
+                        if(reporte.nombre_lugar) setInputValue('ubicacion', reporte.nombre_lugar);
+                        if(lat) setInputValue('latitud', lat);
+                        if(lng) setInputValue('longitud', lng);
                     });
                 });
 
-                // Listener para seleccionar reporte desde la lista lateral
                 document.querySelectorAll('#' + modalId + ' .select-reporte').forEach(function(anchor) {
                     anchor.addEventListener('click', function(e) {
                         e.preventDefault();
@@ -837,7 +767,6 @@
                     });
                 });
 
-                // Si estamos en modo edición y ya hay reporte asignado, abrir popup
                 if (isEditMode && selectedReporteId && reporteMarkers[selectedReporteId]) {
                     const m = reporteMarkers[selectedReporteId];
                     m.openPopup();
@@ -845,548 +774,391 @@
                 }
             }
 
-            function populateSelectedMembersFromChecked() {
-                selectedMembers = [];
-                document.querySelectorAll('#members-tbody-' + modalId + ' .member-checkbox:checked').forEach(
-                    checkbox => {
-                        const row = checkbox.closest('tr');
-                        selectedMembers.push({
-                            id: checkbox.value,
-                            nombre: row.cells[1].textContent.trim(),
-                            entidad: row.cells[2].textContent.trim(),
-                            nivel: row.cells[3].textContent.trim()
-                        });
-                    });
-
-                document.getElementById('selected-count-' + modalId).textContent = selectedMembers.length +
-                    ' seleccionados';
-                document.getElementById('resumen-miembros-' + modalId).textContent = selectedMembers.length;
-                updateSelectedMembersList();
-                updateLeaderSelect();
-
-                // If we have an assigned leader id (edit mode), preselect it
-                if (assignedLeaderId) {
-                    const liderSelect = document.getElementById('lider-equipo-' + modalId);
-                    // Try to set the value if the option exists
-                    const optionExists = Array.from(liderSelect.options).some(opt => opt.value === assignedLeaderId);
-                    if (optionExists) {
-                        liderSelect.value = assignedLeaderId;
-                        // Show leader info box
-                        const liderInfo = document.getElementById('lider-info-' + modalId);
-                        const liderNombre = document.getElementById('lider-nombre-display-' + modalId);
-                        const selectedOption = liderSelect.options[liderSelect.selectedIndex];
-                        if (selectedOption) {
-                            liderNombre.textContent = selectedOption.text;
-                            liderInfo.classList.remove('d-none');
-                        }
-                    }
-                }
+            function setInputValue(name, value) {
+                const el = document.querySelector(`input[name="${name}"]`);
+                if(el) el.value = value;
             }
 
             function updateCoordinates(lat, lng) {
                 document.getElementById('latitud-' + modalId).value = lat.toFixed(6);
                 document.getElementById('longitud-' + modalId).value = lng.toFixed(6);
-                document.getElementById('resumen-ubicacion-' + modalId).textContent = lat.toFixed(4) + ', ' + lng
-                    .toFixed(4);
+                document.getElementById('resumen-ubicacion-' + modalId).textContent = lat.toFixed(4) + ', ' + lng.toFixed(4);
             }
 
+            // --- MOCHILA & PRODUCTS LOGIC ---
+
+            // Render main table (merges donations + selected products)
+            function renderMochilaTable() {
+                const tbody = document.getElementById('mochila-tbody-' + modalId);
+                tbody.innerHTML = '';
+                
+                // 1. Render Donations (Insumos Base)
+                donations.forEach(item => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td><i class="fas ${item.icon} text-primary mr-2"></i> ${item.name}</td>
+                        <td class="text-center"><span class="badge badge-info">${item.stock}</span></td>
+                        <td class="text-center">
+                             <div class="input-group input-group-sm" style="width: 120px; margin: 0 auto;">
+                                <div class="input-group-prepend">
+                                    <button class="btn btn-outline-secondary btn-dec-mochila" type="button" data-type="donation" data-id="${item.id}">-</button>
+                                </div>
+                                <input type="text" class="form-control text-center" value="${item.quantity}" readonly>
+                                <div class="input-group-append">
+                                    <button class="btn btn-outline-secondary btn-inc-mochila" type="button" data-type="donation" data-id="${item.id}">+</button>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="text-center">
+                            <span class="badge badge-success">En lista</span>
+                        </td>
+                    `;
+                    tbody.appendChild(row);
+                });
+
+                 // 2. Render Products (Now always visible)
+                 if (products.length > 0) {
+                     // Divider
+                     const divider = document.createElement('tr');
+                     divider.innerHTML = '<td colspan="4" class="bg-light font-weight-bold pl-3">Productos Adicionales</td>';
+                     tbody.appendChild(divider);
+
+                     products.forEach(prod => {
+                        const row = document.createElement('tr');
+                        row.innerHTML = `
+                            <td>${prod.name}</td>
+                            <td class="text-center"><span class="badge badge-secondary" title="Sugerido">${prod.suggested}</span></td>
+                            <td class="text-center">
+                                <div class="input-group input-group-sm" style="width: 120px; margin: 0 auto;">
+                                    <div class="input-group-prepend">
+                                        <button class="btn btn-outline-secondary btn-dec-mochila" type="button" data-type="product" data-id="${prod.id}">-</button>
+                                    </div>
+                                    <input type="text" class="form-control text-center" value="${prod.quantity}" readonly>
+                                    <div class="input-group-append">
+                                        <button class="btn btn-outline-secondary btn-inc-mochila" type="button" data-type="product" data-id="${prod.id}">+</button>
+                                    </div>
+                                </div>
+                            </td>
+                             <td class="text-center">
+                                <span class="badge badge-secondary">Disponible</span>
+                            </td>
+                        `;
+                        tbody.appendChild(row);
+                     });
+                 }
+
+                 // Attach events for main table counters
+                 attachMochilaEvents();
+            }
+
+            // Remove unused Modal logic/rendering functions...
+
+            function attachMochilaEvents() {
+                // Decrease
+                document.querySelectorAll('.btn-dec-mochila').forEach(btn => {
+                    btn.addEventListener('click', function() {
+                        const type = this.getAttribute('data-type');
+                        const id = parseInt(this.getAttribute('data-id'));
+                        if (type === 'donation') {
+                            const item = donations.find(d => d.id === id);
+                            if (item && item.quantity > 0) { item.quantity--; renderMochilaTable(); }
+                        } else {
+                            const item = products.find(p => p.id === id);
+                            if (item && item.quantity > 0) { item.quantity--; renderMochilaTable(); }
+                        }
+                    });
+                });
+
+                // Increase
+                 document.querySelectorAll('.btn-inc-mochila').forEach(btn => {
+                    btn.addEventListener('click', function() {
+                         const type = this.getAttribute('data-type');
+                        const id = parseInt(this.getAttribute('data-id'));
+                        if (type === 'donation') {
+                            const item = donations.find(d => d.id === id);
+                            if (item) { item.quantity++; renderMochilaTable(); }
+                        } else {
+                            const item = products.find(p => p.id === id);
+                            if (item) { item.quantity++; renderMochilaTable(); }
+                        }
+                    });
+                });
+            }
+
+            // --- GENERAL EVENTS ---
             function initializeEventListeners() {
-                // Navigation
                 document.getElementById('btn-next-' + modalId).addEventListener('click', nextStep);
                 document.getElementById('btn-prev-' + modalId).addEventListener('click', prevStep);
                 document.getElementById('btn-save-' + modalId).addEventListener('click', saveTeam);
 
-                // Remove marker/report selection
+                // Removed Products Modal listeners as requested
+
+                // Existing listeners...
+
                 document.getElementById('btn-remove-marker-' + modalId).addEventListener('click', function() {
                     document.getElementById('reporte_id-' + modalId).value = '';
-                    const resumenUbicacion = document.getElementById('resumen-ubicacion-' + modalId);
-                    if (resumenUbicacion) {
-                        resumenUbicacion.textContent = '-';
+                    const resumen = document.getElementById('resumen-ubicacion-' + modalId);
+                    if(resumen) resumen.textContent = '-';
+                    if(map) map.closePopup();
+                    if(selectedMarker) {
+                         selectedMarker.setStyle({ radius: 7, color: '#dc3545', fillColor: '#dc3545', fillOpacity: 0.9 });
+                         selectedMarker = null;
                     }
-                    // Cerrar todos los popups abiertos en el mapa
-                    if (map) {
-                        map.closePopup();
-                    }
-                    // Restaurar estilo del marcador seleccionado si existe
-                    if (typeof selectedMarker !== 'undefined' && selectedMarker) {
-                        selectedMarker.setStyle({
-                            radius: 7,
-                            color: '#dc3545',
-                            fillColor: '#dc3545',
-                            fillOpacity: 0.9
-                        });
-                        selectedMarker = null;
-                    }
-                    // Remover el marcador azul (de edición) si existe
-                    if (typeof editMarker !== 'undefined' && editMarker) {
-                        try {
-                            map.removeLayer(editMarker);
-                        } catch (e) {}
+                    if(editMarker) {
+                        try { map.removeLayer(editMarker); } catch(e){}
                         editMarker = null;
                     }
+                    // Clear inputs
+                     setInputValue('ubicacion', ''); setInputValue('latitud', ''); setInputValue('longitud', '');
                 });
 
-                // Member selection
-                document.querySelectorAll('#members-tbody-' + modalId + ' .member-checkbox').forEach(checkbox => {
-                    checkbox.addEventListener('change', updateSelectedMembers);
-                });
-
-                // Update resumen when name or state changes
+                document.querySelectorAll('#members-tbody-' + modalId + ' .member-checkbox').forEach(cb => cb.addEventListener('change', updateSelectedMembers));
                 document.getElementById('nombre_equipo-' + modalId).addEventListener('input', updateResumen);
                 document.getElementById('estado_id-' + modalId).addEventListener('change', updateResumen);
+                
+                const search = document.getElementById('search-member-' + modalId);
+                const entFilter = document.getElementById('filter-entidad-' + modalId);
+                const nivFilter = document.getElementById('filter-nivel-' + modalId);
+                if(search) search.addEventListener('input', filterMembers);
+                if(entFilter) entFilter.addEventListener('change', filterMembers);
+                if(nivFilter) nivFilter.addEventListener('change', filterMembers);
 
-                // Search and filter functionality
-                const searchInput = document.getElementById('search-member-' + modalId);
-                const filterEntidad = document.getElementById('filter-entidad-' + modalId);
-                const filterNivel = document.getElementById('filter-nivel-' + modalId);
-
-                if (searchInput) {
-                    searchInput.addEventListener('input', filterMembers);
-                }
-                if (filterEntidad) {
-                    filterEntidad.addEventListener('change', filterMembers);
-                }
-                if (filterNivel) {
-                    filterNivel.addEventListener('change', filterMembers);
-                }
-
-                // Select all functionality
-                const selectAllCheckbox = document.getElementById('select-all-members-' + modalId);
-                if (selectAllCheckbox) {
-                    selectAllCheckbox.addEventListener('change', function() {
-                        const visibleCheckboxes = document.querySelectorAll('#members-tbody-' + modalId +
-                            ' .member-row:not([style*="display: none"]) .member-checkbox');
-                        visibleCheckboxes.forEach(checkbox => {
-                            checkbox.checked = this.checked;
-                        });
-                        updateSelectedMembers();
+                const selectAll = document.getElementById('select-all-members-' + modalId);
+                if(selectAll) {
+                    selectAll.addEventListener('change', function() {
+                         const visible = document.querySelectorAll('#members-tbody-' + modalId + ' .member-row:not([style*="display: none"]) .member-checkbox');
+                         visible.forEach(cb => cb.checked = this.checked);
+                         updateSelectedMembers();
                     });
                 }
-
-                // Leader selection change
                 const liderSelect = document.getElementById('lider-equipo-' + modalId);
                 if (liderSelect) {
                     liderSelect.addEventListener('change', function() {
-                        const liderInfo = document.getElementById('lider-info-' + modalId);
-                        const liderNombre = document.getElementById('lider-nombre-display-' + modalId);
-
-                        if (this.value) {
-                            const selectedOption = this.options[this.selectedIndex];
-                            liderNombre.textContent = selectedOption.text;
-                            liderInfo.classList.remove('d-none');
-                        } else {
-                            liderInfo.classList.add('d-none');
-                        }
+                         const info = document.getElementById('lider-info-' + modalId);
+                         const txt = document.getElementById('lider-nombre-display-' + modalId);
+                         if(this.value) {
+                             txt.textContent = this.options[this.selectedIndex].text;
+                             info.classList.remove('d-none');
+                         } else {
+                             info.classList.add('d-none');
+                         }
                     });
                 }
-
-                // Add Comunario
                 document.getElementById('btn-add-comunario-' + modalId).addEventListener('click', addComunario);
             }
 
-            function addComunario() {
-                const nombreInput = document.getElementById('nombre_comunario-' + modalId);
-                const edadInput = document.getElementById('edad_comunario-' + modalId);
-
-                const nombre = nombreInput.value.trim();
-                const edad = edadInput.value.trim();
-
-                if (!nombre) {
-                    alert('Por favor ingrese el nombre del comunario');
-                    return;
-                }
-                if (!edad) {
-                    alert('Por favor ingrese la edad del comunario');
-                    return;
-                }
-
-                comunarios.push({
-                    nombre,
-                    edad
-                });
-
-                nombreInput.value = '';
-                edadInput.value = '';
-
-                renderComunariosList();
-            }
-
-            function renderComunariosList() {
-                const tbody = document.getElementById('comunarios-list-' + modalId);
-
-                if (comunarios.length === 0) {
-                    tbody.innerHTML = `
-                        <tr>
-                            <td colspan="3" class="text-center text-muted py-3">
-                                No hay comunarios agregados
-                            </td>
-                        </tr>
-                    `;
-                    return;
-                }
-
-                tbody.innerHTML = '';
-                comunarios.forEach((comunario, index) => {
-                    const row = document.createElement('tr');
-                    row.innerHTML = `
-                        <td>${comunario.nombre}</td>
-                        <td>${comunario.edad}</td>
-                        <td>
-                            <button type="button" class="btn btn-danger btn-xs btn-delete-comunario" data-index="${index}">
-                                <i class="fas fa-trash"></i>
-                            </button>
-                        </td>
-                    `;
-                    tbody.appendChild(row);
-                });
-
-                // Add delete event listeners
-                document.querySelectorAll('.btn-delete-comunario').forEach(btn => {
-                    btn.addEventListener('click', function() {
-                        const index = this.getAttribute('data-index');
-                        comunarios.splice(index, 1);
-                        renderComunariosList();
+            // --- HELPERS (populateSelectedMembersFromChecked, filterMembers, etc - Keep minimal changes) ---
+            function populateSelectedMembersFromChecked() {
+                selectedMembers = [];
+                document.querySelectorAll('#members-tbody-' + modalId + ' .member-checkbox:checked').forEach(checkbox => {
+                    const row = checkbox.closest('tr');
+                    selectedMembers.push({
+                        id: checkbox.value,
+                        nombre: row.cells[1].textContent.trim(),
+                        entidad: row.cells[2].textContent.trim(),
+                        nivel: row.cells[3].textContent.trim()
                     });
                 });
-            }
+                document.getElementById('selected-count-' + modalId).textContent = selectedMembers.length + ' seleccionados';
+                document.getElementById('resumen-miembros-' + modalId).textContent = selectedMembers.length;
+                updateSelectedMembersList();
+                updateLeaderSelect();
 
-            function renderDonationsList() {
-                const tbody = document.getElementById('donations-tbody-' + modalId);
-
-                // Show all donations
-                const activeDonations = donations;
-
-                if (activeDonations.length === 0) {
-                    tbody.innerHTML = `
-                        <tr>
-                            <td colspan="4" class="text-center text-muted py-3">
-                                <i class="fas fa-info-circle"></i> No hay donaciones disponibles.
-                            </td>
-                        </tr>
-                    `;
-                    return;
+                if (assignedLeaderId) {
+                    const ls = document.getElementById('lider-equipo-' + modalId);
+                    const opt = Array.from(ls.options).some(o => o.value === assignedLeaderId);
+                    if (opt) {
+                        ls.value = assignedLeaderId;
+                        const info = document.getElementById('lider-info-' + modalId);
+                        const txt = document.getElementById('lider-nombre-display-' + modalId);
+                        txt.textContent = ls.options[ls.selectedIndex].text;
+                        info.classList.remove('d-none');
+                    }
                 }
-
-                tbody.innerHTML = '';
-                activeDonations.forEach((donation) => {
-                    const row = document.createElement('tr');
-                    row.innerHTML = `
-                        <td>
-                            <i class="fas ${donation.icon} text-primary mr-2"></i>
-                            ${donation.name}
-                        </td>
-                        <td class="text-center">
-                            <span class="badge badge-info badge-lg">${donation.stock}</span>
-                        </td>
-                        <td class="text-center">
-                            <span class="badge badge-primary badge-lg">${donation.quantity}</span>
-                        </td>
-                        <td class="text-center">
-                            <div class="btn-group" role="group">
-                                <button type="button" class="btn btn-sm btn-danger btn-decrease-donation" data-id="${donation.id}">
-                                    <i class="fas fa-minus"></i>
-                                </button>
-                                <button type="button" class="btn btn-sm btn-success btn-increase-donation" data-id="${donation.id}">
-                                    <i class="fas fa-plus"></i>
-                                </button>
-                            </div>
-                        </td>
-                    `;
-                    tbody.appendChild(row);
-                });
-
-                // Add event listeners for increase/decrease buttons
-                document.querySelectorAll('.btn-increase-donation').forEach(btn => {
-                    btn.addEventListener('click', function() {
-                        const donationId = parseInt(this.getAttribute('data-id'));
-                        const donation = donations.find(d => d.id === donationId);
-                        if (donation) {
-                            donation.quantity++;
-                            renderDonationsList();
-                        }
-                    });
-                });
-
-                document.querySelectorAll('.btn-decrease-donation').forEach(btn => {
-                    btn.addEventListener('click', function() {
-                        const donationId = parseInt(this.getAttribute('data-id'));
-                        const donation = donations.find(d => d.id === donationId);
-                        if (donation && donation.quantity > 0) {
-                            donation.quantity--;
-                            renderDonationsList();
-                        }
-                    });
-                });
             }
 
             function filterMembers() {
-                const searchTerm = document.getElementById('search-member-' + modalId).value.toLowerCase();
-                const entidadFilter = document.getElementById('filter-entidad-' + modalId).value.toLowerCase();
-                const nivelFilter = document.getElementById('filter-nivel-' + modalId).value.toLowerCase();
-
-                const rows = document.querySelectorAll('#members-tbody-' + modalId + ' .member-row');
-
-                rows.forEach(row => {
-                    const nombre = row.cells[1].textContent.toLowerCase();
-                    const entidad = row.getAttribute('data-entidad');
-                    const nivel = row.getAttribute('data-nivel');
-
-                    const matchesSearch = nombre.includes(searchTerm);
-                    const matchesEntidad = !entidadFilter || entidad.includes(entidadFilter);
-                    const matchesNivel = !nivelFilter || nivel.includes(nivelFilter);
-
-                    if (matchesSearch && matchesEntidad && matchesNivel) {
-                        row.style.display = '';
-                    } else {
-                        row.style.display = 'none';
-                    }
-                });
-            }
-
-            function nextStep() {
-                if (validateStep(currentStep)) {
-                    currentStep++;
-                    updateStep();
-                }
-            }
-
-            function prevStep() {
-                currentStep--;
-                updateStep();
-            }
-
-            function updateStep() {
-                const tabs = ['ubicacion', 'configurar', 'lider', 'mochila', 'comunarios'];
-                tabs.forEach((tab, index) => {
-                    const tabElement = document.getElementById('tab-' + tab + '-' + modalId);
-                    const stepElement = document.getElementById('step-' + tab + '-' + modalId);
-
-                    if (index + 1 === currentStep) {
-                        tabElement.classList.add('active');
-                        tabElement.classList.remove('disabled');
-                        stepElement.classList.add('show', 'active');
-                    } else if (index + 1 < currentStep) {
-                        tabElement.classList.remove('active', 'disabled');
-                        stepElement.classList.remove('show', 'active');
-                    } else {
-                        tabElement.classList.remove('active');
-                        tabElement.classList.add('disabled');
-                        stepElement.classList.remove('show', 'active');
-                    }
-                });
-
-                // Update progress bar
-                const progress = (currentStep / 5) * 100;
-                const progressBar = document.getElementById('progressBar-' + modalId);
-                progressBar.style.width = progress + '%';
-                progressBar.setAttribute('aria-valuenow', progress);
-                progressBar.textContent = 'Paso ' + currentStep + ' de 5';
-
-                // Update buttons
-                document.getElementById('btn-prev-' + modalId).style.display = currentStep > 1 ? 'inline-block' :
-                    'none';
-                document.getElementById('btn-next-' + modalId).style.display = currentStep < 5 ? 'inline-block' :
-                    'none';
-                document.getElementById('btn-save-' + modalId).style.display = currentStep === 5 ? 'inline-block' :
-                    'none';
-
-                // Update resumen in step 3
-                if (currentStep === 3) {
-                    updateResumen();
-                    updateLeaderSelect();
-                }
-            }
-
-            function validateStep(step) {
-                switch (step) {
-                    case 2:
-                        const nombre = document.getElementById('nombre_equipo-' + modalId).value.trim();
-                        const estado = document.getElementById('estado_id-' + modalId).value;
-
-                        if (!nombre) {
-                            alert('Por favor, ingrese el nombre del equipo');
-                            return false;
-                        }
-                        if (!estado) {
-                            alert('Por favor, seleccione el estado del equipo');
-                            return false;
-                        }
-                        return true;
-                    default:
-                        return true;
-                }
+                 const term = document.getElementById('search-member-' + modalId).value.toLowerCase();
+                 const ent = document.getElementById('filter-entidad-' + modalId).value.toLowerCase();
+                 const niv = document.getElementById('filter-nivel-' + modalId).value.toLowerCase();
+                 document.querySelectorAll('#members-tbody-' + modalId + ' .member-row').forEach(row => {
+                     const n = row.cells[1].textContent.toLowerCase();
+                     const e = row.getAttribute('data-entidad');
+                     const l = row.getAttribute('data-nivel');
+                     const match = n.includes(term) && (!ent || e.includes(ent)) && (!niv || l.includes(niv));
+                     row.style.display = match ? '' : 'none';
+                 });
             }
 
             function updateSelectedMembers() {
                 selectedMembers = [];
-                document.querySelectorAll('#members-tbody-' + modalId + ' .member-checkbox:checked').forEach(
-                    checkbox => {
-                        const row = checkbox.closest('tr');
-                        selectedMembers.push({
-                            id: checkbox.value,
-                            nombre: row.cells[1].textContent.trim(),
-                            entidad: row.cells[2].textContent.trim(),
-                            nivel: row.cells[3].textContent.trim()
-                        });
+                 document.querySelectorAll('#members-tbody-' + modalId + ' .member-checkbox:checked').forEach(checkbox => {
+                    const row = checkbox.closest('tr');
+                    selectedMembers.push({
+                        id: checkbox.value,
+                        nombre: row.cells[1].textContent.trim(),
+                        entidad: row.cells[2].textContent.trim(),
+                        nivel: row.cells[3].textContent.trim()
                     });
-
-                document.getElementById('selected-count-' + modalId).textContent = selectedMembers.length +
-                    ' seleccionados';
+                });
+                document.getElementById('selected-count-' + modalId).textContent = selectedMembers.length + ' seleccionados';
                 document.getElementById('resumen-miembros-' + modalId).textContent = selectedMembers.length;
-
-                // Update the selected members list in step 3
                 updateSelectedMembersList();
+                updateLeaderSelect();
             }
 
             function updateSelectedMembersList() {
                 const tbody = document.getElementById('selected-members-list-' + modalId);
-
-                if (selectedMembers.length === 0) {
-                    tbody.innerHTML = `
-                <tr>
-                    <td colspan="5" class="text-center text-muted">
-                        <i class="fas fa-info-circle"></i> No hay miembros seleccionados
-                    </td>
-                </tr>
-            `;
+                if(selectedMembers.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted"><i class="fas fa-info-circle"></i> No hay miembros seleccionados</td></tr>';
                 } else {
                     tbody.innerHTML = '';
-                    selectedMembers.forEach((member, index) => {
-                        const row = document.createElement('tr');
-                        row.innerHTML = `
-                    <td>${index + 1}</td>
-                    <td>${member.nombre}</td>
-                    <td>${member.entidad}</td>
-                    <td>${member.nivel}</td>
-                    <td><span class="badge badge-secondary">Miembro</span></td>
-                `;
-                        tbody.appendChild(row);
+                    selectedMembers.forEach((m, i) => {
+                        const r = document.createElement('tr');
+                        r.innerHTML = `<td>${i+1}</td><td>${m.nombre}</td><td>${m.entidad}</td><td>${m.nivel}</td><td><span class="badge badge-secondary">Miembro</span></td>`;
+                        tbody.appendChild(r);
                     });
                 }
             }
 
             function updateResumen() {
-                const nombre = document.getElementById('nombre_equipo-' + modalId).value || '-';
-                const estadoSelect = document.getElementById('estado_id-' + modalId);
-                const estado = estadoSelect.options[estadoSelect.selectedIndex]?.text || '-';
-
-                document.getElementById('resumen-nombre-' + modalId).textContent = nombre;
-                document.getElementById('resumen-estado-' + modalId).textContent = estado;
+                const n = document.getElementById('nombre_equipo-' + modalId).value || '-';
+                const s = document.getElementById('estado_id-' + modalId);
+                const t = s.options[s.selectedIndex]?.text || '-';
+                document.getElementById('resumen-nombre-' + modalId).textContent = n;
+                document.getElementById('resumen-estado-' + modalId).textContent = t;
             }
 
             function updateLeaderSelect() {
-                const liderSelect = document.getElementById('lider-equipo-' + modalId);
-                // Guardar el valor seleccionado actualmente
-                const currentValue = liderSelect.value;
-
-                liderSelect.innerHTML = '<option value="">Seleccione un líder</option>';
-
-                selectedMembers.forEach(member => {
-                    const option = document.createElement('option');
-                    option.value = member.id;
-                    option.textContent = member.nombre;
-                    liderSelect.appendChild(option);
+                const ls = document.getElementById('lider-equipo-' + modalId);
+                const val = ls.value;
+                ls.innerHTML = '<option value="">Seleccione un líder</option>';
+                selectedMembers.forEach(m => {
+                    const o = document.createElement('option');
+                    o.value = m.id; o.textContent = m.nombre; ls.appendChild(o);
                 });
-
-                // Restaurar el valor seleccionado si aún existe en la lista
-                if (currentValue && selectedMembers.some(m => m.id === currentValue)) {
-                    liderSelect.value = currentValue;
-                }
+                if(val && selectedMembers.some(m => m.id === val)) ls.value = val;
             }
 
+            function addComunario() {
+                const ni = document.getElementById('nombre_comunario-' + modalId);
+                const ei = document.getElementById('edad_comunario-' + modalId);
+                const n = ni.value.trim(); const e = ei.value.trim();
+                if(!n || !e) { alert('Ingrese nombre y edad del comunario'); return; }
+                comunarios.push({ nombre: n, edad: e });
+                ni.value = ''; ei.value = '';
+                renderComunariosList();
+            }
+
+            function renderComunariosList() {
+                const tbody = document.getElementById('comunarios-list-' + modalId);
+                if(comunarios.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="3" class="text-center text-muted py-3">No hay comunarios agregados</td></tr>'; return;
+                }
+                tbody.innerHTML = '';
+                comunarios.forEach((c, i) => {
+                    const r = document.createElement('tr');
+                    r.innerHTML = `<td>${c.nombre}</td><td>${c.edad}</td><td><button type="button" class="btn btn-danger btn-xs btn-del-com" data-index="${i}"><i class="fas fa-trash"></i></button></td>`;
+                    tbody.appendChild(r);
+                });
+                document.querySelectorAll('.btn-del-com').forEach(b => b.addEventListener('click', function() {
+                    comunarios.splice(this.getAttribute('data-index'), 1); renderComunariosList();
+                }));
+            }
+
+            function nextStep() { if(validateStep(currentStep)) { currentStep++; updateStep(); } }
+            function prevStep() { currentStep--; updateStep(); }
+            
+            function updateStep() {
+                const tabs = ['ubicacion', 'configurar', 'lider', 'mochila', 'comunarios'];
+                tabs.forEach((t, i) => {
+                    const tab = document.getElementById('tab-' + t + '-' + modalId);
+                    const pane = document.getElementById('step-' + t + '-' + modalId);
+                    if (i+1 === currentStep) {
+                        tab.classList.add('active'); tab.classList.remove('disabled');
+                        pane.classList.add('show', 'active');
+                    } else if (i+1 < currentStep) {
+                        tab.classList.remove('active', 'disabled'); pane.classList.remove('show', 'active');
+                    } else {
+                         tab.classList.remove('active'); tab.classList.add('disabled'); pane.classList.remove('show', 'active');
+                    }
+                });
+                const p = (currentStep/5)*100;
+                const pb = document.getElementById('progressBar-' + modalId);
+                pb.style.width = p+'%'; pb.setAttribute('aria-valuenow', p); pb.textContent = 'Paso ' + currentStep + ' de 5';
+                
+                document.getElementById('btn-prev-' + modalId).style.display = currentStep > 1 ? 'inline-block' : 'none';
+                document.getElementById('btn-next-' + modalId).style.display = currentStep < 5 ? 'inline-block' : 'none';
+                document.getElementById('btn-save-' + modalId).style.display = currentStep === 5 ? 'inline-block' : 'none';
+
+                if(currentStep === 3) { updateResumen(); updateLeaderSelect(); }
+            }
+
+            function validateStep(step) {
+                if(step === 2) {
+                    const n = document.getElementById('nombre_equipo-' + modalId).value.trim();
+                    const e = document.getElementById('estado_id-' + modalId).value;
+                    if(!n || !e) { alert('Complete nombre y estado del equipo'); return false; }
+                }
+                return true;
+            }
+
+            function resetForm() {
+                currentStep = 1; selectedMembers = []; comunarios = [];
+                donations.forEach(d => d.quantity = 0);
+                products.forEach(p => p.quantity = 0);
+                renderMochilaTable(); renderComunariosList(); updateStep();
+            }
+            
+            // --- FINAL SUBMISSION ---
             function saveTeam() {
-                // Validar campos requeridos
                 const nombre = document.getElementById('nombre_equipo-' + modalId).value.trim();
                 const estado = document.getElementById('estado_id-' + modalId).value;
 
-                if (!nombre) {
-                    alert('Por favor, ingrese el nombre del equipo');
-                    return;
-                }
+                if (!nombre || !estado) { alert('Datos incompletos'); return; }
 
-                if (!estado) {
-                    alert('Por favor, seleccione el estado del equipo');
-                    return;
-                }
+                // Construct Insumos String
+                const insumosParts = [];
+                donations.forEach(d => { if(d.quantity > 0) insumosParts.push(`${d.name}: ${d.quantity}`); });
+                products.forEach(p => { if(p.quantity > 0) insumosParts.push(`${p.name}: ${p.quantity}`); });
+                const insumosString = insumosParts.join(', ');
+                document.getElementById('insumos-necesarios-' + modalId).value = insumosString;
 
-                // Create form and submit
+                // Create form
                 const form = document.createElement('form');
                 form.method = 'POST';
                 form.action = '{{ $formAction }}';
-
-                // CSRF token
-                const csrfInput = document.createElement('input');
-                csrfInput.type = 'hidden';
-                csrfInput.name = '_token';
-                csrfInput.value = '{{ csrf_token() }}';
-                form.appendChild(csrfInput);
-
+                
+                const csrf = document.createElement('input'); csrf.type = 'hidden'; csrf.name = '_token'; csrf.value = '{{ csrf_token() }}'; form.appendChild(csrf);
                 @if ($isEditMode)
-                    // Method spoofing for PUT
-                    const methodInput = document.createElement('input');
-                    methodInput.type = 'hidden';
-                    methodInput.name = '_method';
-                    methodInput.value = 'PUT';
-                    form.appendChild(methodInput);
+                    const m = document.createElement('input'); m.type = 'hidden'; m.name = '_method'; m.value = 'PUT'; form.appendChild(m);
                 @endif
-
-                // Add basic form data
-                const fields = ['nombre_equipo', 'estado_id', 'reporte_id'];
-                fields.forEach(field => {
-                    const element = document.getElementById(field + '-' + modalId);
-                    if (element && element.value) {
-                        const input = document.createElement('input');
-                        input.type = 'hidden';
-                        input.name = field;
-                        input.value = element.value;
-                        form.appendChild(input);
-                    }
+                
+                // Fields
+                ['nombre_equipo', 'estado_id', 'reporte_id', 'codigo_seguimiento', 'latitud', 'longitud', 'ubicacion', 'insumos_necesarios'].forEach(f => {
+                     const el = document.getElementById(f + '-' + modalId);
+                     if(el) {
+                         const i = document.createElement('input'); i.type = 'hidden'; i.name = f; i.value = el.value; form.appendChild(i);
+                     }
                 });
-
-                // Add selected members
-                selectedMembers.forEach(member => {
-                    const input = document.createElement('input');
-                    input.type = 'hidden';
-                    input.name = 'miembros[]';
-                    input.value = member.id;
-                    form.appendChild(input);
+                
+                // Members
+                selectedMembers.forEach(m => {
+                    const i = document.createElement('input'); i.type = 'hidden'; i.name = 'miembros[]'; i.value = m.id; form.appendChild(i);
                 });
-
-                // Add leader if selected
-                const liderSelect = document.getElementById('lider-equipo-' + modalId);
-                if (liderSelect && liderSelect.value) {
-                    const liderInput = document.createElement('input');
-                    liderInput.type = 'hidden';
-                    liderInput.name = 'lider_id';
-                    liderInput.value = liderSelect.value;
-                    form.appendChild(liderInput);
+                const ls = document.getElementById('lider-equipo-' + modalId);
+                if(ls && ls.value) {
+                     const i = document.createElement('input'); i.type = 'hidden'; i.name = 'lider_id'; i.value = ls.value; form.appendChild(i);
                 }
 
-                // Add comunarios
-                comunarios.forEach((comunario, index) => {
-                    const nombreInput = document.createElement('input');
-                    nombreInput.type = 'hidden';
-                    nombreInput.name = `comunarios[${index}][nombre]`;
-                    nombreInput.value = comunario.nombre;
-                    form.appendChild(nombreInput);
-
-                    const edadInput = document.createElement('input');
-                    edadInput.type = 'hidden';
-                    edadInput.name = `comunarios[${index}][edad]`;
-                    edadInput.value = comunario.edad;
-                    form.appendChild(edadInput);
+                // Comunarios
+                comunarios.forEach((c, idx) => {
+                     const n = document.createElement('input'); n.type = 'hidden'; n.name = `comunarios[${idx}][nombre]`; n.value = c.nombre; form.appendChild(n);
+                     const e = document.createElement('input'); e.type = 'hidden'; e.name = `comunarios[${idx}][edad]`; e.value = c.edad; form.appendChild(e);
                 });
 
                 document.body.appendChild(form);
                 form.submit();
-            }
-
-            function resetForm() {
-                currentStep = 1;
-                selectedMembers = [];
-                comunarios = [];
-                renderComunariosList();
-                updateStep();
             }
         })();
     </script>

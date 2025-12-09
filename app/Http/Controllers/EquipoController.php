@@ -116,6 +116,84 @@ class EquipoController extends Controller
             // Calcular cantidad de integrantes
             $cantidadMiembros = ($request->filled('miembros') && is_array($request->miembros)) ? count($request->miembros) : 0;
 
+
+            // --- External Microservice Forwarding ---
+            try {
+                $payload = [
+                    'nombre_equipo' => $validated['nombre_equipo'],
+                    'ubicacion' => [
+                        'latitud' => $request->input('latitud'),
+                        'longitud' => $request->input('longitud'),
+                        'nombre_lugar' => $request->input('ubicacion'),
+                        'ciudad' => 'Santa Cruz',
+                        'provincia' => 'Andrés Ibáñez'
+                    ],
+                    'lider' => [
+                        'nombre_completo' => 'Líder Asignado',
+                        'carnet_identidad' => '0000000',
+                        'telefono' => '00000000'
+                    ],
+                    'miembros' => [],
+                    'insumos_necesarios' => $request->input('insumos_necesarios'),
+                    'codigo_seguimiento' => $request->input('codigo_seguimiento'),
+                    'fecha_solicitud' => now()->format('Y-m-d'),
+                    'estado' => 'pendiente',
+                    'comunidad_solicitante' => 'Comunidad A',
+                    'cantidad_personas' => 15,
+                    'fecha_inicio' => now()->format('Y-m-d'),
+                    'fecha_fin' => now()->addDays(7)->format('Y-m-d'),
+                    'aprobada' => false,
+                    'apoyoaceptado' => false,
+                    'id_tipoemergencia' => 1
+                ];
+
+                // Enrich leader info
+                if ($request->has('lider_id')) {
+                    $lider = \DB::table('usuarios')->where('id', $request->input('lider_id'))->first();
+                    if ($lider) {
+                        $payload['lider'] = [
+                            'nombre_completo' => $lider->nombre . ' ' . ($lider->apellido ?? ''),
+                            'carnet_identidad' => $lider->ci ?? '0000000',
+                            'telefono' => $lider->telefono ?? '00000000'
+                        ];
+                    }
+                }
+
+                // Enrich members info
+                if (!empty($validated['miembros'])) {
+                    $miembros = \DB::table('usuarios')->whereIn('id', $validated['miembros'])->get();
+                    foreach ($miembros as $m) {
+                        $payload['miembros'][] = [
+                            'nombre_completo' => $m->nombre . ' ' . ($m->apellido ?? ''),
+                            'carnet_identidad' => $m->ci ?? '0000000',
+                            'edad' => $m->edad ?? 0
+                        ];
+                    }
+                }
+
+                // Add Comunarios
+                if ($request->has('comunarios')) {
+                    foreach ($request->input('comunarios') as $c) {
+                        $payload['miembros'][] = [
+                            'nombre_completo' => $c['nombre'],
+                            'carnet_identidad' => 'N/A',
+                            'edad' => $c['edad']
+                        ];
+                    }
+                }
+                
+                // Log payload for debugging/verification
+                \Illuminate\Support\Facades\Log::info('Payload para Microservicio:', $payload);
+
+                // Send to external microservice
+                // In production, use env('MICROSERVICE_URL')
+                \Illuminate\Support\Facades\Http::post('http://microservice.local/api/equipos', $payload);
+
+            } catch (\Exception $e) {
+                // Log and continue
+                \Illuminate\Support\Facades\Log::error('Microservice Error: ' . $e->getMessage());
+            }
+
             // Insertar con reporte asociado (reporte_id opcional)
             $reporteId = $request->filled('reporte_id') ? $validated['reporte_id'] : null;
             DB::statement(
