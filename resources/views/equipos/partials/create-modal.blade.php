@@ -641,15 +641,74 @@
                 { id: 5, name: 'Botiquines', stock: 10, quantity: 0, icon: 'fa-medkit' }
             ];
 
-            // Products list for the second modal
-            let products = [
-                { id: 101, name: 'Arroz', suggested: 18, quantity: 0 },
-                { id: 102, name: 'Pañal', suggested: 24, quantity: 0 },
-                { id: 103, name: 'Aceite', suggested: 12, quantity: 0 },
-                { id: 104, name: 'Fideo', suggested: 20, quantity: 0 },
-                { id: 105, name: 'Leche en Polvo', suggested: 10, quantity: 0 },
-                { id: 106, name: 'Jabón', suggested: 30, quantity: 0 }
+            // Products list - will be loaded from API
+            let products = [];
+            let productsLoadingState = 'initial'; // 'initial', 'loading', 'loaded', 'failed'
+            let productsLoadNote = '';
+
+            // Fallback products when API fails
+            const fallbackProducts = [
+                { id_producto: 999, nombre: 'Agua', descripcion: 'Agua potable', unidad_medida: 'L', stock_total: 0, quantity: 0, suggested: 0 },
+                { id_producto: 998, nombre: 'Extintores', descripcion: 'Extintores adicionales', unidad_medida: 'unidad', stock_total: 0, quantity: 0, suggested: 0 },
+                { id_producto: 997, nombre: 'Botiquines', descripcion: 'Botiquines médicos', unidad_medida: 'unidad', stock_total: 0, quantity: 0, suggested: 0 }
             ];
+
+            // --- PRODUCT API INTEGRATION ---
+            async function loadProductsFromAPI() {
+                if (productsLoadingState !== 'initial') {
+                    return; // Already loaded or loading
+                }
+                
+                productsLoadingState = 'loading';
+                console.log('Loading products from inventory API...');
+                
+                try {
+                    const response = await fetch('http://10.26.14.12:8000/api/inventario/por-producto', {
+                        method: 'GET',
+                        headers: {
+                            'Accept': 'application/json',
+                            'Content-Type': 'application/json'
+                        },
+                        timeout: 5000 // 5 second timeout
+                    });
+                    
+                    if (!response.ok) {
+                        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                    }
+                    
+                    const data = await response.json();
+                    
+                    if (Array.isArray(data) && data.length > 0) {
+                        // Transform API data to match our internal structure
+                        products = data.map(item => ({
+                            id_producto: item.id_producto,
+                            nombre: item.nombre || 'Producto sin nombre',
+                            descripcion: item.descripcion || '',
+                            unidad_medida: item.unidad_medida || 'unidad',
+                            stock_total: item.stock_total || 0,
+                            quantity: 0, // User selection
+                            suggested: Math.min(item.stock_total, 5) // Suggest up to 5 or available stock
+                        }));
+                        
+                        productsLoadingState = 'loaded';
+                        productsLoadNote = '';
+                        console.log(`Loaded ${products.length} products from API`);
+                    } else {
+                        throw new Error('API returned empty or invalid data');
+                    }
+                    
+                } catch (error) {
+                    console.warn('Failed to load products from API:', error.message);
+                    
+                    // Use fallback products
+                    products = [...fallbackProducts];
+                    productsLoadingState = 'failed';
+                    productsLoadNote = 'Nota: No se obtuvieron productos del inventario, mostrando productos de reserva.';
+                }
+                
+                // Re-render the table with new products
+                renderMochilaTable();
+            }
 
             // Helper to generate BRI code
             function generateBRICode() {
@@ -903,31 +962,49 @@
                     tbody.appendChild(row);
                 });
 
-                 // 2. Render Products (Now always visible)
-                 if (products.length > 0) {
-                     // Divider
+                 // 2. Render Products Section
+                 if (productsLoadingState === 'loading') {
+                     // Show loading state
                      const divider = document.createElement('tr');
-                     divider.innerHTML = '<td colspan="4" class="bg-light font-weight-bold pl-3">Productos Adicionales</td>';
+                     divider.innerHTML = '<td colspan="4" class="bg-light font-weight-bold pl-3"><i class="fas fa-spinner fa-spin mr-2"></i>Cargando productos del inventario...</td>';
+                     tbody.appendChild(divider);
+                 } else if (products.length > 0) {
+                     // Show divider with note if applicable
+                     const divider = document.createElement('tr');
+                     let dividerText = 'Productos del Inventario';
+                     if (productsLoadNote) {
+                         dividerText += ` <small class="text-muted">(${productsLoadNote})</small>`;
+                     }
+                     divider.innerHTML = `<td colspan="4" class="bg-light font-weight-bold pl-3">${dividerText}</td>`;
                      tbody.appendChild(divider);
 
                      products.forEach(prod => {
                         const row = document.createElement('tr');
+                        const stockBadgeClass = prod.stock_total > 0 ? 'badge-success' : 'badge-warning';
+                        const statusBadgeClass = prod.stock_total > 0 ? 'badge-success' : 'badge-warning';
+                        const statusText = prod.stock_total > 0 ? 'Disponible' : 'Sin stock';
+                        
                         row.innerHTML = `
-                            <td>${prod.name}</td>
-                            <td class="text-center"><span class="badge badge-secondary" title="Sugerido">${prod.suggested}</span></td>
+                            <td>
+                                <span class="font-weight-medium">${prod.nombre}</span>
+                                ${prod.descripcion ? `<br><small class="text-muted">${prod.descripcion}</small>` : ''}
+                            </td>
+                            <td class="text-center">
+                                <span class="badge ${stockBadgeClass}" title="Stock disponible">${prod.stock_total} ${prod.unidad_medida}</span>
+                            </td>
                             <td class="text-center">
                                 <div class="input-group input-group-sm" style="width: 120px; margin: 0 auto;">
                                     <div class="input-group-prepend">
-                                        <button class="btn btn-outline-secondary btn-dec-mochila" type="button" data-type="product" data-id="${prod.id}">-</button>
+                                        <button class="btn btn-outline-secondary btn-dec-mochila" type="button" data-type="product" data-id="${prod.id_producto}">-</button>
                                     </div>
                                     <input type="text" class="form-control text-center" value="${prod.quantity}" readonly>
                                     <div class="input-group-append">
-                                        <button class="btn btn-outline-secondary btn-inc-mochila" type="button" data-type="product" data-id="${prod.id}">+</button>
+                                        <button class="btn btn-outline-secondary btn-inc-mochila" type="button" data-type="product" data-id="${prod.id_producto}">+</button>
                                     </div>
                                 </div>
                             </td>
                              <td class="text-center">
-                                <span class="badge badge-secondary">Disponible</span>
+                                <span class="badge ${statusBadgeClass}">${statusText}</span>
                             </td>
                         `;
                         tbody.appendChild(row);
@@ -950,7 +1027,7 @@
                             const item = donations.find(d => d.id === id);
                             if (item && item.quantity > 0) { item.quantity--; renderMochilaTable(); }
                         } else {
-                            const item = products.find(p => p.id === id);
+                            const item = products.find(p => p.id_producto === id);
                             if (item && item.quantity > 0) { item.quantity--; renderMochilaTable(); }
                         }
                     });
@@ -965,8 +1042,10 @@
                             const item = donations.find(d => d.id === id);
                             if (item) { item.quantity++; renderMochilaTable(); }
                         } else {
-                            const item = products.find(p => p.id === id);
-                            if (item) { item.quantity++; renderMochilaTable(); }
+                            const item = products.find(p => p.id_producto === id);
+                            if (item && item.quantity < item.stock_total) { // Don't exceed available stock
+                                item.quantity++; renderMochilaTable();
+                            }
                         }
                     });
                 });
@@ -1232,6 +1311,12 @@
 
                 console.log('Button visibility - prev:', prevBtn?.style.display, 'next:', nextBtn?.style.display, 'save:', saveBtn?.style.display);
 
+                // Load products when entering Step 4 (Mochila)
+                if (currentStep === 4 && productsLoadingState === 'initial') {
+                    console.log('Entering Step 4 - loading products from API');
+                    loadProductsFromAPI();
+                }
+
                 if(currentStep === 3) { updateResumen(); updateLeaderSelect(); }
             }
 
@@ -1260,6 +1345,10 @@
                 currentStep = 1; selectedMembers = []; comunarios = [];
                 donations.forEach(d => d.quantity = 0);
                 products.forEach(p => p.quantity = 0);
+                // Reset products loading state for next modal open
+                productsLoadingState = 'initial';
+                productsLoadNote = '';
+                products = [];
                 renderMochilaTable(); renderComunariosList(); updateStep();
             }
             
@@ -1276,7 +1365,7 @@
                 // Construct Insumos String
                 const insumosParts = [];
                 donations.forEach(d => { if(d.quantity > 0) insumosParts.push(`${d.name}: ${d.quantity}`); });
-                products.forEach(p => { if(p.quantity > 0) insumosParts.push(`${p.name}: ${p.quantity}`); });
+                products.forEach(p => { if(p.quantity > 0) insumosParts.push(`${p.nombre}: ${p.quantity} ${p.unidad_medida}`); });
                 const insumosString = insumosParts.join(', ');
                 
                 // Update the insumos field in the existing form
