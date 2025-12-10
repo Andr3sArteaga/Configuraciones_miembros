@@ -45,6 +45,11 @@
                     @if($isEditMode)
                         @method('PUT')
                     @endif
+                    
+                    {{-- Hidden Inputs for Location --}}
+                    <input type="hidden" id="latitud-{{ $modalId }}" name="latitud" value="{{ $isEditMode ? $equipo->latitud : '' }}">
+                    <input type="hidden" id="longitud-{{ $modalId }}" name="longitud" value="{{ $isEditMode ? $equipo->longitud : '' }}">
+
 
                 <!-- Progress Bar -->
                 <div class="progress mb-4" style="height: 25px;">
@@ -998,7 +1003,17 @@
             }
 
             function setInputValue(name, value) {
-                const el = document.querySelector(`input[name="${name}"]`);
+                // Prefer ID selector if it follows the convention
+                let el = document.getElementById(name + '-' + modalId);
+                
+                // Fallback: scope to the specific form
+                if (!el) {
+                    const form = document.getElementById('team-form-' + modalId);
+                    if (form) {
+                        el = form.querySelector(`input[name="${name}"]`);
+                    }
+                }
+                
                 if(el) el.value = value;
             }
 

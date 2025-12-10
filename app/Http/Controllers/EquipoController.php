@@ -149,7 +149,7 @@ class EquipoController extends Controller
 
                 // Enrich leader info
                 if ($request->has('lider_id')) {
-                    $lider = \DB::table('usuarios')->where('id', $request->input('lider_id'))->first();
+                    $lider = DB::table('usuarios')->where('id', $request->input('lider_id'))->first();
                     if ($lider) {
                         $payload['lider'] = [
                             'nombre_completo' => $lider->nombre . ' ' . ($lider->apellido ?? ''),
@@ -161,7 +161,7 @@ class EquipoController extends Controller
 
                 // Enrich members info
                 if (!empty($validated['miembros'])) {
-                    $miembros = \DB::table('usuarios')->whereIn('id', $validated['miembros'])->get();
+                    $miembros = DB::table('usuarios')->whereIn('id', $validated['miembros'])->get();
                     foreach ($miembros as $m) {
                         $payload['miembros'][] = [
                             'nombre_completo' => $m->nombre . ' ' . ($m->apellido ?? ''),
@@ -194,13 +194,34 @@ class EquipoController extends Controller
                 \Illuminate\Support\Facades\Log::error('Microservice Error: ' . $e->getMessage());
             }
 
-            // Insertar con reporte asociado (reporte_id opcional)
+            // Insertar con reporte asociado (reporte_id opcional) y ubicación PostGIS
             $reporteId = $request->filled('reporte_id') ? $validated['reporte_id'] : null;
-            DB::statement(
-                "INSERT INTO equipos (id, nombre_equipo, estado_id, cantidad_integrantes, reporte_id, creado)
-                     VALUES (?, ?, ?, ?, ?, NOW())",
-                [$equipoId, $validated['nombre_equipo'], $validated['estado_id'], $cantidadMiembros, $reporteId]
-            );
+            
+            // Prepare location if provided
+            $lat = $request->input('latitud');
+            $lng = $request->input('longitud');
+            
+            if ($lat && $lng) {
+                 DB::statement(
+                    "INSERT INTO equipos (id, nombre_equipo, estado_id, cantidad_integrantes, reporte_id, ubicacion, creado)
+                         VALUES (?, ?, ?, ?, ?, ST_SetSRID(ST_MakePoint(?, ?), 4326), NOW())",
+                    [
+                        $equipoId, 
+                        $validated['nombre_equipo'], 
+                        $validated['estado_id'], 
+                        $cantidadMiembros, 
+                        $reporteId,
+                        $lng, // PostGIS uses (x, y) = (lng, lat)
+                        $lat
+                    ]
+                );
+            } else {
+                 DB::statement(
+                    "INSERT INTO equipos (id, nombre_equipo, estado_id, cantidad_integrantes, reporte_id, creado)
+                         VALUES (?, ?, ?, ?, ?, NOW())",
+                    [$equipoId, $validated['nombre_equipo'], $validated['estado_id'], $cantidadMiembros, $reporteId]
+                );
+            }
 
 
             // Agregar miembros al equipo si se proporcionaron
@@ -318,12 +339,27 @@ class EquipoController extends Controller
             // Actualizar campos básicos
             $equipo->nombre_equipo = $validated['nombre_equipo'];
             $equipo->estado_id = $validated['estado_id'];
-
-            // Actualizar reporte asociado
+            
+            // Actualizar reporte
             $reporteId = $request->filled('reporte_id') ? $validated['reporte_id'] : null;
-            DB::statement("UPDATE equipos SET reporte_id = ? WHERE id = ?", [$reporteId, $equipo->id]);
+            $equipo->reporte_id = $reporteId;
 
+            // Save basic fields
             $equipo->save();
+
+            // Update PostGIS location directly via SQL
+            $lat = $request->input('latitud');
+            $lng = $request->input('longitud');
+            
+            if ($lat && $lng) {
+                DB::statement(
+                    "UPDATE equipos SET ubicacion = ST_SetSRID(ST_MakePoint(?, ?), 4326) WHERE id = ?",
+                    [$lng, $lat, $equipo->id]
+                );
+            } else if (!$reporteId) {
+                // If neither report nor coordinates, maybe clear location? 
+                // DB::statement("UPDATE equipos SET ubicacion = NULL WHERE id = ?", [$equipo->id]);
+            }
 
             // Actualizar miembros del equipo
             if ($request->has('miembros')) {
