@@ -39,6 +39,13 @@
                     </div>
                 @endif
 
+                <!-- Form wrapper for team creation/editing -->
+                <form id="team-form-{{ $modalId }}" action="{{ $formAction }}" method="POST">
+                    @csrf
+                    @if($isEditMode)
+                        @method('PUT')
+                    @endif
+
                 <!-- Progress Bar -->
                 <div class="progress mb-4" style="height: 25px;">
                     <div class="progress-bar progress-bar-striped progress-bar-animated bg-primary" role="progressbar"
@@ -534,6 +541,7 @@
                         </div>
                     </div>
                 </div>
+                </form> <!-- Close form wrapper -->
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" id="btn-prev-{{ $modalId }}"
@@ -652,38 +660,55 @@
             const assignedLeaderId = @json(isset($liderAsignadoId) ? $liderAsignadoId : null);
 
             document.addEventListener('DOMContentLoaded', function() {
-                // Initialize when modal is shown
+                console.log('DOM loaded, initializing modal:', modalId);
+                
+                // Initialize event listeners early
+                setTimeout(initializeEventListeners, 100);
+
+                // Optimized: Initialize when modal is shown
                 $('#' + modalId).on('shown.bs.modal', function() {
+                    console.log('Modal shown:', modalId);
+                    
+                    // Ensure event listeners are attached
+                    initializeEventListeners();
+                    
                     // Generate tracking code if empty
                     const codeField = document.getElementById('codigo_seguimiento-' + modalId);
-                    if (!codeField.value) {
-                         codeField.value = generateBRICode();
+                    if (codeField && !codeField.value) {
+                        codeField.value = generateBRICode();
                     }
-
-                    if (!map) {
-                        initializeMap();
-                    } else {
-                        try { map.invalidateSize(true); } catch (e) {}
-                    }
-                    populateSelectedMembersFromChecked();
-                    renderMochilaTable(); // Initial render
                     
+                    // Initialize map with proper timing - wait for modal to be fully visible
                     setTimeout(function() {
-                        if (map) {
-                            try { map.invalidateSize(true); } catch (e) {}
-                            if (marker) {
-                                try { map.setView(marker.getLatLng(), map.getZoom()); } catch (e) {}
-                            }
+                        console.log('Initializing map after modal is shown');
+                        if (!map) {
+                            initializeMap();
                         }
-                    }, 350);
+                        populateSelectedMembersFromChecked();
+                        renderMochilaTable();
+                        
+                        // Fix map rendering after modal is fully shown - multiple attempts for reliability
+                        setTimeout(function() {
+                            if (map) {
+                                console.log('First map invalidation attempt');
+                                map.invalidateSize(true);
+                                // Additional invalidation for stubborn cases
+                                setTimeout(function() {
+                                    if (map) {
+                                        console.log('Second map invalidation attempt');
+                                        map.invalidateSize(true);
+                                    }
+                                }, 200);
+                            }
+                        }, 500); // Increased timing for better reliability
+                    }, 300); // Increased initial delay
                 });
 
                 // Reset on modal hide
                 $('#' + modalId).on('hidden.bs.modal', function() {
+                    console.log('Modal hidden, resetting form');
                     resetForm();
                 });
-
-                initializeEventListeners();
 
                 // Show modal if validation errors
                 @if ($errors->any() && !$isEditMode)
@@ -693,6 +718,7 @@
 
             // --- MAP LOGIC (Kept same as before) ---
             function initializeMap() {
+                console.log('initializeMap called for modalId:', modalId);
                 const mapIdStr = 'map-' + modalId;
                 const safeMapId = mapIdStr.replace(/-/g, '_');
                 const candidates = [
@@ -702,16 +728,35 @@
                 let mapInstance = null;
                 for (const key of candidates) {
                     if (Object.prototype.hasOwnProperty.call(window, key) && window[key]) {
+                        console.log('Found map instance with key:', key);
                         mapInstance = window[key]; break;
                     }
                 }
-            }
+                
                 if (!mapInstance) {
+                    console.log('Map instance not found, attempting to initialize...');
                     const initFuncKey = 'initLeafletMap_' + safeMapId;
                     if (window[initFuncKey] && typeof window[initFuncKey] === 'function') {
-                        try { window[initFuncKey](); } catch (e) {}
+                        console.log('Found init function, calling:', initFuncKey);
+                        try { 
+                            window[initFuncKey](); 
+                            // Try again to get the instance after initialization
+                            for (const key of candidates) {
+                                if (Object.prototype.hasOwnProperty.call(window, key) && window[key]) {
+                                    console.log('Map instance found after init:', key);
+                                    mapInstance = window[key]; 
+                                    break;
+                                }
+                            }
+                        } catch (e) {
+                            console.error('Error initializing map:', e);
+                        }
                     }
-                    setTimeout(initializeMap, 100); return;
+                    
+                    if (!mapInstance) {
+                        console.error('Leaflet map instance not found. Container may not be visible or map not initialized.');
+                        return;
+                    }
                 }
                 map = mapInstance;
                 map.off('click'); // Clear previous listeners
@@ -929,15 +974,24 @@
 
             // --- GENERAL EVENTS ---
             function initializeEventListeners() {
-                document.getElementById('btn-next-' + modalId).addEventListener('click', nextStep);
-                document.getElementById('btn-prev-' + modalId).addEventListener('click', prevStep);
-                document.getElementById('btn-save-' + modalId).addEventListener('click', saveTeam);
+                // Safe element getter that checks if element exists
+                const safeAddEventListener = (id, event, handler) => {
+                    const element = document.getElementById(id);
+                    if (element) {
+                        element.addEventListener(event, handler);
+                        console.log('Added event listener to:', id);
+                    } else {
+                        console.warn('Element not found:', id);
+                    }
+                };
 
-                // Removed Products Modal listeners as requested
+                // Navigation button event listeners
+                safeAddEventListener('btn-next-' + modalId, 'click', nextStep);
+                safeAddEventListener('btn-prev-' + modalId, 'click', prevStep);
+                safeAddEventListener('btn-save-' + modalId, 'click', saveTeam);
 
-                // Existing listeners...
-
-                document.getElementById('btn-remove-marker-' + modalId).addEventListener('click', function() {
+                // Remove marker button
+                safeAddEventListener('btn-remove-marker-' + modalId, 'click', function() {
                     document.getElementById('reporte_id-' + modalId).value = '';
                     const resumen = document.getElementById('resumen-ubicacion-' + modalId);
                     if(resumen) resumen.textContent = '-';
@@ -954,10 +1008,11 @@
                      setInputValue('ubicacion', ''); setInputValue('latitud', ''); setInputValue('longitud', '');
                 });
 
-                document.querySelectorAll('#members-tbody-' + modalId + ' .member-checkbox').forEach(cb => cb.addEventListener('change', updateSelectedMembers));
-                document.getElementById('nombre_equipo-' + modalId).addEventListener('input', updateResumen);
-                document.getElementById('estado_id-' + modalId).addEventListener('change', updateResumen);
+                // Team configuration listeners
+                safeAddEventListener('nombre_equipo-' + modalId, 'input', updateResumen);
+                safeAddEventListener('estado_id-' + modalId, 'change', updateResumen);
                 
+                // Filter listeners
                 const search = document.getElementById('search-member-' + modalId);
                 const entFilter = document.getElementById('filter-entidad-' + modalId);
                 const nivFilter = document.getElementById('filter-nivel-' + modalId);
@@ -965,6 +1020,10 @@
                 if(entFilter) entFilter.addEventListener('change', filterMembers);
                 if(nivFilter) nivFilter.addEventListener('change', filterMembers);
 
+                // Member selection listeners
+                document.querySelectorAll('#members-tbody-' + modalId + ' .member-checkbox').forEach(cb => cb.addEventListener('change', updateSelectedMembers));
+
+                // Select all checkbox
                 const selectAll = document.getElementById('select-all-members-' + modalId);
                 if(selectAll) {
                     selectAll.addEventListener('change', function() {
@@ -973,6 +1032,8 @@
                          updateSelectedMembers();
                     });
                 }
+
+                // Leader selection
                 const liderSelect = document.getElementById('lider-equipo-' + modalId);
                 if (liderSelect) {
                     liderSelect.addEventListener('change', function() {
@@ -986,7 +1047,9 @@
                          }
                     });
                 }
-                document.getElementById('btn-add-comunario-' + modalId).addEventListener('click', addComunario);
+
+                // Add comunario button
+                safeAddEventListener('btn-add-comunario-' + modalId, 'click', addComunario);
             }
 
             // --- HELPERS (populateSelectedMembersFromChecked, filterMembers, etc - Keep minimal changes) ---
@@ -1108,40 +1171,88 @@
                 }));
             }
 
-            function nextStep() { if(validateStep(currentStep)) { currentStep++; updateStep(); } }
-            function prevStep() { currentStep--; updateStep(); }
+            function nextStep() { 
+                console.log('nextStep called, current step:', currentStep);
+                if(validateStep(currentStep)) { 
+                    currentStep++; 
+                    console.log('Moving to step:', currentStep);
+                    updateStep(); 
+                } else {
+                    console.log('Validation failed for step:', currentStep);
+                }
+            }
+            
+            function prevStep() { 
+                console.log('prevStep called, current step:', currentStep);
+                currentStep--; 
+                console.log('Moving to step:', currentStep);
+                updateStep(); 
+            }
             
             function updateStep() {
+                console.log('updateStep called, currentStep:', currentStep);
                 const tabs = ['ubicacion', 'configurar', 'lider', 'mochila', 'comunarios'];
+                
                 tabs.forEach((t, i) => {
                     const tab = document.getElementById('tab-' + t + '-' + modalId);
                     const pane = document.getElementById('step-' + t + '-' + modalId);
-                    if (i+1 === currentStep) {
-                        tab.classList.add('active'); tab.classList.remove('disabled');
-                        pane.classList.add('show', 'active');
-                    } else if (i+1 < currentStep) {
-                        tab.classList.remove('active', 'disabled'); pane.classList.remove('show', 'active');
-                    } else {
-                         tab.classList.remove('active'); tab.classList.add('disabled'); pane.classList.remove('show', 'active');
+                    
+                    console.log(`Tab ${t} (${i+1}): tab=${tab ? 'found' : 'not found'}, pane=${pane ? 'found' : 'not found'}`);
+                    
+                    if (tab && pane) {
+                        if (i+1 === currentStep) {
+                            tab.classList.add('active'); tab.classList.remove('disabled');
+                            pane.classList.add('show', 'active');
+                        } else if (i+1 < currentStep) {
+                            tab.classList.remove('active', 'disabled'); 
+                            pane.classList.remove('show', 'active');
+                        } else {
+                             tab.classList.remove('active'); tab.classList.add('disabled'); 
+                             pane.classList.remove('show', 'active');
+                        }
                     }
                 });
+                
                 const p = (currentStep/5)*100;
                 const pb = document.getElementById('progressBar-' + modalId);
-                pb.style.width = p+'%'; pb.setAttribute('aria-valuenow', p); pb.textContent = 'Paso ' + currentStep + ' de 5';
+                if (pb) {
+                    pb.style.width = p+'%'; 
+                    pb.setAttribute('aria-valuenow', p); 
+                    pb.textContent = 'Paso ' + currentStep + ' de 5';
+                    console.log('Updated progress bar:', p + '%');
+                }
                 
-                document.getElementById('btn-prev-' + modalId).style.display = currentStep > 1 ? 'inline-block' : 'none';
-                document.getElementById('btn-next-' + modalId).style.display = currentStep < 5 ? 'inline-block' : 'none';
-                document.getElementById('btn-save-' + modalId).style.display = currentStep === 5 ? 'inline-block' : 'none';
+                const prevBtn = document.getElementById('btn-prev-' + modalId);
+                const nextBtn = document.getElementById('btn-next-' + modalId);
+                const saveBtn = document.getElementById('btn-save-' + modalId);
+                
+                if (prevBtn) prevBtn.style.display = currentStep > 1 ? 'inline-block' : 'none';
+                if (nextBtn) nextBtn.style.display = currentStep < 5 ? 'inline-block' : 'none';
+                if (saveBtn) saveBtn.style.display = currentStep === 5 ? 'inline-block' : 'none';
+
+                console.log('Button visibility - prev:', prevBtn?.style.display, 'next:', nextBtn?.style.display, 'save:', saveBtn?.style.display);
 
                 if(currentStep === 3) { updateResumen(); updateLeaderSelect(); }
             }
 
             function validateStep(step) {
+                console.log('validateStep called for step:', step);
+                
                 if(step === 2) {
-                    const n = document.getElementById('nombre_equipo-' + modalId).value.trim();
-                    const e = document.getElementById('estado_id-' + modalId).value;
-                    if(!n || !e) { alert('Complete nombre y estado del equipo'); return false; }
+                    const nombreEl = document.getElementById('nombre_equipo-' + modalId);
+                    const estadoEl = document.getElementById('estado_id-' + modalId);
+                    const n = nombreEl ? nombreEl.value.trim() : '';
+                    const e = estadoEl ? estadoEl.value : '';
+                    
+                    console.log('Step 2 validation - nombre:', n, 'estado:', e);
+                    
+                    if(!n || !e) { 
+                        alert('Complete nombre y estado del equipo'); 
+                        return false; 
+                    }
                 }
+                
+                console.log('Step', step, 'validation passed');
                 return true;
             }
 
@@ -1157,49 +1268,69 @@
                 const nombre = document.getElementById('nombre_equipo-' + modalId).value.trim();
                 const estado = document.getElementById('estado_id-' + modalId).value;
 
-                if (!nombre || !estado) { alert('Datos incompletos'); return; }
+                if (!nombre || !estado) { 
+                    alert('Por favor complete el nombre y estado del equipo'); 
+                    return; 
+                }
 
                 // Construct Insumos String
                 const insumosParts = [];
                 donations.forEach(d => { if(d.quantity > 0) insumosParts.push(`${d.name}: ${d.quantity}`); });
                 products.forEach(p => { if(p.quantity > 0) insumosParts.push(`${p.name}: ${p.quantity}`); });
                 const insumosString = insumosParts.join(', ');
-                document.getElementById('insumos-necesarios-' + modalId).value = insumosString;
-
-                // Create form
-                const form = document.createElement('form');
-                form.method = 'POST';
-                form.action = '{{ $formAction }}';
                 
-                const csrf = document.createElement('input'); csrf.type = 'hidden'; csrf.name = '_token'; csrf.value = '{{ csrf_token() }}'; form.appendChild(csrf);
-                @if ($isEditMode)
-                    const m = document.createElement('input'); m.type = 'hidden'; m.name = '_method'; m.value = 'PUT'; form.appendChild(m);
-                @endif
-                
-                // Fields
-                ['nombre_equipo', 'estado_id', 'reporte_id', 'codigo_seguimiento', 'latitud', 'longitud', 'ubicacion', 'insumos_necesarios'].forEach(f => {
-                     const el = document.getElementById(f + '-' + modalId);
-                     if(el) {
-                         const i = document.createElement('input'); i.type = 'hidden'; i.name = f; i.value = el.value; form.appendChild(i);
-                     }
-                });
-                
-                // Members
-                selectedMembers.forEach(m => {
-                    const i = document.createElement('input'); i.type = 'hidden'; i.name = 'miembros[]'; i.value = m.id; form.appendChild(i);
-                });
-                const ls = document.getElementById('lider-equipo-' + modalId);
-                if(ls && ls.value) {
-                     const i = document.createElement('input'); i.type = 'hidden'; i.name = 'lider_id'; i.value = ls.value; form.appendChild(i);
+                // Update the insumos field in the existing form
+                let insumosField = document.getElementById('insumos_necesarios-' + modalId);
+                if (!insumosField) {
+                    // Create the field if it doesn't exist
+                    insumosField = document.createElement('input');
+                    insumosField.type = 'hidden';
+                    insumosField.id = 'insumos_necesarios-' + modalId;
+                    insumosField.name = 'insumos_necesarios';
+                    document.getElementById('team-form-' + modalId).appendChild(insumosField);
                 }
-
-                // Comunarios
-                comunarios.forEach((c, idx) => {
-                     const n = document.createElement('input'); n.type = 'hidden'; n.name = `comunarios[${idx}][nombre]`; n.value = c.nombre; form.appendChild(n);
-                     const e = document.createElement('input'); e.type = 'hidden'; e.name = `comunarios[${idx}][edad]`; e.value = c.edad; form.appendChild(e);
+                insumosField.value = insumosString;
+                
+                // Add selected members as hidden fields
+                const form = document.getElementById('team-form-' + modalId);
+                
+                // Remove existing member fields
+                const existingMembers = form.querySelectorAll('input[name="miembros[]"]');
+                existingMembers.forEach(field => field.remove());
+                
+                // Add current selected members
+                selectedMembers.forEach(m => {
+                    const memberField = document.createElement('input');
+                    memberField.type = 'hidden';
+                    memberField.name = 'miembros[]';
+                    memberField.value = m.id;
+                    form.appendChild(memberField);
                 });
+                
+                // Add leader field
+                let liderField = document.getElementById('lider_id-hidden-' + modalId);
+                if (!liderField) {
+                    liderField = document.createElement('input');
+                    liderField.type = 'hidden';
+                    liderField.id = 'lider_id-hidden-' + modalId;
+                    liderField.name = 'lider_id';
+                    form.appendChild(liderField);
+                }
+                const liderSelect = document.getElementById('lider-equipo-' + modalId);
+                liderField.value = liderSelect ? liderSelect.value : '';
 
-                document.body.appendChild(form);
+                // Add comunarios as JSON
+                let comunariosField = document.getElementById('comunarios-hidden-' + modalId);
+                if (!comunariosField) {
+                    comunariosField = document.createElement('input');
+                    comunariosField.type = 'hidden';
+                    comunariosField.id = 'comunarios-hidden-' + modalId;
+                    comunariosField.name = 'comunarios';
+                    form.appendChild(comunariosField);
+                }
+                comunariosField.value = JSON.stringify(comunarios);
+                
+                console.log('Submitting team form');
                 form.submit();
             }
         })();
