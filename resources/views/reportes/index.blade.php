@@ -84,7 +84,13 @@
                     </thead>
                     <tbody>
                         @foreach ($reportes as $reporte)
-                            <tr>
+                            @php
+                                $estado = strtolower(trim($reporte->estados_sistema->nombre ?? $reporte->estado ?? ''));
+                                $falsoPositivo = in_array($estado, [
+                                    'falso positivo', 'falsopositivo', 'falso_positivo', 'false positive', 'falsepositive', 'false_positive'
+                                ]);
+                            @endphp
+                            <tr @if($falsoPositivo) style="background-color: rgba(255, 0, 0, 0.40);" @endif>
                                 <td>{{ $reporte->fecha_hora->format('d/m/Y H:i') }}</td>
                                 <td>
                                     <strong>{{ $reporte->nombre_reportante }}</strong><br>

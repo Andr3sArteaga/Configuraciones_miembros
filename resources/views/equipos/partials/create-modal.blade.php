@@ -705,6 +705,7 @@
                         mapInstance = window[key]; break;
                     }
                 }
+            }
                 if (!mapInstance) {
                     const initFuncKey = 'initLeafletMap_' + safeMapId;
                     if (window[initFuncKey] && typeof window[initFuncKey] === 'function') {
@@ -713,7 +714,40 @@
                     setTimeout(initializeMap, 100); return;
                 }
                 map = mapInstance;
-                map.off('click');
+                map.off('click'); // Clear previous listeners
+                
+                // NEW: Generic Click Listener for Custom Location
+                map.on('click', function(e) {
+                    // Reset selected report marker if any
+                    if (selectedMarker) {
+                         selectedMarker.setStyle({ radius: 7, color: '#dc3545', fillColor: '#dc3545', fillOpacity: 0.9 });
+                         selectedMarker = null;
+                    }
+                    // Remove previous edit/custom marker
+                    if (editMarker) {
+                        map.removeLayer(editMarker);
+                    }
+
+                    // Place new Blue Marker (Custom Location)
+                    editMarker = L.marker(e.latlng, { draggable: true }).addTo(map);
+                    
+                    // Update Inputs
+                    updateCoordinates(e.latlng.lat, e.latlng.lng);
+                    document.getElementById('reporte_id-' + modalId).value = ''; // Clear report ID
+                    document.getElementById('resumen-ubicacion-' + modalId).textContent = 'Punto Personalizado (' + e.latlng.lat.toFixed(4) + ', ' + e.latlng.lng.toFixed(4) + ')';
+                    setInputValue('ubicacion', 'Ubicación Personalizada');
+                    setInputValue('latitud', e.latlng.lat.toFixed(6));
+                    setInputValue('longitud', e.latlng.lng.toFixed(6));
+
+                    // Drag event for the new marker
+                    editMarker.on('dragend', function(ev) {
+                        const position = editMarker.getLatLng();
+                        updateCoordinates(position.lat, position.lng);
+                        setInputValue('latitud', position.lat.toFixed(6));
+                        setInputValue('longitud', position.lng.toFixed(6));
+                    });
+                });
+
                 setTimeout(function() { try { map.invalidateSize(true); } catch (e) {} }, 300);
 
                 @if ($isEditMode && isset($equipo) && $equipo->latitud && $equipo->longitud)
@@ -737,10 +771,18 @@
                     m.reporteId = reporte.id;
                     reporteMarkers[reporte.id] = m;
 
-                    m.on('click', function() {
+                    m.on('click', function(e) {
+                        L.DomEvent.stopPropagation(e); // Prevent map click
+
                         if (selectedMarker && selectedMarker !== m) {
                             selectedMarker.setStyle({ radius: 7, color: '#dc3545', fillColor: '#dc3545', fillOpacity: 0.9 });
                         }
+                        // Remove custom marker if exists
+                        if(editMarker) {
+                            map.removeLayer(editMarker);
+                            editMarker = null;
+                        }
+
                         selectedReporteId = this.reporteId;
                         selectedMarker = m;
                         document.getElementById('reporte_id-' + modalId).value = selectedReporteId;

@@ -419,6 +419,44 @@ class EquipoController extends Controller
     }
 
     /**
+     * API endpoint to get deployed teams (history)
+     * Ordered by creation date descending
+     */
+    public function deployed()
+    {
+        try {
+            $equipos = Equipo::with(['estados_sistema', 'reporte'])
+                ->whereNotNull('reporte_id')
+                ->orderBy('creado', 'desc')
+                ->get()
+                ->map(function ($equipo) {
+                    return [
+                        'id' => $equipo->id,
+                        'nombre_equipo' => $equipo->nombre_equipo,
+                        'cantidad_integrantes' => $equipo->cantidad_integrantes,
+                        'ubicacion' => $equipo->reporte ? $equipo->reporte->ubicacion : null,
+                        'latitud' => $equipo->reporte ? $equipo->reporte->latitud : null,
+                        'longitud' => $equipo->reporte ? $equipo->reporte->longitud : null,
+                        'estado' => $equipo->estados_sistema ? [
+                            'nombre' => $equipo->estados_sistema->nombre,
+                            'codigo' => $equipo->estados_sistema->codigo,
+                            'color' => $equipo->estados_sistema->color
+                        ] : null,
+                        'fecha_despliegue' => $equipo->creado->toIso8601String(),
+                        'tiempo_transcurrido' => $equipo->creado->diffForHumans()
+                    ];
+                });
+
+            return response()->json($equipos);
+        } catch (\Exception $e) {
+            return response()->json([
+                'error' => 'Error al obtener equipos desplegados',
+                'message' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
      * Count para el numero de equipos
      */
     public function count()
