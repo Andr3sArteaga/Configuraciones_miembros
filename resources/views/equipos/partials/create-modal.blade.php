@@ -49,9 +49,9 @@
                 <!-- Progress Bar -->
                 <div class="progress mb-4" style="height: 25px;">
                     <div class="progress-bar progress-bar-striped progress-bar-animated bg-primary" role="progressbar"
-                        id="progressBar-{{ $modalId }}" style="width: 20%;" aria-valuenow="20" aria-valuemin="0"
+                        id="progressBar-{{ $modalId }}" style="width: 16%;" aria-valuenow="16" aria-valuemin="0"
                         aria-valuemax="100">
-                        Paso 1 de 5
+                        Paso 1 de 6
                     </div>
                 </div>
 
@@ -85,6 +85,12 @@
                         <a class="nav-link disabled" id="tab-comunarios-{{ $modalId }}" data-toggle="tab"
                             href="#step-comunarios-{{ $modalId }}" role="tab">
                             <i class="fas fa-users"></i> 5. Comunarios
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link disabled" id="tab-resumen-{{ $modalId }}" data-toggle="tab"
+                            href="#step-resumen-{{ $modalId }}" role="tab">
+                            <i class="fas fa-clipboard-check"></i> 6. Resumen
                         </a>
                     </li>
                 </ul>
@@ -533,6 +539,77 @@
                                                         </td>
                                                     </tr>
                                                 </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- PASO 6: Resumen Final -->
+                    <div class="tab-pane fade" id="step-resumen-{{ $modalId }}" role="tabpanel">
+                        <h4 class="mb-3"><i class="fas fa-clipboard-check text-primary"></i> Resumen del Equipo</h4>
+                        
+                        <div class="alert alert-success py-2">
+                             <i class="fas fa-check-circle"></i> Verifique los datos antes de guardar.
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="card card-outline card-primary mb-3">
+                                    <div class="card-header py-1">
+                                        <h3 class="card-title" style="font-size: 1rem;">Datos Generales</h3>
+                                    </div>
+                                    <div class="card-body py-2">
+                                        <small><strong>Nombre:</strong> <span id="final-nombre-{{ $modalId }}">-</span></small><br>
+                                        <small><strong>Estado:</strong> <span id="final-estado-{{ $modalId }}">-</span></small><br>
+                                        <small><strong>Ubicación:</strong> <span id="final-ubicacion-{{ $modalId }}">-</span></small><br>
+                                        <small><strong>Código:</strong> <span id="final-codigo-{{ $modalId }}">-</span></small>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="card card-outline card-warning mb-3">
+                                    <div class="card-header py-1">
+                                        <h3 class="card-title" style="font-size: 1rem;">Líder y Miembros</h3>
+                                    </div>
+                                    <div class="card-body py-2">
+                                        <small><strong>Líder:</strong> <span id="final-lider-{{ $modalId }}">-</span></small><br>
+                                        <small><strong>Miembros:</strong> <span id="final-count-miembros-{{ $modalId }}">0</span></small>
+                                        <div style="max-height: 80px; overflow-y: auto; border: 1px solid #eee; margin-top: 5px;">
+                                            <ul class="list-unstyled mb-0 pl-1" id="final-lista-miembros-{{ $modalId }}" style="font-size: 0.85rem;">
+                                                <li>-</li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                             <div class="col-md-6">
+                                <div class="card card-outline card-info mb-3">
+                                    <div class="card-header py-1">
+                                        <h3 class="card-title" style="font-size: 1rem;">Mochila</h3>
+                                    </div>
+                                    <div class="card-body p-0">
+                                        <div class="table-responsive" style="max-height: 120px; overflow-y: auto;">
+                                            <table class="table table-sm table-striped mb-0" style="font-size: 0.85rem;">
+                                                <tbody id="final-lista-mochila-{{ $modalId }}"></tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="card card-outline card-success mb-3">
+                                    <div class="card-header py-1">
+                                        <h3 class="card-title" style="font-size: 1rem;">Comunarios</h3>
+                                    </div>
+                                     <div class="card-body p-0">
+                                        <div class="table-responsive" style="max-height: 120px; overflow-y: auto;">
+                                            <table class="table table-sm table-striped mb-0" style="font-size: 0.85rem;">
+                                                <tbody id="final-lista-comunarios-{{ $modalId }}"></tbody>
                                             </table>
                                         </div>
                                     </div>
@@ -1270,13 +1347,11 @@
             
             function updateStep() {
                 console.log('updateStep called, currentStep:', currentStep);
-                const tabs = ['ubicacion', 'configurar', 'lider', 'mochila', 'comunarios'];
+                const tabs = ['ubicacion', 'configurar', 'lider', 'mochila', 'comunarios', 'resumen'];
                 
                 tabs.forEach((t, i) => {
                     const tab = document.getElementById('tab-' + t + '-' + modalId);
                     const pane = document.getElementById('step-' + t + '-' + modalId);
-                    
-                    console.log(`Tab ${t} (${i+1}): tab=${tab ? 'found' : 'not found'}, pane=${pane ? 'found' : 'not found'}`);
                     
                     if (tab && pane) {
                         if (i+1 === currentStep) {
@@ -1292,13 +1367,12 @@
                     }
                 });
                 
-                const p = (currentStep/5)*100;
+                const p = (currentStep/6)*100;
                 const pb = document.getElementById('progressBar-' + modalId);
                 if (pb) {
                     pb.style.width = p+'%'; 
                     pb.setAttribute('aria-valuenow', p); 
-                    pb.textContent = 'Paso ' + currentStep + ' de 5';
-                    console.log('Updated progress bar:', p + '%');
+                    pb.textContent = 'Paso ' + currentStep + ' de 6';
                 }
                 
                 const prevBtn = document.getElementById('btn-prev-' + modalId);
@@ -1306,18 +1380,81 @@
                 const saveBtn = document.getElementById('btn-save-' + modalId);
                 
                 if (prevBtn) prevBtn.style.display = currentStep > 1 ? 'inline-block' : 'none';
-                if (nextBtn) nextBtn.style.display = currentStep < 5 ? 'inline-block' : 'none';
-                if (saveBtn) saveBtn.style.display = currentStep === 5 ? 'inline-block' : 'none';
-
-                console.log('Button visibility - prev:', prevBtn?.style.display, 'next:', nextBtn?.style.display, 'save:', saveBtn?.style.display);
+                if (nextBtn) nextBtn.style.display = currentStep < 6 ? 'inline-block' : 'none';
+                if (saveBtn) saveBtn.style.display = currentStep === 6 ? 'inline-block' : 'none';
 
                 // Load products when entering Step 4 (Mochila)
                 if (currentStep === 4 && productsLoadingState === 'initial') {
-                    console.log('Entering Step 4 - loading products from API');
                     loadProductsFromAPI();
                 }
 
                 if(currentStep === 3) { updateResumen(); updateLeaderSelect(); }
+                if(currentStep === 6) { updateResumenFinal(); }
+            }
+
+            function updateResumenFinal() {
+                // 1. General Data
+                const nombre = document.getElementById('nombre_equipo-' + modalId).value || '-';
+                const estadoSelect = document.getElementById('estado_id-' + modalId);
+                const estadoText = estadoSelect.options[estadoSelect.selectedIndex]?.text || '-';
+                const ubicacionText = document.getElementById('resumen-ubicacion-' + modalId).textContent || '-';
+                const codigo = document.getElementById('codigo_seguimiento-' + modalId).value || '-';
+                
+                document.getElementById('final-nombre-' + modalId).textContent = nombre;
+                document.getElementById('final-estado-' + modalId).textContent = estadoText;
+                document.getElementById('final-ubicacion-' + modalId).textContent = ubicacionText;
+                document.getElementById('final-codigo-' + modalId).textContent = codigo;
+
+                // 2. Leader
+                const liderSelect = document.getElementById('lider-equipo-' + modalId);
+                const liderText = liderSelect.options[liderSelect.selectedIndex]?.text || 'No seleccionado';
+                document.getElementById('final-lider-' + modalId).textContent = liderText;
+
+                // 3. Members
+                document.getElementById('final-count-miembros-' + modalId).textContent = selectedMembers.length;
+                const membersList = document.getElementById('final-lista-miembros-' + modalId);
+                
+                if (selectedMembers.length === 0) {
+                    membersList.innerHTML = '<li>No hay miembros seleccionados</li>';
+                } else {
+                    membersList.innerHTML = '';
+                    selectedMembers.forEach(m => {
+                        const li = document.createElement('li');
+                        li.textContent = m.nombre;
+                        membersList.appendChild(li);
+                    });
+                }
+
+                // 4. Mochila
+                const mochilaList = document.getElementById('final-lista-mochila-' + modalId);
+                const allItems = [
+                    ...donations.filter(d => d.quantity > 0).map(d => ({ name: d.name, quantity: d.quantity })),
+                    ...products.filter(p => p.quantity > 0).map(p => ({ name: p.nombre, quantity: `${p.quantity} ${p.unidad_medida}` }))
+                ];
+
+                if (allItems.length === 0) {
+                    mochilaList.innerHTML = '<tr><td colspan="2" class="text-center">-</td></tr>';
+                } else {
+                    mochilaList.innerHTML = '';
+                    allItems.forEach(item => {
+                        const tr = document.createElement('tr');
+                        tr.innerHTML = `<td>${item.name}</td><td style="width:50px;">${item.quantity}</td>`;
+                        mochilaList.appendChild(tr);
+                    });
+                }
+
+                // 5. Comunarios
+                const comunariosList = document.getElementById('final-lista-comunarios-' + modalId);
+                if (comunarios.length === 0) {
+                    comunariosList.innerHTML = '<tr><td colspan="2" class="text-center">None</td></tr>';
+                } else {
+                    comunariosList.innerHTML = '';
+                    comunarios.forEach(c => {
+                        const tr = document.createElement('tr');
+                        tr.innerHTML = `<td>${c.nombre}</td><td style="width:50px;">${c.edad}</td>`;
+                        comunariosList.appendChild(tr);
+                    });
+                }
             }
 
             function validateStep(step) {

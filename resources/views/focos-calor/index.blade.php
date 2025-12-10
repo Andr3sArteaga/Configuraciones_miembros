@@ -361,7 +361,7 @@
                     const gravedadBadge = reporte.niveles_gravedad ?
                         `<span class="badge badge-danger">${reporte.niveles_gravedad.nombre}</span>` : '';
                     const estadoBadge = reporte.estados_sistema ?
-                        `<span class="badge" style="background-color: ${reporte.estados_sistema.color || '#6c757d'}">${reporte.estados_sistema.nombre}</span>` :
+                        `<span class="badge" style="background-color: ${reporte.estados_sistema.color || '#6c757d'}; color: white;">${reporte.estados_sistema.nombre}</span>` :
                         '';
 
                     const popupContent = `

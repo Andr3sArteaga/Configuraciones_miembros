@@ -20,6 +20,7 @@
     "require-dev": {
         "adwiv/laravel-crud-adminlte": "^2.0",
         "fakerphp/faker": "^1.23",
+        "ibex/crud-generator": "^2.1",
         "kitloong/laravel-migrations-generator": "^7.2",
         "laravel/pail": "^1.2.2",
         "laravel/pint": "^1.24",
