@@ -135,17 +135,16 @@ class ReporteController extends Controller
             $reporte->setRelation('estados_sistema', $estadosSistema[$reporte->estado_id]);
         }
 
-        // Add condition mapping for animal reports
         $condicionesAnimales = [
-            1 => 'Atascado / atrapado',
-            2 => 'Desconocido',
-            3 => 'Deshidratado',
-            4 => 'Desorientado / shock',
-            5 => 'Difícil acceso',
-            6 => 'Herido grave',
-            7 => 'Herido leve',
-            8 => 'Inconsciente',
-            9 => 'Quemaduras'
+            1 => 'Herido leve',
+            2 => 'Herido grave',
+            3 => 'Inconsciente',
+            4 => 'Deshidratado',
+            5 => 'Quemaduras',
+            6 => 'Desorientado / shock',
+            7 => 'Atascado / atrapado',
+            8 => 'Difícil acceso',
+            9 => 'Desconocido'
         ];
 
         return view('reportes.show', compact('reporte', 'condicionesAnimales'));
@@ -166,15 +165,15 @@ class ReporteController extends Controller
 
         // Add condition mapping for animal reports
         $condicionesAnimales = [
-            1 => 'Atascado / atrapado',
-            2 => 'Desconocido',
-            3 => 'Deshidratado',
-            4 => 'Desorientado / shock',
-            5 => 'Difícil acceso',
-            6 => 'Herido grave',
-            7 => 'Herido leve',
-            8 => 'Inconsciente',
-            9 => 'Quemaduras'
+            1 => 'Herido leve',
+            2 => 'Herido grave',
+            3 => 'Inconsciente',
+            4 => 'Deshidratado',
+            5 => 'Quemaduras',
+            6 => 'Desorientado / shock',
+            7 => 'Atascado / atrapado',
+            8 => 'Difícil acceso',
+            9 => 'Desconocido'
         ];
 
         return view('reportes.edit', compact('reporte', 'tiposIncidente', 'nivelesGravedad', 'estados', 'condicionesAnimales'));

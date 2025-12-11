@@ -225,15 +225,15 @@
                                 <div class="form-group">
                                     <label>Estado inicial del animal</label>
                                     <select class="form-control" name="estado_animal">
-                                        <option value="Atascado / atrapado">Atascado / atrapado</option>
-                                        <option value="Desconocido">Desconocido</option>
-                                        <option value="Deshidratado">Deshidratado</option>
-                                        <option value="Desorientado / shock">Desorientado / shock</option>
-                                        <option value="Difícil acceso">Difícil acceso</option>
-                                        <option value="Herido grave">Herido grave</option>
                                         <option value="Herido leve">Herido leve</option>
+                                        <option value="Herido grave">Herido grave</option>
                                         <option value="Inconsciente">Inconsciente</option>
+                                        <option value="Deshidratado">Deshidratado</option>
                                         <option value="Quemaduras">Quemaduras</option>
+                                        <option value="Desorientado / shock">Desorientado / shock</option>
+                                        <option value="Atascado / atrapado">Atascado / atrapado</option>
+                                        <option value="Difícil acceso">Difícil acceso</option>
+                                        <option value="Desconocido">Desconocido</option>
                                     </select>
                                 </div>
                             </div>
@@ -444,15 +444,15 @@
                 
                 // Static mappings for IDs (Simulated for Microservice)
                 const conditionMap = {
-                    'Atascado / atrapado': 1,
-                    'Desconocido': 2,
-                    'Deshidratado': 3,
-                    'Desorientado / shock': 4,
-                    'Difícil acceso': 5,
-                    'Herido grave': 6,
-                    'Herido leve': 7,
-                    'Inconsciente': 8,
-                    'Quemaduras': 9
+                    'Herido leve': 1,
+                    'Herido grave': 2,
+                    'Inconsciente': 3,
+                    'Deshidratado': 4,
+                    'Quemaduras': 5,
+                    'Desorientado / shock': 6,
+                    'Atascado / atrapado': 7,
+                    'Difícil acceso': 8,
+                    'Desconocido': 9
                 };
                 
                 const incidentTypeMap = {
