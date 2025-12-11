@@ -118,7 +118,7 @@ class ReporteController extends Controller
      */
     public function show(string $id)
     {
-        $reporte = Reporte::findOrFail($id);
+        $reporte = Reporte::with('animal_report')->findOrFail($id);
 
         // Cargar relaciones manualmente para evitar problema de UUID con whereIn
         $tiposIncidente = TiposIncidente::all()->keyBy('id');
@@ -135,7 +135,20 @@ class ReporteController extends Controller
             $reporte->setRelation('estados_sistema', $estadosSistema[$reporte->estado_id]);
         }
 
-        return view('reportes.show', compact('reporte'));
+        // Add condition mapping for animal reports
+        $condicionesAnimales = [
+            1 => 'Atascado / atrapado',
+            2 => 'Desconocido',
+            3 => 'Deshidratado',
+            4 => 'Desorientado / shock',
+            5 => 'Difícil acceso',
+            6 => 'Herido grave',
+            7 => 'Herido leve',
+            8 => 'Inconsciente',
+            9 => 'Quemaduras'
+        ];
+
+        return view('reportes.show', compact('reporte', 'condicionesAnimales'));
     }
 
     /**
@@ -151,7 +164,20 @@ class ReporteController extends Controller
             ->orderBy('orden')
             ->get();
 
-        return view('reportes.edit', compact('reporte', 'tiposIncidente', 'nivelesGravedad', 'estados'));
+        // Add condition mapping for animal reports
+        $condicionesAnimales = [
+            1 => 'Atascado / atrapado',
+            2 => 'Desconocido',
+            3 => 'Deshidratado',
+            4 => 'Desorientado / shock',
+            5 => 'Difícil acceso',
+            6 => 'Herido grave',
+            7 => 'Herido leve',
+            8 => 'Inconsciente',
+            9 => 'Quemaduras'
+        ];
+
+        return view('reportes.edit', compact('reporte', 'tiposIncidente', 'nivelesGravedad', 'estados', 'condicionesAnimales'));
     }
 
     /**

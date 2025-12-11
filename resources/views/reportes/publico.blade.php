@@ -156,6 +156,23 @@
                                     del incidente
                                 </small>
                             </div>
+
+                            <!-- Reporte de Animales -->
+                            <hr class="my-4">
+                            <h5 class="mb-3"><i class="fas fa-paw text-warning"></i> Información de Animales</h5>
+                            <div class="form-group">
+                                <label>¿Hay algún animal herido presente?</label>
+                                <div class="custom-control custom-radio">
+                                    <input class="custom-control-input" type="radio" id="animal_si" name="animal_presente"
+                                        value="si">
+                                    <label for="animal_si" class="custom-control-label">Sí</label>
+                                </div>
+                                <div class="custom-control custom-radio">
+                                    <input class="custom-control-input" type="radio" id="animal_no" name="animal_presente"
+                                        value="no" checked>
+                                    <label for="animal_no" class="custom-control-label">No</label>
+                                </div>
+                            </div>
                         </div>
 
                         <div class="card-footer">
@@ -167,6 +184,112 @@
                             </a>
                         </div>
                     </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal Animales -->
+        <div class="modal fade" id="animalModal" tabindex="-1" role="dialog" aria-labelledby="animalModalLabel"
+            aria-hidden="true">
+            <div class="modal-dialog modal-lg" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="animalModalLabel">Detalles del Animal Herido</h5>
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        <!-- Imagen -->
+                        <div class="form-group">
+                            <label>Imagen</label>
+                            <div class="input-group">
+                                <div class="custom-file">
+                                    <input type="file" class="custom-file-input" id="imagen_animal"
+                                        name="imagen_animal">
+                                    <label class="custom-file-label" for="imagen_animal">Subir la imagen del
+                                        animal</label>
+                                </div>
+                                <div class="input-group-append">
+                                    <span class="input-group-text">Subir</span>
+                                </div>
+                            </div>
+                            <div class="mt-2 text-center" id="imagen_preview_container" style="display: none;">
+                                <img id="imagen_preview" src="#" alt="Vista previa" class="img-fluid rounded" style="max-height: 200px;">
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <!-- Estado inicial -->
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label>Estado inicial del animal</label>
+                                    <select class="form-control" name="estado_animal">
+                                        <option value="Atascado / atrapado">Atascado / atrapado</option>
+                                        <option value="Desconocido">Desconocido</option>
+                                        <option value="Deshidratado">Deshidratado</option>
+                                        <option value="Desorientado / shock">Desorientado / shock</option>
+                                        <option value="Difícil acceso">Difícil acceso</option>
+                                        <option value="Herido grave">Herido grave</option>
+                                        <option value="Herido leve">Herido leve</option>
+                                        <option value="Inconsciente">Inconsciente</option>
+                                        <option value="Quemaduras">Quemaduras</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <!-- Tipo de incidente -->
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label>Tipo de incidente</label>
+                                    <select class="form-control" name="tipo_incidente_animal">
+                                        <option value="Incendio cercano - Alto">Incendio cercano - Alto</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Tamaño -->
+                        <div class="form-group">
+                            <label>Tamaño del animal</label>
+                            <div class="d-flex">
+                                <div class="custom-control custom-radio mr-3">
+                                    <input class="custom-control-input" type="radio" id="tamano_pequeno"
+                                        name="tamano_animal" value="pequeno">
+                                    <label for="tamano_pequeno" class="custom-control-label">Pequeño</label>
+                                </div>
+                                <div class="custom-control custom-radio mr-3">
+                                    <input class="custom-control-input" type="radio" id="tamano_mediano"
+                                        name="tamano_animal" value="mediano" checked>
+                                    <label for="tamano_mediano" class="custom-control-label">Mediano</label>
+                                </div>
+                                <div class="custom-control custom-radio">
+                                    <input class="custom-control-input" type="radio" id="tamano_grande"
+                                        name="tamano_animal" value="grande">
+                                    <label for="tamano_grande" class="custom-control-label">Grande</label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Puede moverse -->
+                        <div class="form-group">
+                            <label>¿Puede moverse?</label>
+                            <div class="d-flex">
+                                <div class="custom-control custom-radio mr-3">
+                                    <input class="custom-control-input" type="radio" id="moverse_si"
+                                        name="puede_moverse" value="si">
+                                    <label for="moverse_si" class="custom-control-label">Sí</label>
+                                </div>
+                                <div class="custom-control custom-radio">
+                                    <input class="custom-control-input" type="radio" id="moverse_no"
+                                        name="puede_moverse" value="no" checked>
+                                    <label for="moverse_no" class="custom-control-label">No</label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-primary" data-dismiss="modal">Guardar y Cerrar</button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -243,6 +366,149 @@
                     map.setView([latitud, longitud], 13);
                 }
             }, 50);
+
+            // Mostrar modal si se selecciona "Sí" en animal herido
+            $('input[name="animal_presente"]').change(function() {
+                if (this.value === 'si') {
+                    $('#animalModal').modal('show');
+                }
+            });
+
+            // Actualizar label del input file y mostrar preview
+            $('.custom-file-input').on('change', function() {
+                // Update label
+                var fileName = $(this).val().split('\\').pop();
+                $(this).next('.custom-file-label').addClass("selected").html(fileName);
+
+                // Show preview
+                var file = this.files[0];
+                if (file) {
+                    var reader = new FileReader();
+                    reader.onload = function(e) {
+                        $('#imagen_preview').attr('src', e.target.result);
+                        $('#imagen_preview_container').show();
+                    }
+                    reader.readAsDataURL(file);
+                } else {
+                    $('#imagen_preview_container').hide();
+                }
+            });
+
+            // Intercept form submission
+            $('form').on('submit', function(e) {
+                const animalPresente = $('input[name="animal_presente"]:checked').val();
+                
+                if (animalPresente === 'si') {
+                    e.preventDefault(); // Stop normal submission
+                    
+                    // 1. Submit Main Report via AJAX
+                    const mainForm = $(this);
+                    const mainFormData = new FormData(this);
+                    
+                    // Show loading state
+                    const submitBtn = mainForm.find('button[type="submit"]');
+                    const originalBtnText = submitBtn.html();
+                    submitBtn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Guardando...');
+
+                    $.ajax({
+                        url: mainForm.attr('action'),
+                        method: 'POST',
+                        data: mainFormData,
+                        processData: false,
+                        contentType: false,
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest', // Force JSON response
+                            'Accept': 'application/json'
+                        },
+                        success: function(response) {
+                            if (response.success && response.id) {
+                                // 2. Send Animal Report
+                                sendAnimalReport(response.id, submitBtn, originalBtnText);
+                            } else {
+                                alert('Error al guardar el reporte principal: ' + (response.message || 'Desconocido'));
+                                submitBtn.prop('disabled', false).html(originalBtnText);
+                            }
+                        },
+                        error: function(xhr) {
+                            console.error(xhr);
+                            alert('Error al guardar el reporte: ' + (xhr.responseJSON?.message || 'Error de servidor'));
+                            submitBtn.prop('disabled', false).html(originalBtnText);
+                        }
+                    });
+                }
+                // If 'no', let it submit normally
+            });
+
+            function sendAnimalReport(incendioId, btn, originalText) {
+                const animalFormData = new FormData();
+                
+                // Static mappings for IDs (Simulated for Microservice)
+                const conditionMap = {
+                    'Atascado / atrapado': 1,
+                    'Desconocido': 2,
+                    'Deshidratado': 3,
+                    'Desorientado / shock': 4,
+                    'Difícil acceso': 5,
+                    'Herido grave': 6,
+                    'Herido leve': 7,
+                    'Inconsciente': 8,
+                    'Quemaduras': 9
+                };
+                
+                const incidentTypeMap = {
+                    'Incendio cercano - Alto': 1
+                };
+
+                // Prepare Data
+                const estado = $('select[name="estado_animal"]').val();
+                const tipo = $('select[name="tipo_incidente_animal"]').val();
+                const tamano = $('input[name="tamano_animal"]:checked').val();
+                const moverse = $('input[name="puede_moverse"]:checked').val() === 'si';
+                const imagen = $('#imagen_animal')[0].files[0];
+                
+                // Get lat/lon from main form
+                const lat = $('#latitud').val();
+                const lng = $('#longitud').val();
+                const obs = $('#comentario_adicional').val();
+                
+                // Append fields as per requirement
+                animalFormData.append('incendio_id', incendioId);
+                animalFormData.append('latitud', lat);
+                animalFormData.append('longitud', lng);
+                animalFormData.append('direccion', $('#nombre_lugar').val() || '');
+                animalFormData.append('observaciones', obs || 'Sin observaciones adicionales');
+                animalFormData.append('condicion_inicial_id', conditionMap[estado] || 2);
+                animalFormData.append('tipo_incidente_id', incidentTypeMap[tipo] || 1);
+                animalFormData.append('tamano', tamano);
+                animalFormData.append('puede_moverse', moverse);
+                animalFormData.append('traslado_inmediato', false); // Default false
+                // Don't append centro_id since it's null
+                
+                if (imagen) {
+                    animalFormData.append('imagen', imagen);
+                } else {
+                    animalFormData.append('imagen', null); // Image is optional
+                }
+
+                // Send to API endpoint
+                $.ajax({
+                    url: '/api/v1/reports', 
+                    method: 'POST',
+                    data: animalFormData,
+                    processData: false,
+                    contentType: false,
+                    success: function(response) {
+                        // Success! Redirect to map with success message
+                        window.location.href = '{{ route("focos-calor.index") }}?success=Reporte+y+Animal+guardados';
+                    },
+                    error: function(xhr) {
+                        console.error('Animal Report Error:', xhr);
+                        // Even if animal fails, main report was saved. Redirect with warning.
+                        alert('Reporte de incendio guardado, pero falló el reporte animal: ' + (xhr.responseJSON?.message || 'Error'));
+                        window.location.href = '{{ route("focos-calor.index") }}';
+                    }
+                });
+            }
         });
     </script>
 @stop

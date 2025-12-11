@@ -22,17 +22,17 @@ class ReporteAnimalController extends Controller
             'observaciones' => 'nullable|string',
             'condicion_inicial_id' => 'required|numeric',
             'tipo_incidente_id' => 'required|numeric',
-            'tamano' => 'required|string|in:pequeño,pequeno,mediano,grande',
-            'puede_moverse' => 'required|boolean',
-            'traslado_inmediato' => 'required|boolean',
+            'tamano' => 'required|string|in:pequeno,mediano,grande',
+            'puede_moverse' => 'required',
+            'traslado_inmediato' => 'required',
             'centro_id' => 'nullable|numeric',
-            'imagen' => 'required|file|image|max:10240', 
+            'imagen' => 'nullable|file|image|max:10240', 
         ]);
 
         try {
             // Handle File Upload
-            $path = '';
-            if ($request->hasFile('imagen')) {
+            $path = null;
+            if ($request->hasFile('imagen') && $request->file('imagen')) {
                 // Store in 'public/animales' folder
                 $path = $request->file('imagen')->store('animales', 'public');
             }
@@ -47,9 +47,9 @@ class ReporteAnimalController extends Controller
                 'condicion_inicial_id' => $validated['condicion_inicial_id'],
                 'tipo_incidente_id' => $validated['tipo_incidente_id'],
                 'tamano' => $validated['tamano'],
-                'puede_moverse' => filter_var($validated['puede_moverse'], FILTER_VALIDATE_BOOLEAN),
-                'traslado_inmediato' => filter_var($validated['traslado_inmediato'], FILTER_VALIDATE_BOOLEAN),
-                'centro_id' => $validated['centro_id'],
+                'puede_moverse' => $validated['puede_moverse'] === 'si' || $validated['puede_moverse'] === true || $validated['puede_moverse'] === 'true',
+                'traslado_inmediato' => $validated['traslado_inmediato'] === true || $validated['traslado_inmediato'] === 'true' || $validated['traslado_inmediato'] === 1,
+                'centro_id' => $validated['centro_id'] ?? null,
                 'imagen_path' => $path,
             ]);
 
@@ -59,9 +59,15 @@ class ReporteAnimalController extends Controller
             ], 201);
 
         } catch (\Exception $e) {
+            Log::error('Animal Report Error: ' . $e->getMessage(), [
+                'request' => $request->all(),
+                'exception' => $e
+            ]);
+            
             return response()->json([
                 'message' => 'Error al crear reporte de animal',
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
+                'details' => config('app.debug') ? $e->getTraceAsString() : null
             ], 500);
         }
     }

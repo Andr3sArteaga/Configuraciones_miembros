@@ -370,17 +370,41 @@
                                 <div class="form-group">
                                     <label>Condición</label>
                                     <input type="text" class="form-control" readonly
-                                        value="{{ $reporte->animal_report->condicion_inicial_id ?? 'N/A' }}">
+                                        value="{{ $reporte->animal_report ? ($condicionesAnimales[$reporte->animal_report->condicion_inicial_id] ?? 'Desconocido') : 'N/A' }}">
                                 </div>
                             </div>
                             <div class="col-md-6">
                                 <div class="form-group">
                                     <label>Tamaño</label>
                                     <input type="text" class="form-control" readonly
-                                        value="{{ $reporte->animal_report->tamano ?? 'N/A' }}">
+                                        value="{{ $reporte->animal_report ? ucfirst($reporte->animal_report->tamano) : 'N/A' }}">
                                 </div>
                             </div>
                         </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label>¿Puede moverse?</label>
+                                    <input type="text" class="form-control" readonly
+                                        value="{{ $reporte->animal_report ? ($reporte->animal_report->puede_moverse ? 'Sí' : 'No') : 'N/A' }}">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label>Traslado Inmediato</label>
+                                    <input type="text" class="form-control" readonly
+                                        value="{{ $reporte->animal_report ? ($reporte->animal_report->traslado_inmediato ? 'Sí' : 'No') : 'N/A' }}">
+                                </div>
+                            </div>
+                        </div>
+
+                        @if($reporte->animal_report && $reporte->animal_report->observaciones)
+                        <div class="form-group">
+                            <label>Observaciones</label>
+                            <textarea class="form-control" readonly rows="3">{{ $reporte->animal_report->observaciones }}</textarea>
+                        </div>
+                        @endif
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-dismiss="modal">Cerrar</button>

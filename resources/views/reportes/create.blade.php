@@ -559,21 +559,19 @@
                 animalFormData.append('condicion_inicial_id', conditionMap[estado] || 2);
                 animalFormData.append('tipo_incidente_id', incidentTypeMap[tipo] || 1);
                 animalFormData.append('tamano', tamano);
-                animalFormData.append('puede_moverse', moverse ? 1 : 0);
-                animalFormData.append('traslado_inmediato', 0); // Default false or add input
-                animalFormData.append('centro_id', ''); // Default empty (becomes null)
+                animalFormData.append('puede_moverse', moverse);
+                animalFormData.append('traslado_inmediato', false); // Default false
+                // Don't append centro_id since it's null
                 
                 if (imagen) {
                     animalFormData.append('imagen', imagen);
                 } else {
-                    alert('Debe subir una imagen del animal.');
-                    btn.prop('disabled', false).html(originalText);
-                    return;
+                    animalFormData.append('imagen', null); // Image is optional
                 }
 
                 // Send to Microservice Endpoint
                 $.ajax({
-                    url: '{{ route("api.reports.animal") }}', // Using our new API route
+                    url: '/api/v1/reports', // Using our API route
                     method: 'POST',
                     data: animalFormData,
                     processData: false,

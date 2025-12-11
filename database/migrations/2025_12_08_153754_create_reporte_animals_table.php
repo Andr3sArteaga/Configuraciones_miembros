@@ -41,7 +41,7 @@ return new class extends Migration
             $table->boolean('traslado_inmediato')->default(false);
             
             $table->unsignedBigInteger('centro_id')->nullable();
-            $table->string('imagen_path');
+            $table->string('imagen_path')->nullable();
             
             $table->timestamps();
         });
