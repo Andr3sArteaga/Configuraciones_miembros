@@ -7,6 +7,8 @@ use Illuminate\Http\Request;
 
 use Illuminate\Support\Facades\Log;
 
+use Illuminate\Support\Facades\Http;
+
 class ReporteAnimalController extends Controller
 {
     public function store(Request $request)
@@ -52,6 +54,59 @@ class ReporteAnimalController extends Controller
                 'centro_id' => $validated['centro_id'] ?? null,
                 'imagen_path' => $path,
             ]);
+
+            // Enviar a microservicio externo
+            try {
+                // Determine boolean values
+                $puedeMoverse = $validated['puede_moverse'] === 'si' || $validated['puede_moverse'] === true || $validated['puede_moverse'] === 'true' || $validated['puede_moverse'] === 1 || $validated['puede_moverse'] === '1';
+                $trasladoInmediato = $validated['traslado_inmediato'] === true || $validated['traslado_inmediato'] === 'true' || $validated['traslado_inmediato'] === 1 || $validated['traslado_inmediato'] === '1';
+
+                // Map fields - Handle direccion vs nombre_lugar mismatch
+                $direccion = $request->input('direccion') 
+                            ?? $request->input('nombre_lugar') 
+                            ?? $validated['direccion'] 
+                            ?? "";
+
+                $http = Http::timeout(15);
+                
+                // Attach image if exists
+                if ($request->hasFile('imagen')) {
+                    $file = $request->file('imagen');
+                    $http->attach(
+                        'imagen', 
+                        file_get_contents($file->getRealPath()), 
+                        $file->getClientOriginalName()
+                    );
+                }
+
+                $externalPayload = [
+                    "incendio_id" => null, 
+                    "latitud" => (string)$validated['latitud'], 
+                    "longitud" => (string)$validated['longitud'],
+                    "direccion" => $direccion,
+                    "observaciones" => $validated['observaciones'] ?? "",
+                    "condicion_inicial_id" => (int)$validated['condicion_inicial_id'],
+                    "tipo_incidente_id" => (int)$validated['tipo_incidente_id'],
+                    "tamano" => $validated['tamano'],
+                    "puede_moverse" => $puedeMoverse ? '1' : '0',
+                    "traslado_inmediato" => $trasladoInmediato ? '1' : '0',
+                    "centro_id" => isset($validated['centro_id']) ? (int)$validated['centro_id'] : null
+                ];
+
+                Log::info('Sending to External API (Multipart):', $externalPayload);
+
+                $response = $http->post('http://10.26.13.235:8000/api/reports', $externalPayload);
+
+                if ($response->successful()) {
+                    Log::info('External API Success: ' . $response->status());
+                } else {
+                    Log::error('External API Failed: ' . $response->status() . ' - ' . $response->body());
+                }
+
+            } catch (\Exception $ex) {
+                // No interrumpir el flujo si falla el servicio externo
+                Log::error('External API Connection Error: ' . $ex->getMessage());
+            }
 
             return response()->json([
                 'message' => 'Reporte de animal creado exitosamente',
