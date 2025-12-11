@@ -284,5 +284,19 @@
             color: #000 !important;
             border: 1px solid rgba(255, 193, 7, 0.5);
         }
+
+        /* Ocultar user-panel cuando el sidebar está colapsado */
+        .sidebar-collapse .user-panel {
+            display: none !important;
+        }
+
+        .sidebar-collapse .user-panel .info {
+            display: none !important;
+        }
+
+        /* También ocultar el avatar cuando el sidebar está colapsado */
+        .sidebar-collapse .sidebar .user-panel > div {
+            display: none !important;
+        }
     </style>
 @endpush
