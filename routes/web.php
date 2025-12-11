@@ -25,6 +25,7 @@ use App\Http\Controllers\PerfilController;
 use App\Http\Controllers\KardexController;
 use App\Http\Controllers\AdminCourseProgressController;
 use App\Http\Controllers\NotificationController;
+use App\Http\Controllers\ComunarioController;
 
 Auth::routes();
 
@@ -106,7 +107,7 @@ Route::middleware(['auth'])->group(function () {
 // ========== RUTAS SOLO ADMIN ==========
 
 Route::middleware(['auth', 'role:admin'])->group(function () {
-    
+
     // ========== OPERACIONES ==========
 
     // Recursos (Solo Admin)
@@ -129,7 +130,10 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
     Route::post('equipos/{equipo}/miembros', [EquipoController::class, 'agregarMiembro'])->name('equipos.agregar-miembro');
     Route::delete('equipos/{equipo}/miembros/{usuario}', [EquipoController::class, 'removerMiembro'])->name('equipos.remover-miembro');
     Route::post('equipos/{equipo}/comunarios', [EquipoController::class, 'agregarComunario'])->name('equipos.agregar-comunario');
-    Route::delete('equipos/{equipo}/comunarios/{comunario}', [EquipoController::class, 'removerComunario'])->name('equipos.remover-comunario');
+    Route::delete('equipos/{equipo}/comunarios/{comunarioId}', [EquipoController::class, 'removerComunario'])->name('equipos.remover-comunario');
+
+    // Comunarios (Solo Admin)
+    Route::resource('comunarios', ComunarioController::class);
 
     // ========== INFORMACIÓN ==========
 

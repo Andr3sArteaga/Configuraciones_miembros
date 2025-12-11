@@ -43,6 +43,9 @@ class DatabaseSeeder extends Seeder
         $this->call(ReportesSeeder::class);
         // $this->call(NoticiasSeeder::class);
 
+        $this->command->info('Poblando reportes de incendios...');
+        $this->call(ReportesIncendioSeeder::class);
+
         $this->command->info('🎉 ¡Siembra completada exitosamente!');
     }
 }

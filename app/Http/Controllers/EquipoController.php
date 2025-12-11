@@ -96,6 +96,9 @@ class EquipoController extends Controller
             'miembros' => 'nullable|array',
             'miembros.*' => 'uuid|exists:usuarios,id',
             'lider_id' => 'nullable|uuid|exists:usuarios,id',
+            'comunarios' => 'nullable|array',
+            'comunarios.*.nombre' => 'required_with:comunarios|string|max:100',
+            'comunarios.*.edad' => 'required_with:comunarios|integer|min:18|max:100',
         ], [
             'nombre_equipo.required' => 'El nombre del equipo es obligatorio',
             'nombre_equipo.max' => 'El nombre del equipo no puede exceder 100 caracteres',
@@ -107,6 +110,9 @@ class EquipoController extends Controller
             'miembros.*.exists' => 'Uno o más miembros seleccionados no existen',
             'lider_id.uuid' => 'El ID del líder debe ser válido',
             'lider_id.exists' => 'El líder seleccionado no existe',
+            'comunarios.*.nombre.required_with' => 'El nombre del comunario es obligatorio',
+            'comunarios.*.edad.required_with' => 'La edad del comunario es obligatoria',
+            'comunarios.*.edad.min' => 'Los comunarios deben ser mayores de 18 años',
         ]);
 
         try {
@@ -117,114 +123,16 @@ class EquipoController extends Controller
 
             // Calcular cantidad de integrantes
             $cantidadMiembros = ($request->filled('miembros') && is_array($request->miembros)) ? count($request->miembros) : 0;
+            $cantidadComunarios = ($request->filled('comunarios') && is_array($request->comunarios)) ? count($request->comunarios) : 0;
+            $totalIntegrantes = $cantidadMiembros + $cantidadComunarios;
 
-
-            // --- External Microservice Forwarding ---
-            try {
-                $payload = [
-                    'nombre_equipo' => $validated['nombre_equipo'],
-                    'ubicacion' => [
-                        'latitud' => $request->input('latitud'),
-                        'longitud' => $request->input('longitud'),
-                        'nombre_lugar' => $request->input('ubicacion'),
-                        'ciudad' => 'Santa Cruz',
-                        'provincia' => 'Andrés Ibáñez'
-                    ],
-                    'lider' => [
-                        'nombre_completo' => 'Líder Asignado',
-                        'carnet_identidad' => '0000000',
-                        'telefono' => '00000000'
-                    ],
-                    'miembros' => [],
-                    'insumos_necesarios' => $request->input('insumos_necesarios'),
-                    'codigo_seguimiento' => $request->input('codigo_seguimiento'),
-                    'fecha_solicitud' => now()->format('Y-m-d'),
-                    'estado' => 'pendiente',
-                    'comunidad_solicitante' => 'Comunidad A',
-                    'cantidad_personas' => 15,
-                    'fecha_inicio' => now()->format('Y-m-d'),
-                    'fecha_fin' => now()->addDays(7)->format('Y-m-d'),
-                    'aprobada' => false,
-                    'apoyoaceptado' => false,
-                    'id_tipoemergencia' => 1
-                ];
-
-                // Enrich leader info
-                if ($request->has('lider_id')) {
-                    $lider = DB::table('usuarios')->where('id', $request->input('lider_id'))->first();
-                    if ($lider) {
-                        $payload['lider'] = [
-                            'nombre_completo' => $lider->nombre . ' ' . ($lider->apellido ?? ''),
-                            'carnet_identidad' => $lider->ci ?? '0000000',
-                            'telefono' => $lider->telefono ?? '00000000'
-                        ];
-                    }
-                }
-
-                // Enrich members info
-                if (!empty($validated['miembros'])) {
-                    $miembros = DB::table('usuarios')->whereIn('id', $validated['miembros'])->get();
-                    foreach ($miembros as $m) {
-                        $payload['miembros'][] = [
-                            'nombre_completo' => $m->nombre . ' ' . ($m->apellido ?? ''),
-                            'carnet_identidad' => $m->ci ?? '0000000',
-                            'edad' => $m->edad ?? 0
-                        ];
-                    }
-                }
-
-                // Add Comunarios
-                if ($request->has('comunarios')) {
-                    foreach ($request->input('comunarios') as $c) {
-                        $payload['miembros'][] = [
-                            'nombre_completo' => $c['nombre'],
-                            'carnet_identidad' => 'N/A',
-                            'edad' => $c['edad']
-                        ];
-                    }
-                }
-                
-                // Log payload for debugging/verification
-                \Illuminate\Support\Facades\Log::info('Payload para Microservicio:', $payload);
-
-                // Send to external microservice
-                // In production, use env('MICROSERVICE_URL')
-                \Illuminate\Support\Facades\Http::post('http://microservice.local/api/equipos', $payload);
-
-            } catch (\Exception $e) {
-                // Log and continue
-                \Illuminate\Support\Facades\Log::error('Microservice Error: ' . $e->getMessage());
-            }
-
-            // Insertar con reporte asociado (reporte_id opcional) y ubicación PostGIS
+            // Insertar con reporte asociado (reporte_id opcional)
             $reporteId = $request->filled('reporte_id') ? $validated['reporte_id'] : null;
-            
-            // Prepare location if provided
-            $lat = $request->input('latitud');
-            $lng = $request->input('longitud');
-            
-            if ($lat && $lng) {
-                 DB::statement(
-                    "INSERT INTO equipos (id, nombre_equipo, codigo_seguimiento, estado_id, cantidad_integrantes, reporte_id, ubicacion, creado)
-                         VALUES (?, ?, ?, ?, ?, ?, ST_SetSRID(ST_MakePoint(?, ?), 4326), NOW())",
-                    [
-                        $equipoId, 
-                        $validated['nombre_equipo'],
-                        $request->input('codigo_seguimiento'), 
-                        $validated['estado_id'], 
-                        $cantidadMiembros, 
-                        $reporteId,
-                        $lng, // PostGIS uses (x, y) = (lng, lat)
-                        $lat
-                    ]
-                );
-            } else {
-                 DB::statement(
-                    "INSERT INTO equipos (id, nombre_equipo, codigo_seguimiento, estado_id, cantidad_integrantes, reporte_id, creado)
-                         VALUES (?, ?, ?, ?, ?, ?, NOW())",
-                    [$equipoId, $validated['nombre_equipo'], $request->input('codigo_seguimiento'), $validated['estado_id'], $cantidadMiembros, $reporteId]
-                );
-            }
+            DB::statement(
+                "INSERT INTO equipos (id, nombre_equipo, estado_id, cantidad_integrantes, reporte_id, creado)
+                     VALUES (?, ?, ?, ?, ?, NOW())",
+                [$equipoId, $validated['nombre_equipo'], $validated['estado_id'], $totalIntegrantes, $reporteId]
+            );
 
 
             // Agregar miembros al equipo si se proporcionaron
@@ -240,6 +148,23 @@ class EquipoController extends Controller
                          VALUES (?, ?, ?, ?, NOW())",
                         [$miembroId, $equipoId, $usuarioId, $esLider]
                     );
+                }
+            }
+
+            // Insertar comunarios de apoyo si existen
+            if ($request->filled('comunarios') && is_array($request->comunarios)) {
+                foreach ($request->comunarios as $comunario) {
+                    // Validar estructura básica del comunario
+                    if (isset($comunario['nombre']) && isset($comunario['edad'])) {
+                        DB::table('comunarios_apoyo')->insert([
+                            'id' => \Ramsey\Uuid\Uuid::uuid4()->toString(),
+                            'nombre' => $comunario['nombre'],
+                            'edad' => $comunario['edad'],
+                            'entidad_perteneciente' => $comunario['entidad'] ?? null,
+                            'equipoid' => $equipoId,
+                            'creado' => now(),
+                        ]);
+                    }
                 }
             }
 
@@ -263,7 +188,7 @@ class EquipoController extends Controller
      */
     public function show(string $id)
     {
-        $equipo = Equipo::with(['estados_sistema', 'miembros'])->findOrFail($id);
+        $equipo = Equipo::with(['estados_sistema', 'miembros', 'comunarios_apoyos'])->findOrFail($id);
 
         return view('equipos.show', compact('equipo'));
     }
@@ -273,7 +198,7 @@ class EquipoController extends Controller
      */
     public function edit(string $id)
     {
-        $equipo = Equipo::with('miembros')->findOrFail($id);
+        $equipo = Equipo::with(['miembros', 'comunarios_apoyos'])->findOrFail($id);
 
         // Obtener estados de equipos
         $estados = EstadosSistema::where('tabla', 'equipos')
@@ -339,6 +264,10 @@ class EquipoController extends Controller
             'miembros.*.exists' => 'Uno o más miembros seleccionados no existen',
             'lider_id.uuid' => 'El ID del líder debe ser válido',
             'lider_id.exists' => 'El líder seleccionado no existe',
+            'comunarios' => 'nullable|array',
+            'comunarios.*.nombre' => 'required_with:comunarios|string|max:100',
+            'comunarios.*.edad' => 'required_with:comunarios|integer|min:18|max:100',
+            'comunarios.*.entidad' => 'nullable|string|max:150',
         ]);
 
         try {
@@ -348,7 +277,7 @@ class EquipoController extends Controller
             $equipo->nombre_equipo = $validated['nombre_equipo'];
             $equipo->estado_id = $validated['estado_id'];
             $equipo->codigo_seguimiento = $request->input('codigo_seguimiento');
-            
+
             // Actualizar reporte
             $reporteId = $request->filled('reporte_id') ? $validated['reporte_id'] : null;
             $equipo->reporte_id = $reporteId;
@@ -359,7 +288,7 @@ class EquipoController extends Controller
             // Update PostGIS location directly via SQL
             $lat = $request->input('latitud');
             $lng = $request->input('longitud');
-            
+
             if ($lat && $lng) {
                 DB::statement(
                     "UPDATE equipos SET ubicacion = ST_SetSRID(ST_MakePoint(?, ?), 4326) WHERE id = ?",
@@ -371,7 +300,8 @@ class EquipoController extends Controller
             }
 
             // Actualizar miembros del equipo
-            if ($request->has('miembros')) {
+            // Si viene el flag sync_relations o si existen miembros en el request
+            if ($request->has('sync_relations') || $request->has('miembros')) {
                 // Eliminar miembros actuales
                 DB::table('miembros_equipo')->where('id_equipo', $equipo->id)->delete();
 
@@ -394,9 +324,37 @@ class EquipoController extends Controller
                     }
                 }
 
-                // Actualizar contador de integrantes
-                DB::statement("UPDATE equipos SET cantidad_integrantes = ? WHERE id = ?", [$cantidadMiembros, $equipo->id]);
+                // Actualizar contador de integrantes (se hará al final)
+                // DB::statement("UPDATE equipos SET cantidad_integrantes = ? WHERE id = ?", [$cantidadMiembros, $equipo->id]);
             }
+
+            // Actualizar comunarios del equipo
+            if ($request->has('sync_relations') || $request->has('comunarios')) {
+                // Eliminar comunarios asociados a este equipo
+                DB::table('comunarios_apoyo')->where('equipoid', $equipo->id)->delete();
+
+                if (is_array($request->comunarios) && count($request->comunarios) > 0) {
+                    foreach ($request->comunarios as $comunario) {
+                        if (isset($comunario['nombre']) && isset($comunario['edad'])) {
+                            DB::table('comunarios_apoyo')->insert([
+                                'id' => \Ramsey\Uuid\Uuid::uuid4()->toString(),
+                                'nombre' => $comunario['nombre'],
+                                'edad' => $comunario['edad'],
+                                'entidad_perteneciente' => $comunario['entidad'] ?? null,
+                                'equipoid' => $equipo->id,
+                                'creado' => now(),
+                            ]);
+                        }
+                    }
+                }
+            }
+
+            // Recalcular y actualizar cantidad total de integrantes (miembros + comunarios)
+            $cantMiembros = DB::table('miembros_equipo')->where('id_equipo', $equipo->id)->count();
+            $cantComunarios = DB::table('comunarios_apoyo')->where('equipoid', $equipo->id)->count();
+            $totalIntegrantes = $cantMiembros + $cantComunarios;
+
+            DB::statement("UPDATE equipos SET cantidad_integrantes = ? WHERE id = ?", [$totalIntegrantes, $equipo->id]);
 
             DB::commit();
 
@@ -426,6 +384,58 @@ class EquipoController extends Controller
         return redirect()
             ->route('equipos.index')
             ->with('success', "Equipo '{$nombre}' eliminado exitosamente");
+    }
+
+    /**
+     * Agregar un comunario de apoyo a un equipo.
+     */
+    public function agregarComunario(Request $request, string $id)
+    {
+        $equipo = Equipo::findOrFail($id);
+
+        $validated = $request->validate([
+            'nombre' => 'required|string|max:100',
+            'edad' => 'required|integer|min:18|max:100',
+            'entidad_perteneciente' => 'nullable|string|max:150',
+        ], [
+            'nombre.required' => 'El nombre del comunario es obligatorio.',
+            'edad.required' => 'La edad es obligatoria.',
+            'edad.integer' => 'La edad debe ser un número.',
+            'edad.min' => 'El comunario debe ser mayor de 18 años.',
+        ]);
+
+        try {
+            DB::table('comunarios_apoyo')->insert([
+                'id' => \Ramsey\Uuid\Uuid::uuid4()->toString(),
+                'nombre' => $validated['nombre'],
+                'edad' => $validated['edad'],
+                'entidad_perteneciente' => $validated['entidad_perteneciente'] ?? null,
+                'equipoid' => $equipo->id,
+                'creado' => now(),
+            ]);
+
+            return redirect()->route('equipos.show', $equipo->id)
+                ->with('success', 'Comunario de apoyo agregado exitosamente.');
+        } catch (\Exception $e) {
+            return redirect()->route('equipos.show', $equipo->id)
+                ->with('error', 'Error al agregar el comunario: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Remover un comunario de apoyo de un equipo.
+     */
+    public function removerComunario(string $id, string $comunarioId)
+    {
+        try {
+            DB::table('comunarios_apoyo')->where('id', $comunarioId)->where('equipoid', $id)->delete();
+
+            return redirect()->route('equipos.show', $id)
+                ->with('success', 'Comunario de apoyo removido exitosamente.');
+        } catch (\Exception $e) {
+            return redirect()->route('equipos.show', $id)
+                ->with('error', 'Error al remover el comunario: ' . $e->getMessage());
+        }
     }
 
     /**
