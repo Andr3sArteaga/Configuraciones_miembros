@@ -453,7 +453,11 @@
                         <div class="row mb-3">
                             <div class="col-md-12 text-right">
                                 <label class="mr-2">Código de Seguimiento:</label>
-                                <input type="text" class="form-control d-inline-block w-auto bg-light" id="codigo_seguimiento-{{ $modalId }}" name="codigo_seguimiento" readonly>
+                                <input type="text" class="form-control d-inline-block w-auto bg-light" 
+                                       id="codigo_seguimiento-{{ $modalId }}" 
+                                       name="codigo_seguimiento" 
+                                       value="{{ $isEditMode && isset($codigoSeguimiento) ? $codigoSeguimiento : '' }}" 
+                                       readonly>
                             </div>
                         </div>
 
@@ -813,10 +817,17 @@
                     // Ensure event listeners are attached
                     initializeEventListeners();
                     
-                    // Generate tracking code if empty
+                    // Generate tracking code if empty (different logic for edit vs create)
                     const codeField = document.getElementById('codigo_seguimiento-' + modalId);
                     if (codeField && !codeField.value) {
-                        codeField.value = generateBRICode();
+                        @if($isEditMode)
+                            // In edit mode, load existing code or generate new if none exists
+                            const existingCode = @json(isset($codigoSeguimiento) ? $codigoSeguimiento : null);
+                            codeField.value = existingCode || generateBRICode();
+                        @else
+                            // In create mode, always generate new code
+                            codeField.value = generateBRICode();
+                        @endif
                     }
                     
                     // Initialize map with proper timing - wait for modal to be fully visible

@@ -47,6 +47,7 @@ class Equipo extends Model
 
     protected $fillable = [
         'nombre_equipo',
+        'codigo_seguimiento',
         'reporte_id',
         'cantidad_integrantes',
         'estado_id',

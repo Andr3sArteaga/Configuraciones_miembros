@@ -91,6 +91,8 @@ class EquipoController extends Controller
             'nombre_equipo' => 'required|string|max:100',
             'estado_id' => 'required|uuid|exists:estados_sistema,id',
             'reporte_id' => 'nullable|uuid|exists:reportes,id',
+            'codigo_seguimiento' => 'nullable|string|max:20',
+            'insumos_necesarios' => 'nullable|string',
             'miembros' => 'nullable|array',
             'miembros.*' => 'uuid|exists:usuarios,id',
             'lider_id' => 'nullable|uuid|exists:usuarios,id',
@@ -203,11 +205,12 @@ class EquipoController extends Controller
             
             if ($lat && $lng) {
                  DB::statement(
-                    "INSERT INTO equipos (id, nombre_equipo, estado_id, cantidad_integrantes, reporte_id, ubicacion, creado)
-                         VALUES (?, ?, ?, ?, ?, ST_SetSRID(ST_MakePoint(?, ?), 4326), NOW())",
+                    "INSERT INTO equipos (id, nombre_equipo, codigo_seguimiento, estado_id, cantidad_integrantes, reporte_id, ubicacion, creado)
+                         VALUES (?, ?, ?, ?, ?, ?, ST_SetSRID(ST_MakePoint(?, ?), 4326), NOW())",
                     [
                         $equipoId, 
-                        $validated['nombre_equipo'], 
+                        $validated['nombre_equipo'],
+                        $request->input('codigo_seguimiento'), 
                         $validated['estado_id'], 
                         $cantidadMiembros, 
                         $reporteId,
@@ -217,9 +220,9 @@ class EquipoController extends Controller
                 );
             } else {
                  DB::statement(
-                    "INSERT INTO equipos (id, nombre_equipo, estado_id, cantidad_integrantes, reporte_id, creado)
-                         VALUES (?, ?, ?, ?, ?, NOW())",
-                    [$equipoId, $validated['nombre_equipo'], $validated['estado_id'], $cantidadMiembros, $reporteId]
+                    "INSERT INTO equipos (id, nombre_equipo, codigo_seguimiento, estado_id, cantidad_integrantes, reporte_id, creado)
+                         VALUES (?, ?, ?, ?, ?, ?, NOW())",
+                    [$equipoId, $validated['nombre_equipo'], $request->input('codigo_seguimiento'), $validated['estado_id'], $cantidadMiembros, $reporteId]
                 );
             }
 
@@ -295,9 +298,12 @@ class EquipoController extends Controller
         $latitud = $equipo->latitud;
         $longitud = $equipo->longitud;
 
+        // Get existing tracking code
+        $codigoSeguimiento = $equipo->codigo_seguimiento;
+
         $reportes = Reporte::whereNotNull('ubicacion')->orderBy('fecha_hora', 'desc')->get();
 
-        return view('equipos.edit', compact('equipo', 'estados', 'usuarios', 'miembrosAsignados', 'latitud', 'longitud', 'liderAsignadoId', 'reportes'));
+        return view('equipos.edit', compact('equipo', 'estados', 'usuarios', 'miembrosAsignados', 'latitud', 'longitud', 'liderAsignadoId', 'reportes', 'codigoSeguimiento'));
     }
 
     /**
@@ -311,6 +317,8 @@ class EquipoController extends Controller
             'nombre_equipo' => 'required|string|max:100',
             'estado_id' => 'required|uuid|exists:estados_sistema,id',
             'reporte_id' => 'nullable|uuid|exists:reportes,id',
+            'codigo_seguimiento' => 'nullable|string|max:20',
+            'insumos_necesarios' => 'nullable|string',
             'miembros' => 'nullable|array',
             'miembros.*' => 'uuid|exists:usuarios,id',
             'lider_id' => 'nullable|uuid|exists:usuarios,id',
@@ -339,6 +347,7 @@ class EquipoController extends Controller
             // Actualizar campos básicos
             $equipo->nombre_equipo = $validated['nombre_equipo'];
             $equipo->estado_id = $validated['estado_id'];
+            $equipo->codigo_seguimiento = $request->input('codigo_seguimiento');
             
             // Actualizar reporte
             $reporteId = $request->filled('reporte_id') ? $validated['reporte_id'] : null;
