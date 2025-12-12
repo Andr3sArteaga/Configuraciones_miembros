@@ -95,7 +95,7 @@ class ReporteAnimalController extends Controller
 
                 Log::info('Sending to External API (Multipart):', $externalPayload);
 
-                $response = $http->post('http://10.26.13.235:8000/api/reports', $externalPayload);
+                $response = $http->post(config('services.microservices.animal_reports.base_url') . '/api/reports', $externalPayload);
 
                 if ($response->successful()) {
                     Log::info('External API Success: ' . $response->status());

@@ -484,25 +484,97 @@ class EquipoController extends Controller
     public function deployed()
     {
         try {
-            $equipos = Equipo::with(['estados_sistema', 'reporte'])
+            $equipos = Equipo::with([
+                'estados_sistema',
+                'reporte',
+                'miembros.niveles_entrenamiento',
+                'miembros.role',
+                'comunarios_apoyos',
+                'recursos'
+            ])
                 ->whereNotNull('reporte_id')
                 ->orderBy('creado', 'desc')
                 ->get()
                 ->map(function ($equipo) {
+                    // Find leader
+                    $lider = $equipo->miembros->firstWhere('pivot.es_lider', true);
+
                     return [
                         'id' => $equipo->id,
                         'nombre_equipo' => $equipo->nombre_equipo,
+                        'codigo_seguimiento' => $equipo->codigo_seguimiento,
                         'cantidad_integrantes' => $equipo->cantidad_integrantes,
-                        'ubicacion' => $equipo->reporte ? $equipo->reporte->ubicacion : null,
-                        'latitud' => $equipo->reporte ? $equipo->reporte->latitud : null,
-                        'longitud' => $equipo->reporte ? $equipo->reporte->longitud : null,
+                        'ubicacion' => [
+                            'latitud' => $equipo->latitud,
+                            'longitud' => $equipo->longitud,
+                            'geojson' => $equipo->ubicacion
+                        ],
                         'estado' => $equipo->estados_sistema ? [
+                            'id' => $equipo->estados_sistema->id,
                             'nombre' => $equipo->estados_sistema->nombre,
                             'codigo' => $equipo->estados_sistema->codigo,
                             'color' => $equipo->estados_sistema->color
                         ] : null,
-                        'fecha_despliegue' => $equipo->creado->toIso8601String(),
-                        'tiempo_transcurrido' => $equipo->creado->diffForHumans()
+                        'reporte' => $equipo->reporte ? [
+                            'id' => $equipo->reporte->id,
+                            'nombre_lugar' => $equipo->reporte->nombre_lugar,
+                            'nombre_reportante' => $equipo->reporte->nombre_reportante,
+                            'gravedad' => $equipo->reporte->gravedad_incendio,
+                            'fecha_hora' => $equipo->reporte->fecha_hora
+                        ] : null,
+                        'lider' => $lider ? [
+                            'id' => $lider->id,
+                            'nombre' => $lider->nombre,
+                            'apellido' => $lider->apellido,
+                            'email' => $lider->email,
+                            'telefono' => $lider->telefono,
+                            'nivel_entrenamiento' => $lider->niveles_entrenamiento ? [
+                                'id' => $lider->niveles_entrenamiento->id,
+                                'nombre' => $lider->niveles_entrenamiento->nombre
+                            ] : null,
+                            'rol' => $lider->role ? [
+                                'id' => $lider->role->id,
+                                'nombre' => $lider->role->nombre
+                            ] : null
+                        ] : null,
+                        'miembros' => $equipo->miembros->map(function ($miembro) {
+                            return [
+                                'id' => $miembro->id,
+                                'nombre' => $miembro->nombre,
+                                'apellido' => $miembro->apellido,
+                                'email' => $miembro->email,
+                                'telefono' => $miembro->telefono,
+                                'es_lider' => (bool) $miembro->pivot->es_lider,
+                                'fecha_ingreso' => $miembro->pivot->fecha_ingreso,
+                                'nivel_entrenamiento' => $miembro->niveles_entrenamiento ? [
+                                    'id' => $miembro->niveles_entrenamiento->id,
+                                    'nombre' => $miembro->niveles_entrenamiento->nombre
+                                ] : null,
+                                'rol' => $miembro->role ? [
+                                    'id' => $miembro->role->id,
+                                    'nombre' => $miembro->role->nombre
+                                ] : null
+                            ];
+                        }),
+                        'comunarios' => $equipo->comunarios_apoyos->map(function ($comunario) {
+                            return [
+                                'id' => $comunario->id,
+                                'nombre' => $comunario->nombre,
+                                'edad' => $comunario->edad,
+                                'entidad_perteneciente' => $comunario->entidad_perteneciente
+                            ];
+                        }),
+                        'recursos' => $equipo->recursos->map(function ($recurso) {
+                            return [
+                                'id' => $recurso->id,
+                                'nombre' => $recurso->nombre ?? 'Recurso',
+                                'cantidad' => $recurso->cantidad ?? 1
+                            ];
+                        }),
+                        'fecha_despliegue' => $equipo->creado ? $equipo->creado->toIso8601String() : null,
+                        'tiempo_transcurrido' => $equipo->creado ? $equipo->creado->diffForHumans() : null,
+                        'creado' => $equipo->creado,
+                        'actualizado' => $equipo->actualizado
                     ];
                 });
 
@@ -512,6 +584,130 @@ class EquipoController extends Controller
                 'error' => 'Error al obtener equipos desplegados',
                 'message' => $e->getMessage()
             ], 500);
+        }
+    }
+
+    /**
+     * API endpoint to get detailed information for a single team
+     * GET /api/v1/equipos/{id}
+     */
+    public function showApi(string $id)
+    {
+        try {
+            $equipo = Equipo::with([
+                'estados_sistema',
+                'miembros.niveles_entrenamiento',
+                'miembros.role',
+                'miembros.genero',
+                'miembros.tipos_sangre',
+                'comunarios_apoyos',
+                'recursos',
+                'reporte'
+            ])->findOrFail($id);
+
+            // Find leader
+            $lider = $equipo->miembros->firstWhere('pivot.es_lider', true);
+
+            return response()->json([
+                'id' => $equipo->id,
+                'nombre_equipo' => $equipo->nombre_equipo,
+                'codigo_seguimiento' => $equipo->codigo_seguimiento,
+                'cantidad_integrantes' => $equipo->cantidad_integrantes,
+                'estado' => $equipo->estados_sistema ? [
+                    'id' => $equipo->estados_sistema->id,
+                    'nombre' => $equipo->estados_sistema->nombre,
+                    'codigo' => $equipo->estados_sistema->codigo,
+                    'color' => $equipo->estados_sistema->color
+                ] : null,
+                'ubicacion' => [
+                    'latitud' => $equipo->latitud,
+                    'longitud' => $equipo->longitud,
+                    'geojson' => $equipo->ubicacion
+                ],
+                'reporte' => $equipo->reporte ? [
+                    'id' => $equipo->reporte->id,
+                    'nombre_lugar' => $equipo->reporte->nombre_lugar,
+                    'nombre_reportante' => $equipo->reporte->nombre_reportante,
+                    'gravedad' => $equipo->reporte->gravedad_incendio,
+                    'fecha_hora' => $equipo->reporte->fecha_hora
+                ] : null,
+                'lider' => $lider ? [
+                    'id' => $lider->id,
+                    'nombre' => $lider->nombre,
+                    'apellido' => $lider->apellido,
+                    'email' => $lider->email,
+                    'telefono' => $lider->telefono,
+                    'ci' => $lider->ci,
+                    'fecha_nacimiento' => $lider->fecha_nacimiento,
+                    'genero' => $lider->genero ? [
+                        'id' => $lider->genero->id,
+                        'nombre' => $lider->genero->nombre
+                    ] : null,
+                    'tipo_sangre' => $lider->tipos_sangre ? [
+                        'id' => $lider->tipos_sangre->id,
+                        'nombre' => $lider->tipos_sangre->nombre
+                    ] : null,
+                    'nivel_entrenamiento' => $lider->niveles_entrenamiento ? [
+                        'id' => $lider->niveles_entrenamiento->id,
+                        'nombre' => $lider->niveles_entrenamiento->nombre
+                    ] : null,
+                    'rol' => $lider->role ? [
+                        'id' => $lider->role->id,
+                        'nombre' => $lider->role->nombre
+                    ] : null
+                ] : null,
+                'miembros' => $equipo->miembros->map(function ($miembro) {
+                    return [
+                        'id' => $miembro->id,
+                        'nombre' => $miembro->nombre,
+                        'apellido' => $miembro->apellido,
+                        'email' => $miembro->email,
+                        'telefono' => $miembro->telefono,
+                        'ci' => $miembro->ci,
+                        'fecha_nacimiento' => $miembro->fecha_nacimiento,
+                        'es_lider' => (bool) $miembro->pivot->es_lider,
+                        'fecha_ingreso' => $miembro->pivot->fecha_ingreso,
+                        'genero' => $miembro->genero ? [
+                            'id' => $miembro->genero->id,
+                            'nombre' => $miembro->genero->nombre
+                        ] : null,
+                        'tipo_sangre' => $miembro->tipos_sangre ? [
+                            'id' => $miembro->tipos_sangre->id,
+                            'nombre' => $miembro->tipos_sangre->nombre
+                        ] : null,
+                        'nivel_entrenamiento' => $miembro->niveles_entrenamiento ? [
+                            'id' => $miembro->niveles_entrenamiento->id,
+                            'nombre' => $miembro->niveles_entrenamiento->nombre
+                        ] : null,
+                        'rol' => $miembro->role ? [
+                            'id' => $miembro->role->id,
+                            'nombre' => $miembro->role->nombre
+                        ] : null
+                    ];
+                }),
+                'comunarios' => $equipo->comunarios_apoyos->map(function ($comunario) {
+                    return [
+                        'id' => $comunario->id,
+                        'nombre' => $comunario->nombre,
+                        'edad' => $comunario->edad,
+                        'entidad_perteneciente' => $comunario->entidad_perteneciente
+                    ];
+                }),
+                'recursos' => $equipo->recursos->map(function ($recurso) {
+                    return [
+                        'id' => $recurso->id,
+                        'nombre' => $recurso->nombre ?? 'Recurso',
+                        'cantidad' => $recurso->cantidad ?? 1
+                    ];
+                }),
+                'creado' => $equipo->creado,
+                'actualizado' => $equipo->actualizado
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'error' => 'Team not found',
+                'message' => $e->getMessage()
+            ], 404);
         }
     }
 

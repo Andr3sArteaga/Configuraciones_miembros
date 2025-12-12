@@ -68,6 +68,10 @@ Route::prefix('v1')->group(function () {
     Route::get('/equipos/desplegados', [EquipoController::class, 'deployed'])
         ->name('api.equipos.deployed');
 
+    // Team details (single team with full information)
+    Route::get('/equipos/{id}', [EquipoController::class, 'showApi'])
+        ->name('api.equipos.show');
+
     // Animal Injury Reports
     Route::post('/reports', [\App\Http\Controllers\Api\ReporteAnimalController::class, 'store'])
         ->name('api.reports.animal');
