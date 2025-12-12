@@ -329,11 +329,13 @@ class EquipoController extends Controller
             }
 
             // Actualizar comunarios del equipo
-            if ($request->has('sync_relations') || $request->has('comunarios')) {
+            // Process comunarios if sync flag is present, or if comunarios array is provided
+            if ($request->has('sync_relations') || $request->has('sync_comunarios') || $request->has('comunarios')) {
                 // Eliminar comunarios asociados a este equipo
                 DB::table('comunarios_apoyo')->where('equipoid', $equipo->id)->delete();
 
-                if (is_array($request->comunarios) && count($request->comunarios) > 0) {
+                // Insertar nuevos comunarios (si hay alguno)
+                if ($request->has('comunarios') && is_array($request->comunarios) && count($request->comunarios) > 0) {
                     foreach ($request->comunarios as $comunario) {
                         if (isset($comunario['nombre']) && isset($comunario['edad'])) {
                             DB::table('comunarios_apoyo')->insert([
@@ -347,6 +349,8 @@ class EquipoController extends Controller
                         }
                     }
                 }
+                // Si sync_comunarios está presente pero no hay comunarios en el array,
+                // simplemente se eliminan todos (ya hecho arriba)
             }
 
             // Recalcular y actualizar cantidad total de integrantes (miembros + comunarios)

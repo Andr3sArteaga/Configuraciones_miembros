@@ -736,6 +736,20 @@
     </style>
 @endpush
 
+@php
+    $initialComunarios = ($isEditMode && isset($equipo))
+        ? $equipo->comunarios_apoyos
+            ->map(function ($c) {
+                return [
+                    'nombre' => $c->nombre,
+                    'edad' => $c->edad,
+                    'entidad' => $c->entidad_perteneciente,
+                ];
+            })
+            ->values()
+            ->toArray()
+        : [];
+@endphp
 @push('js')
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
@@ -753,6 +767,7 @@
             // Arrays state
             let selectedMembers = [];
             let comunarios = [];
+            const initialComunarios = @json($initialComunarios);
 
             // Available items
             // Donations (Insumos Mochila base)
@@ -927,6 +942,11 @@
                         if (!map) {
                             initializeMap();
                         }
+                        // Pre-cargar comunarios en modo edición
+                        if (initialComunarios.length > 0) {
+                            comunarios = JSON.parse(JSON.stringify(initialComunarios));
+                        }
+                        renderComunariosList();
                         populateSelectedMembersFromChecked();
                         renderMochilaTable();
 
@@ -1698,7 +1718,7 @@
             function resetForm() {
                 currentStep = 1;
                 selectedMembers = [];
-                comunarios = [];
+                comunarios = initialComunarios.length ? JSON.parse(JSON.stringify(initialComunarios)) : [];
                 donations.forEach(d => d.quantity = 0);
                 products.forEach(p => p.quantity = 0);
                 // Reset products loading state for next modal open
@@ -1771,7 +1791,19 @@
                 liderField.value = liderSelect ? liderSelect.value : '';
 
                 // Add comunarios as array inputs for backend validation
+                // Always remove existing comunarios fields first
                 form.querySelectorAll('input[name^="comunarios"]').forEach(field => field.remove());
+                
+                // Add a flag to indicate comunarios should be synced (for edit mode)
+                if (isEditMode) {
+                    const syncField = document.createElement('input');
+                    syncField.type = 'hidden';
+                    syncField.name = 'sync_comunarios';
+                    syncField.value = '1';
+                    form.appendChild(syncField);
+                }
+                
+                // Add comunarios fields (even if empty array, backend will handle it)
                 comunarios.forEach((c, idx) => {
                     const nameField = document.createElement('input');
                     nameField.type = 'hidden';
