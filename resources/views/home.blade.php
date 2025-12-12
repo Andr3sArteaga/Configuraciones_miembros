@@ -479,30 +479,134 @@
             // Only real-time NASA FIRMS data (circles) are displayed
             // The saved focos are for historical reference only
 
+            // Función para calcular desplazamiento circular de marcadores
+            function calcularDesplazamientoCircular(index, total, radioMetros = 50) {
+                // Calcular el ángulo en radianes (distribución circular)
+                const angulo = (2 * Math.PI * index) / total;
+                // Convertir metros a grados (aproximadamente 1 grado = 111,000 metros)
+                const radioGrados = radioMetros / 111000;
+                // Calcular desplazamiento en latitud y longitud
+                const offsetLat = radioGrados * Math.cos(angulo);
+                const offsetLng = radioGrados * Math.sin(angulo);
+                return { offsetLat, offsetLng };
+            }
+
             // Agregar marcadores de equipos (desde variable $equipos)
+            // Primero agrupamos los equipos por ubicación para evitar sobreposición
             @if (isset($equipos) && count($equipos) > 0)
-                @foreach ($equipos as $equipo)
-                    @if ($equipo->latitud && $equipo->longitud)
+                @php
+                    // Agrupar equipos por ubicación
+                    $equiposAgrupados = [];
+                    foreach ($equipos as $equipo) {
+                        if ($equipo->latitud && $equipo->longitud) {
+                            $key = round($equipo->latitud, 6) . ',' . round($equipo->longitud, 6);
+                            if (!isset($equiposAgrupados[$key])) {
+                                $equiposAgrupados[$key] = [];
+                            }
+                            $equiposAgrupados[$key][] = $equipo;
+                        }
+                    }
+                @endphp
+
+                @foreach ($equiposAgrupados as $ubicacion => $equiposEnUbicacion)
+                    @php
+                        $totalEquipos = count($equiposEnUbicacion);
+                        $primerEquipo = $equiposEnUbicacion[0];
+                        $latBase = $primerEquipo->latitud;
+                        $lngBase = $primerEquipo->longitud;
+                    @endphp
+                    
+                    @if ($totalEquipos > 1)
+                        {{-- Crear marcador central que muestre todos los equipos --}}
+                        (function() {
+                            const lat = {{ $latBase }};
+                            const lng = {{ $lngBase }};
+                            const total = {{ $totalEquipos }};
+                            
+                            // Crear icono especial para el marcador central con número
+                            const centroIcon = L.divIcon({
+                                html: `<div style="background-color: #28a745; color: white; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 3px solid white; box-shadow: 0 2px 8px rgba(0,0,0,0.4); font-weight: bold; font-size: 16px;">${total}</div>`,
+                                className: 'equipo-centro-marker',
+                                iconSize: [40, 40]
+                            });
+                            
+                            // Crear popup con lista de todos los equipos
+                            const equiposData = [
+                                @foreach ($equiposEnUbicacion as $eq)
+                                {
+                                    nombre: {!! json_encode($eq->nombre_equipo ?? 'Equipo') !!},
+                                    integrantes: {{ $eq->cantidad_integrantes ?? 0 }},
+                                    url: {!! json_encode(route('equipos.show', $eq->id)) !!}
+                                },
+                                @endforeach
+                            ];
+                            
+                            let popupContent = `<div class="equipo-popup"><strong><i class="fas fa-users"></i> ${total} Equipos en esta ubicación</strong><hr style="margin: 8px 0;">`;
+                            equiposData.forEach((equipo, idx) => {
+                                popupContent += `<div style="margin-bottom: 8px; padding: 8px; background-color: #f8f9fa; border-radius: 4px;">
+                                    <strong>${equipo.nombre}</strong><br/>
+                                    <small>Integrantes: ${equipo.integrantes}</small><br/>
+                                    <a href="${equipo.url}" target="_blank" class="btn btn-sm btn-primary mt-1" style="font-size: 11px;">
+                                        <i class="fas fa-eye"></i> Ver Detalles
+                                    </a>
+                                </div>`;
+                            });
+                            popupContent += `</div>`;
+                            
+                            const centroMarker = L.marker([lat, lng], {
+                                icon: centroIcon,
+                                zIndexOffset: 1000 // Asegurar que esté por encima
+                            }).bindPopup(popupContent, {
+                                maxWidth: 300
+                            });
+                            equiposLayer.addLayer(centroMarker);
+                        })();
+                    @endif
+                    
+                    {{-- Crear marcadores individuales desplazados --}}
+                    @foreach ($equiposEnUbicacion as $index => $equipo)
                         (function() {
                             const lng = {{ $equipo->longitud }};
                             const lat = {{ $equipo->latitud }};
+                            const index = {{ $index }};
+                            const total = {{ $totalEquipos }};
+                            
+                            // Calcular desplazamiento si hay múltiples equipos (aumentado a 200m para mejor separación)
+                            let offsetLat = 0;
+                            let offsetLng = 0;
+                            if (total > 1) {
+                                const angulo = (2 * Math.PI * index) / total;
+                                const radioMetros = 200; // Radio aumentado a 200 metros para mejor separación
+                                const radioGrados = radioMetros / 111000; // Convertir a grados
+                                offsetLat = radioGrados * Math.cos(angulo);
+                                offsetLng = radioGrados * Math.sin(angulo);
+                            }
 
                             const equipoIcon = L.divIcon({
-                                html: `<div style="background-color: #007bff; color: white; width: 34px; height: 34px; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 2px solid white;"><i class="fas fa-users" style="font-size: 14px;"></i></div>`,
+                                html: `<div style="background-color: #007bff; color: white; width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 3px solid white; box-shadow: 0 2px 6px rgba(0,0,0,0.4);"><i class="fas fa-users" style="font-size: 14px;"></i></div>`,
                                 className: 'equipo-marker',
-                                iconSize: [34, 34]
+                                iconSize: [36, 36]
                             });
 
                             const equipoNombre = {!! json_encode($equipo->nombre_equipo ?? 'Equipo') !!};
                             const equipoIntegrantes = {{ $equipo->cantidad_integrantes ?? 0 }};
                             const equipoUrl = {!! json_encode(route('equipos.show', $equipo->id)) !!};
-                            const popupHtml = `<div class="equipo-popup"><strong>${equipoNombre}</strong><br/>Integrantes: ${equipoIntegrantes}<br/><a href="${equipoUrl}" target="_blank">Ver equipo</a></div>`;
-                            const marker = L.marker([lat, lng], {
+                            const equipoInfo = total > 1 ? ` (Equipo ${index + 1} de ${total})` : '';
+                            const popupHtml = `<div class="equipo-popup">
+                                <strong>${equipoNombre}${equipoInfo}</strong><br/>
+                                <i class="fas fa-users"></i> Integrantes: ${equipoIntegrantes}<br/>
+                                <a href="${equipoUrl}" target="_blank" class="btn btn-sm btn-primary mt-2">
+                                    <i class="fas fa-eye"></i> Ver Detalles del Equipo
+                                </a>
+                            </div>`;
+                            const marker = L.marker([lat + offsetLat, lng + offsetLng], {
                                 icon: equipoIcon
-                            }).bindPopup(popupHtml);
+                            }).bindPopup(popupHtml, {
+                                maxWidth: 250
+                            });
                             equiposLayer.addLayer(marker);
                         })();
-                    @endif
+                    @endforeach
                 @endforeach
             @endif
 
