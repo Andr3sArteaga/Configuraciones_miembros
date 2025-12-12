@@ -838,7 +838,7 @@
                 console.log('Loading products from inventory API...');
 
                 try {
-                    const response = await fetch('http://10.26.14.12:8000/api/inventario/por-producto', {
+                    const response = await fetch('http://10.26.5.25:8000/api/inventario/por-producto', {
                         method: 'GET',
                         headers: {
                             'Accept': 'application/json',
