@@ -1492,18 +1492,22 @@
             function addComunario() {
                 const ni = document.getElementById('nombre_comunario-' + modalId);
                 const ei = document.getElementById('edad_comunario-' + modalId);
+                const enti = document.getElementById('entidad_comunario-' + modalId);
                 const n = ni.value.trim();
                 const e = ei.value.trim();
+                const ent = enti ? enti.value.trim() : '';
                 if (!n || !e) {
                     alert('Ingrese nombre y edad del comunario');
                     return;
                 }
                 comunarios.push({
                     nombre: n,
-                    edad: e
+                    edad: e,
+                    entidad: ent
                 });
                 ni.value = '';
                 ei.value = '';
+                if (enti) enti.value = '';
                 renderComunariosList();
             }
 
@@ -1511,14 +1515,14 @@
                 const tbody = document.getElementById('comunarios-list-' + modalId);
                 if (comunarios.length === 0) {
                     tbody.innerHTML =
-                        '<tr><td colspan="3" class="text-center text-muted py-3">No hay comunarios agregados</td></tr>';
+                        '<tr><td colspan="4" class="text-center text-muted py-3">No hay comunarios agregados</td></tr>';
                     return;
                 }
                 tbody.innerHTML = '';
                 comunarios.forEach((c, i) => {
                     const r = document.createElement('tr');
                     r.innerHTML =
-                        `<td>${c.nombre}</td><td>${c.edad}</td><td><button type="button" class="btn btn-danger btn-xs btn-del-com" data-index="${i}"><i class="fas fa-trash"></i></button></td>`;
+                        `<td>${c.nombre}</td><td>${c.edad}</td><td>${c.entidad || '-'}</td><td><button type="button" class="btn btn-danger btn-xs btn-del-com" data-index="${i}"><i class="fas fa-trash"></i></button></td>`;
                     tbody.appendChild(r);
                 });
                 document.querySelectorAll('.btn-del-com').forEach(b => b.addEventListener('click', function() {
@@ -1659,12 +1663,12 @@
                 // 5. Comunarios
                 const comunariosList = document.getElementById('final-lista-comunarios-' + modalId);
                 if (comunarios.length === 0) {
-                    comunariosList.innerHTML = '<tr><td colspan="2" class="text-center">None</td></tr>';
+                    comunariosList.innerHTML = '<tr><td colspan="3" class="text-center">None</td></tr>';
                 } else {
                     comunariosList.innerHTML = '';
                     comunarios.forEach(c => {
                         const tr = document.createElement('tr');
-                        tr.innerHTML = `<td>${c.nombre}</td><td style="width:50px;">${c.edad}</td>`;
+                        tr.innerHTML = `<td>${c.nombre}</td><td style="width:50px;">${c.edad}</td><td>${c.entidad || '-'}</td>`;
                         comunariosList.appendChild(tr);
                     });
                 }
@@ -1766,16 +1770,27 @@
                 const liderSelect = document.getElementById('lider-equipo-' + modalId);
                 liderField.value = liderSelect ? liderSelect.value : '';
 
-                // Add comunarios as JSON
-                let comunariosField = document.getElementById('comunarios-hidden-' + modalId);
-                if (!comunariosField) {
-                    comunariosField = document.createElement('input');
-                    comunariosField.type = 'hidden';
-                    comunariosField.id = 'comunarios-hidden-' + modalId;
-                    comunariosField.name = 'comunarios';
-                    form.appendChild(comunariosField);
-                }
-                comunariosField.value = JSON.stringify(comunarios);
+                // Add comunarios as array inputs for backend validation
+                form.querySelectorAll('input[name^="comunarios"]').forEach(field => field.remove());
+                comunarios.forEach((c, idx) => {
+                    const nameField = document.createElement('input');
+                    nameField.type = 'hidden';
+                    nameField.name = `comunarios[${idx}][nombre]`;
+                    nameField.value = c.nombre;
+                    form.appendChild(nameField);
+
+                    const edadField = document.createElement('input');
+                    edadField.type = 'hidden';
+                    edadField.name = `comunarios[${idx}][edad]`;
+                    edadField.value = c.edad;
+                    form.appendChild(edadField);
+
+                    const entField = document.createElement('input');
+                    entField.type = 'hidden';
+                    entField.name = `comunarios[${idx}][entidad]`;
+                    entField.value = c.entidad || '';
+                    form.appendChild(entField);
+                });
 
                 console.log('Submitting team form');
                 form.submit();
