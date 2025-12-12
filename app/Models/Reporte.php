@@ -7,6 +7,7 @@
 namespace App\Models;
 
 use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
 
@@ -37,6 +38,8 @@ use Illuminate\Support\Facades\DB;
  */
 class Reporte extends Model
 {
+    use HasUuids;
+
 	protected $table = 'reportes';
 	public $incrementing = false;
 	protected $keyType = 'string';
@@ -127,5 +130,10 @@ class Reporte extends Model
                 return DB::raw("ST_SetSRID(ST_MakePoint({$lng}, {$lat}), 4326)");
             }
         );
+    }
+
+    public function animal_report()
+    {
+        return $this->hasOne(ReporteAnimal::class, 'incendio_id');
     }
 }

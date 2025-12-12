@@ -304,6 +304,9 @@
                                         <span class="input-group-text">Subir</span>
                                     </div>
                                 </div>
+                                <div class="mt-2 text-center" id="imagen_preview_container" style="display: none;">
+                                    <img id="imagen_preview" src="#" alt="Vista previa" class="img-fluid rounded" style="max-height: 200px;">
+                                </div>
                             </div>
 
                             <div class="row">
@@ -312,15 +315,15 @@
                                     <div class="form-group">
                                         <label>Estado inicial del animal</label>
                                         <select class="form-control" name="estado_animal">
-                                            <option value="Atascado / atrapado">Atascado / atrapado</option>
-                                            <option value="Desconocido">Desconocido</option>
-                                            <option value="Deshidratado">Deshidratado</option>
-                                            <option value="Desorientado / shock">Desorientado / shock</option>
-                                            <option value="Difícil acceso">Difícil acceso</option>
-                                            <option value="Herido grave">Herido grave</option>
                                             <option value="Herido leve">Herido leve</option>
+                                            <option value="Herido grave">Herido grave</option>
                                             <option value="Inconsciente">Inconsciente</option>
+                                            <option value="Deshidratado">Deshidratado</option>
                                             <option value="Quemaduras">Quemaduras</option>
+                                            <option value="Desorientado / shock">Desorientado / shock</option>
+                                            <option value="Atascado / atrapado">Atascado / atrapado</option>
+                                            <option value="Difícil acceso">Difícil acceso</option>
+                                            <option value="Desconocido">Desconocido</option>
                                         </select>
                                     </div>
                                 </div>
@@ -414,6 +417,16 @@
                     document.getElementById('latitud').value = lat.toFixed(6);
                     document.getElementById('longitud').value = lng.toFixed(6);
 
+                    // Reverse Geocoding con Nominatim
+                    fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lng}`)
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data && data.display_name) {
+                                document.getElementById('nombre_lugar').value = data.display_name;
+                            }
+                        })
+                        .catch(error => console.error('Error en geocoding:', error));
+
                     // Quitar marcador anterior
                     if (marker) {
                         map.removeLayer(marker);
@@ -440,11 +453,141 @@
                 }
             });
 
-            // Actualizar label del input file
+            // Actualizar label del input file y mostrar preview
             $('.custom-file-input').on('change', function() {
+                // Update label
                 var fileName = $(this).val().split('\\').pop();
                 $(this).next('.custom-file-label').addClass("selected").html(fileName);
+
+                // Show preview
+                var file = this.files[0];
+                if (file) {
+                    var reader = new FileReader();
+                    reader.onload = function(e) {
+                        $('#imagen_preview').attr('src', e.target.result);
+                        $('#imagen_preview_container').show();
+                    }
+                    reader.readAsDataURL(file);
+                } else {
+                    $('#imagen_preview_container').hide();
+                }
             });
+
+            // Intercept form submission
+            $('form').on('submit', function(e) {
+                const animalPresente = $('input[name="animal_presente"]:checked').val();
+                
+                if (animalPresente === 'si') {
+                    e.preventDefault(); // Stop normal submission
+                    
+                    // 1. Submit Main Report via AJAX
+                    const mainForm = $(this);
+                    const mainFormData = new FormData(this);
+                    
+                    // Show loading state (optional but good UI)
+                    const submitBtn = mainForm.find('button[type="submit"]');
+                    const originalBtnText = submitBtn.html();
+                    submitBtn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Guardando...');
+
+                    $.ajax({
+                        url: mainForm.attr('action'),
+                        method: 'POST',
+                        data: mainFormData,
+                        processData: false,
+                        contentType: false,
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest', // Force JSON response from our Controller
+                            'Accept': 'application/json'
+                        },
+                        success: function(response) {
+                            if (response.success && response.id) {
+                                // 2. Send Animal Report
+                                sendAnimalReport(response.id, submitBtn, originalBtnText);
+                            } else {
+                                alert('Error al guardar el reporte principal: ' + (response.message || 'Desconocido'));
+                                submitBtn.prop('disabled', false).html(originalBtnText);
+                            }
+                        },
+                        error: function(xhr) {
+                            console.error(xhr);
+                            alert('Error al guardar el reporte: ' + (xhr.responseJSON?.message || 'Error de servidor'));
+                            submitBtn.prop('disabled', false).html(originalBtnText);
+                        }
+                    });
+                }
+                // If 'no', let it submit normally
+            });
+
+            function sendAnimalReport(incendioId, btn, originalText) {
+                const animalFormData = new FormData();
+                
+                // Static mappings for IDs (Simulated for Microservice)
+                const conditionMap = {
+                    'Herido leve': 1,
+                    'Herido grave': 2,
+                    'Inconsciente': 3,
+                    'Deshidratado': 4,
+                    'Quemaduras': 5,
+                    'Desorientado / shock': 6,
+                    'Atascado / atrapado': 7,
+                    'Difícil acceso': 8,
+                    'Desconocido': 9
+                };
+                
+                const incidentTypeMap = {
+                    'Incendio cercano - Alto': 1
+                };
+
+                // Prepare Data
+                const estado = $('select[name="estado_animal"]').val();
+                const tipo = $('select[name="tipo_incidente_animal"]').val();
+                const tamano = $('input[name="tamano_animal"]:checked').val();
+                const moverse = $('input[name="puede_moverse"]:checked').val() === 'si';
+                const imagen = $('#imagen_animal')[0].files[0];
+                
+                // Get lat/lon from main form
+                const lat = $('#latitud').val();
+                const lng = $('#longitud').val();
+                const obs = $('#comentario_adicional').val(); // Using main comment or add new field? Prompt said "observaciones" -> string. I'll use a placeholder or reuse main comment.
+                
+                // Append fields as per requirement
+                animalFormData.append('incendio_id', incendioId);
+                animalFormData.append('latitud', lat);
+                animalFormData.append('longitud', lng);
+                animalFormData.append('direccion', $('#nombre_lugar').val() || '');
+                animalFormData.append('observaciones', obs || 'Sin observaciones adicionales');
+                animalFormData.append('condicion_inicial_id', conditionMap[estado] || 2);
+                animalFormData.append('tipo_incidente_id', incidentTypeMap[tipo] || 1);
+                animalFormData.append('tamano', tamano);
+                animalFormData.append('puede_moverse', moverse);
+                animalFormData.append('traslado_inmediato', false); // Default false
+                // Don't append centro_id since it's null
+                
+                if (imagen) {
+                    animalFormData.append('imagen', imagen);
+                } else {
+                    animalFormData.append('imagen', null); // Image is optional
+                }
+
+                // Send to Microservice Endpoint
+                $.ajax({
+                    url: '/api/v1/reports', // Using our API route
+                    method: 'POST',
+                    data: animalFormData,
+                    processData: false,
+                    contentType: false,
+                    success: function(response) {
+                        // Success! Redirect
+                        window.location.href = '{{ route("reportes.index") }}?success=Reporte+y+Animal+guardados';
+                    },
+                    error: function(xhr) {
+                        console.error('Animal Report Error:', xhr);
+                        // Even if animal fails, main report was saved. Redirect with warning.
+                        alert('Reporte de incendio guardado, pero falló el reporte animal: ' + (xhr.responseJSON?.message || 'Error'));
+                        window.location.href = '{{ route("reportes.index") }}';
+                    }
+                });
+            }
         });
     </script>
 @stop

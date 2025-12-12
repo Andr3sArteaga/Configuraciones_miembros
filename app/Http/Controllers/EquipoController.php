@@ -91,9 +91,14 @@ class EquipoController extends Controller
             'nombre_equipo' => 'required|string|max:100',
             'estado_id' => 'required|uuid|exists:estados_sistema,id',
             'reporte_id' => 'nullable|uuid|exists:reportes,id',
+            'codigo_seguimiento' => 'nullable|string|max:20',
+            'insumos_necesarios' => 'nullable|string',
             'miembros' => 'nullable|array',
             'miembros.*' => 'uuid|exists:usuarios,id',
             'lider_id' => 'nullable|uuid|exists:usuarios,id',
+            'comunarios' => 'nullable|array',
+            'comunarios.*.nombre' => 'required_with:comunarios|string|max:100',
+            'comunarios.*.edad' => 'required_with:comunarios|integer|min:18|max:100',
         ], [
             'nombre_equipo.required' => 'El nombre del equipo es obligatorio',
             'nombre_equipo.max' => 'El nombre del equipo no puede exceder 100 caracteres',
@@ -105,6 +110,9 @@ class EquipoController extends Controller
             'miembros.*.exists' => 'Uno o más miembros seleccionados no existen',
             'lider_id.uuid' => 'El ID del líder debe ser válido',
             'lider_id.exists' => 'El líder seleccionado no existe',
+            'comunarios.*.nombre.required_with' => 'El nombre del comunario es obligatorio',
+            'comunarios.*.edad.required_with' => 'La edad del comunario es obligatoria',
+            'comunarios.*.edad.min' => 'Los comunarios deben ser mayores de 18 años',
         ]);
 
         try {
@@ -115,13 +123,15 @@ class EquipoController extends Controller
 
             // Calcular cantidad de integrantes
             $cantidadMiembros = ($request->filled('miembros') && is_array($request->miembros)) ? count($request->miembros) : 0;
+            $cantidadComunarios = ($request->filled('comunarios') && is_array($request->comunarios)) ? count($request->comunarios) : 0;
+            $totalIntegrantes = $cantidadMiembros + $cantidadComunarios;
 
             // Insertar con reporte asociado (reporte_id opcional)
             $reporteId = $request->filled('reporte_id') ? $validated['reporte_id'] : null;
             DB::statement(
                 "INSERT INTO equipos (id, nombre_equipo, estado_id, cantidad_integrantes, reporte_id, creado)
                      VALUES (?, ?, ?, ?, ?, NOW())",
-                [$equipoId, $validated['nombre_equipo'], $validated['estado_id'], $cantidadMiembros, $reporteId]
+                [$equipoId, $validated['nombre_equipo'], $validated['estado_id'], $totalIntegrantes, $reporteId]
             );
 
 
@@ -138,6 +148,23 @@ class EquipoController extends Controller
                          VALUES (?, ?, ?, ?, NOW())",
                         [$miembroId, $equipoId, $usuarioId, $esLider]
                     );
+                }
+            }
+
+            // Insertar comunarios de apoyo si existen
+            if ($request->filled('comunarios') && is_array($request->comunarios)) {
+                foreach ($request->comunarios as $comunario) {
+                    // Validar estructura básica del comunario
+                    if (isset($comunario['nombre']) && isset($comunario['edad'])) {
+                        DB::table('comunarios_apoyo')->insert([
+                            'id' => \Ramsey\Uuid\Uuid::uuid4()->toString(),
+                            'nombre' => $comunario['nombre'],
+                            'edad' => $comunario['edad'],
+                            'entidad_perteneciente' => $comunario['entidad'] ?? null,
+                            'equipoid' => $equipoId,
+                            'creado' => now(),
+                        ]);
+                    }
                 }
             }
 
@@ -161,7 +188,7 @@ class EquipoController extends Controller
      */
     public function show(string $id)
     {
-        $equipo = Equipo::with(['estados_sistema', 'miembros'])->findOrFail($id);
+        $equipo = Equipo::with(['estados_sistema', 'miembros', 'comunarios_apoyos'])->findOrFail($id);
 
         return view('equipos.show', compact('equipo'));
     }
@@ -171,7 +198,7 @@ class EquipoController extends Controller
      */
     public function edit(string $id)
     {
-        $equipo = Equipo::with('miembros')->findOrFail($id);
+        $equipo = Equipo::with(['miembros', 'comunarios_apoyos'])->findOrFail($id);
 
         // Obtener estados de equipos
         $estados = EstadosSistema::where('tabla', 'equipos')
@@ -196,9 +223,12 @@ class EquipoController extends Controller
         $latitud = $equipo->latitud;
         $longitud = $equipo->longitud;
 
+        // Get existing tracking code
+        $codigoSeguimiento = $equipo->codigo_seguimiento;
+
         $reportes = Reporte::whereNotNull('ubicacion')->orderBy('fecha_hora', 'desc')->get();
 
-        return view('equipos.edit', compact('equipo', 'estados', 'usuarios', 'miembrosAsignados', 'latitud', 'longitud', 'liderAsignadoId', 'reportes'));
+        return view('equipos.edit', compact('equipo', 'estados', 'usuarios', 'miembrosAsignados', 'latitud', 'longitud', 'liderAsignadoId', 'reportes', 'codigoSeguimiento'));
     }
 
     /**
@@ -212,6 +242,8 @@ class EquipoController extends Controller
             'nombre_equipo' => 'required|string|max:100',
             'estado_id' => 'required|uuid|exists:estados_sistema,id',
             'reporte_id' => 'nullable|uuid|exists:reportes,id',
+            'codigo_seguimiento' => 'nullable|string|max:20',
+            'insumos_necesarios' => 'nullable|string',
             'miembros' => 'nullable|array',
             'miembros.*' => 'uuid|exists:usuarios,id',
             'lider_id' => 'nullable|uuid|exists:usuarios,id',
@@ -232,6 +264,10 @@ class EquipoController extends Controller
             'miembros.*.exists' => 'Uno o más miembros seleccionados no existen',
             'lider_id.uuid' => 'El ID del líder debe ser válido',
             'lider_id.exists' => 'El líder seleccionado no existe',
+            'comunarios' => 'nullable|array',
+            'comunarios.*.nombre' => 'required_with:comunarios|string|max:100',
+            'comunarios.*.edad' => 'required_with:comunarios|integer|min:18|max:100',
+            'comunarios.*.entidad' => 'nullable|string|max:150',
         ]);
 
         try {
@@ -240,15 +276,32 @@ class EquipoController extends Controller
             // Actualizar campos básicos
             $equipo->nombre_equipo = $validated['nombre_equipo'];
             $equipo->estado_id = $validated['estado_id'];
+            $equipo->codigo_seguimiento = $request->input('codigo_seguimiento');
 
-            // Actualizar reporte asociado
+            // Actualizar reporte
             $reporteId = $request->filled('reporte_id') ? $validated['reporte_id'] : null;
-            DB::statement("UPDATE equipos SET reporte_id = ? WHERE id = ?", [$reporteId, $equipo->id]);
+            $equipo->reporte_id = $reporteId;
 
+            // Save basic fields
             $equipo->save();
 
+            // Update PostGIS location directly via SQL
+            $lat = $request->input('latitud');
+            $lng = $request->input('longitud');
+
+            if ($lat && $lng) {
+                DB::statement(
+                    "UPDATE equipos SET ubicacion = ST_SetSRID(ST_MakePoint(?, ?), 4326) WHERE id = ?",
+                    [$lng, $lat, $equipo->id]
+                );
+            } else if (!$reporteId) {
+                // If neither report nor coordinates, maybe clear location? 
+                // DB::statement("UPDATE equipos SET ubicacion = NULL WHERE id = ?", [$equipo->id]);
+            }
+
             // Actualizar miembros del equipo
-            if ($request->has('miembros')) {
+            // Si viene el flag sync_relations o si existen miembros en el request
+            if ($request->has('sync_relations') || $request->has('miembros')) {
                 // Eliminar miembros actuales
                 DB::table('miembros_equipo')->where('id_equipo', $equipo->id)->delete();
 
@@ -271,9 +324,41 @@ class EquipoController extends Controller
                     }
                 }
 
-                // Actualizar contador de integrantes
-                DB::statement("UPDATE equipos SET cantidad_integrantes = ? WHERE id = ?", [$cantidadMiembros, $equipo->id]);
+                // Actualizar contador de integrantes (se hará al final)
+                // DB::statement("UPDATE equipos SET cantidad_integrantes = ? WHERE id = ?", [$cantidadMiembros, $equipo->id]);
             }
+
+            // Actualizar comunarios del equipo
+            // Process comunarios if sync flag is present, or if comunarios array is provided
+            if ($request->has('sync_relations') || $request->has('sync_comunarios') || $request->has('comunarios')) {
+                // Eliminar comunarios asociados a este equipo
+                DB::table('comunarios_apoyo')->where('equipoid', $equipo->id)->delete();
+
+                // Insertar nuevos comunarios (si hay alguno)
+                if ($request->has('comunarios') && is_array($request->comunarios) && count($request->comunarios) > 0) {
+                    foreach ($request->comunarios as $comunario) {
+                        if (isset($comunario['nombre']) && isset($comunario['edad'])) {
+                            DB::table('comunarios_apoyo')->insert([
+                                'id' => \Ramsey\Uuid\Uuid::uuid4()->toString(),
+                                'nombre' => $comunario['nombre'],
+                                'edad' => $comunario['edad'],
+                                'entidad_perteneciente' => $comunario['entidad'] ?? null,
+                                'equipoid' => $equipo->id,
+                                'creado' => now(),
+                            ]);
+                        }
+                    }
+                }
+                // Si sync_comunarios está presente pero no hay comunarios en el array,
+                // simplemente se eliminan todos (ya hecho arriba)
+            }
+
+            // Recalcular y actualizar cantidad total de integrantes (miembros + comunarios)
+            $cantMiembros = DB::table('miembros_equipo')->where('id_equipo', $equipo->id)->count();
+            $cantComunarios = DB::table('comunarios_apoyo')->where('equipoid', $equipo->id)->count();
+            $totalIntegrantes = $cantMiembros + $cantComunarios;
+
+            DB::statement("UPDATE equipos SET cantidad_integrantes = ? WHERE id = ?", [$totalIntegrantes, $equipo->id]);
 
             DB::commit();
 
@@ -303,6 +388,58 @@ class EquipoController extends Controller
         return redirect()
             ->route('equipos.index')
             ->with('success', "Equipo '{$nombre}' eliminado exitosamente");
+    }
+
+    /**
+     * Agregar un comunario de apoyo a un equipo.
+     */
+    public function agregarComunario(Request $request, string $id)
+    {
+        $equipo = Equipo::findOrFail($id);
+
+        $validated = $request->validate([
+            'nombre' => 'required|string|max:100',
+            'edad' => 'required|integer|min:18|max:100',
+            'entidad_perteneciente' => 'nullable|string|max:150',
+        ], [
+            'nombre.required' => 'El nombre del comunario es obligatorio.',
+            'edad.required' => 'La edad es obligatoria.',
+            'edad.integer' => 'La edad debe ser un número.',
+            'edad.min' => 'El comunario debe ser mayor de 18 años.',
+        ]);
+
+        try {
+            DB::table('comunarios_apoyo')->insert([
+                'id' => \Ramsey\Uuid\Uuid::uuid4()->toString(),
+                'nombre' => $validated['nombre'],
+                'edad' => $validated['edad'],
+                'entidad_perteneciente' => $validated['entidad_perteneciente'] ?? null,
+                'equipoid' => $equipo->id,
+                'creado' => now(),
+            ]);
+
+            return redirect()->route('equipos.show', $equipo->id)
+                ->with('success', 'Comunario de apoyo agregado exitosamente.');
+        } catch (\Exception $e) {
+            return redirect()->route('equipos.show', $equipo->id)
+                ->with('error', 'Error al agregar el comunario: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Remover un comunario de apoyo de un equipo.
+     */
+    public function removerComunario(string $id, string $comunarioId)
+    {
+        try {
+            DB::table('comunarios_apoyo')->where('id', $comunarioId)->where('equipoid', $id)->delete();
+
+            return redirect()->route('equipos.show', $id)
+                ->with('success', 'Comunario de apoyo removido exitosamente.');
+        } catch (\Exception $e) {
+            return redirect()->route('equipos.show', $id)
+                ->with('error', 'Error al remover el comunario: ' . $e->getMessage());
+        }
     }
 
     /**
@@ -336,6 +473,44 @@ class EquipoController extends Controller
                 'message' => $e->getMessage(),
                 'line' => $e->getLine(),
                 'file' => basename($e->getFile())
+            ], 500);
+        }
+    }
+
+    /**
+     * API endpoint to get deployed teams (history)
+     * Ordered by creation date descending
+     */
+    public function deployed()
+    {
+        try {
+            $equipos = Equipo::with(['estados_sistema', 'reporte'])
+                ->whereNotNull('reporte_id')
+                ->orderBy('creado', 'desc')
+                ->get()
+                ->map(function ($equipo) {
+                    return [
+                        'id' => $equipo->id,
+                        'nombre_equipo' => $equipo->nombre_equipo,
+                        'cantidad_integrantes' => $equipo->cantidad_integrantes,
+                        'ubicacion' => $equipo->reporte ? $equipo->reporte->ubicacion : null,
+                        'latitud' => $equipo->reporte ? $equipo->reporte->latitud : null,
+                        'longitud' => $equipo->reporte ? $equipo->reporte->longitud : null,
+                        'estado' => $equipo->estados_sistema ? [
+                            'nombre' => $equipo->estados_sistema->nombre,
+                            'codigo' => $equipo->estados_sistema->codigo,
+                            'color' => $equipo->estados_sistema->color
+                        ] : null,
+                        'fecha_despliegue' => $equipo->creado->toIso8601String(),
+                        'tiempo_transcurrido' => $equipo->creado->diffForHumans()
+                    ];
+                });
+
+            return response()->json($equipos);
+        } catch (\Exception $e) {
+            return response()->json([
+                'error' => 'Error al obtener equipos desplegados',
+                'message' => $e->getMessage()
             ], 500);
         }
     }

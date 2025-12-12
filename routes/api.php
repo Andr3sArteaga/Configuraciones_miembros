@@ -14,6 +14,7 @@ Route::middleware('auth:sanctum')->group(function () {
     // Obtener equipos con ubicación (para apps móviles/APIs externas)
     Route::get('/equipos', [EquipoController::class, 'api'])
         ->name('api.equipos');
+    
 
     // Inscribirse a un curso (para móvil)
     Route::post('/cursos/{id}/inscribirme', [CursoController::class, 'apiInscribirme'])
@@ -40,7 +41,7 @@ Route::middleware('auth:sanctum')->group(function () {
         ->name('api.notifications.unread-count');
 });
 
-// Public API endpoints (no authentication required)
+// Public API endpoints (sin autenticación requerida)
 Route::prefix('v1')->group(function () {
 
     // NASA FIRMS Hotspots API
@@ -50,14 +51,25 @@ Route::prefix('v1')->group(function () {
     Route::get('/hotspots/stats', [FocoCalorController::class, 'stats'])
         ->name('api.hotspots.stats');
 
-    // Live NASA FIRMS data (real-time from NASA API)
+    // Live NASA FIRMS data (real-time de NASA API)
     Route::get('/hotspots/live', [FocoCalorController::class, 'live'])
         ->name('api.hotspots.live');
 
     // Reportes (Citizen Fire Reports) API
     Route::get('/reportes', [ReporteController::class, 'api'])
         ->name('api.reportes');
+    Route::post('/reportes', [ReporteController::class, 'storePublico'])
+        ->name('api.reportes.store');
 
     Route::get('/cursos', [CursoController::class, 'api'])
         ->name('api.cursos.api');
+
+    // Equipos desplegados (History/Map)
+    Route::get('/equipos/desplegados', [EquipoController::class, 'deployed'])
+        ->name('api.equipos.deployed');
+
+    // Animal Injury Reports
+    Route::post('/reports', [\App\Http\Controllers\Api\ReporteAnimalController::class, 'store'])
+        ->name('api.reports.animal');
 });
+ 

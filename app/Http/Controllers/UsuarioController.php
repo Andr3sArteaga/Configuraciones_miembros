@@ -59,7 +59,7 @@ class UsuarioController extends Controller
             'tipo_sangre_id' => 'nullable|uuid|exists:tipos_sangre,id',
             'nivel_entrenamiento_id' => 'nullable|uuid|exists:niveles_entrenamiento,id',
             'entidad_perteneciente' => 'nullable|string|max:200',
-            'rol_id' => 'required|uuid|exists:roles,id',
+            'rol_id' => 'required|uuid|exists:legacy_roles,id',
             'estado_id' => 'required|uuid|exists:estados_sistema,id',
         ], [
             'nombre.required' => 'El nombre es obligatorio',
@@ -157,7 +157,7 @@ class UsuarioController extends Controller
             'tipo_sangre_id' => 'nullable|uuid|exists:tipos_sangre,id',
             'nivel_entrenamiento_id' => 'nullable|uuid|exists:niveles_entrenamiento,id',
             'entidad_perteneciente' => 'nullable|string|max:200',
-            'rol_id' => 'required|uuid|exists:roles,id',
+            'rol_id' => 'required|uuid|exists:legacy_roles,id',
             'estado_id' => 'required|uuid|exists:estados_sistema,id',
         ], [
             'nombre.required' => 'El nombre es obligatorio',

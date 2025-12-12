@@ -168,6 +168,112 @@
             </div>
         </div>
     </div>
+
+    <!-- Integrantes y Comunarios -->
+    <div class="row mt-3">
+        <div class="col-md-6">
+            <div class="card card-outline card-primary">
+                <div class="card-header">
+                    <h3 class="card-title">
+                        <i class="fas fa-users mr-1"></i>
+                        Miembros del Equipo
+                    </h3>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-striped table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Nombre</th>
+                                    <th>Entidad</th>
+                                    <th>Nivel</th>
+                                    <th>Rol</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @forelse($equipo->miembros as $miembro)
+                                    <tr>
+                                        <td>{{ $miembro->nombre }} {{ $miembro->apellido }}</td>
+                                        <td>
+                                            @if ($miembro->entidad_perteneciente)
+                                                <span class="badge badge-info">{{ $miembro->entidad_perteneciente }}</span>
+                                            @else
+                                                <span class="text-muted text-sm">N/A</span>
+                                            @endif
+                                        </td>
+                                        <td>
+                                            @if ($miembro->niveles_entrenamiento)
+                                                <span
+                                                    class="badge badge-success">{{ $miembro->niveles_entrenamiento->nivel }}</span>
+                                            @else
+                                                <span class="text-muted text-sm">N/A</span>
+                                            @endif
+                                        </td>
+                                        <td>
+                                            @if ($miembro->pivot->es_lider)
+                                                <span class="badge badge-warning"><i class="fas fa-crown"></i>
+                                                    Líder</span>
+                                            @else
+                                                <span class="badge badge-secondary">Miembro</span>
+                                            @endif
+                                        </td>
+                                    </tr>
+                                @empty
+                                    <tr>
+                                        <td colspan="4" class="text-center text-muted">No hay miembros asignados</td>
+                                    </tr>
+                                @endforelse
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <div class="card card-outline card-info">
+                <div class="card-header">
+                    <h3 class="card-title">
+                        <i class="fas fa-user-friends mr-1"></i>
+                        Comunarios de Apoyo
+                    </h3>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-striped table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Nombre</th>
+                                    <th>Edad</th>
+                                    <th>Entidad</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @forelse($equipo->comunarios_apoyos as $comunario)
+                                    <tr>
+                                        <td>{{ $comunario->nombre }}</td>
+                                        <td>{{ $comunario->edad }} años</td>
+                                        <td>
+                                            @if ($comunario->entidad_perteneciente)
+                                                <span class="badge badge-info">{{ $comunario->entidad_perteneciente }}</span>
+                                            @else
+                                                <span class="text-muted text-sm">Local</span>
+                                            @endif
+                                        </td>
+                                    </tr>
+                                @empty
+                                    <tr>
+                                        <td colspan="3" class="text-center text-muted">No hay comunarios registrados</td>
+                                    </tr>
+                                @endforelse
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 @stop
 
 @section('css')

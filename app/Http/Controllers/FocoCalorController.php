@@ -243,15 +243,20 @@ class FocoCalorController extends Controller
      * @param Request $request
      * @return \Illuminate\Http\JsonResponse
      */
+    /**
+     * Live NASA FIRMS data (proxied from NASA API)
+     * Fetches real-time hotspot data for Bolivia and returns a normalized structure.
+     * 
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function live(Request $request)
     {
         $validated = $request->validate([
             'days' => 'nullable|integer|min:1|max:10',
-            'format' => 'nullable|in:json,geojson',
         ]);
 
         $days = $request->input('days', 2);
-        $format = $request->input('format', 'json');
 
         // NASA FIRMS API configuration
         $NASA_API_KEY = '1ae0346a287432156ada4abb791d57cd';
@@ -266,121 +271,83 @@ class FocoCalorController extends Controller
         ];
 
         try {
-            // Fetch from NASA FIRMS
+            // Fetch from NASA FIRMS (VIIRS_NOAA21_NRT)
+            // https://firms.modaps.eosdis.nasa.gov/api/area/csv/YOUR_KEY/VIIRS_NOAA21_NRT/minLon,minLat,maxLon,maxLat/days
             $url = sprintf(
                 '%s/%s/VIIRS_NOAA21_NRT/%s,%s,%s,%s/%s',
                 $NASA_API_BASE,
                 $NASA_API_KEY,
+                $BOLIVIA_BOUNDS['min_lng'], // API expects West, South, East, North (Lon, Lat, Lon, Lat)
                 $BOLIVIA_BOUNDS['min_lat'],
-                $BOLIVIA_BOUNDS['min_lng'],
-                $BOLIVIA_BOUNDS['max_lat'],
                 $BOLIVIA_BOUNDS['max_lng'],
+                $BOLIVIA_BOUNDS['max_lat'],
                 $days
             );
 
+            // Using GET request with timeout
             $response = \Illuminate\Support\Facades\Http::timeout(30)->get($url);
 
             if (!$response->successful()) {
+                \Illuminate\Support\Facades\Log::error('NASA FIRMS API Error: ' . $response->body());
                 return response()->json([
                     'success' => false,
-                    'error' => 'Failed to fetch data from NASA FIRMS',
-                ], 500);
+                    'error' => 'Failed to fetch data from satellite provider (NASA FIRMS)',
+                ], 502); // Bad Gateway
             }
 
             $csvData = $response->body();
             $lines = explode("\n", trim($csvData));
 
-            if (count($lines) < 2) {
-                return response()->json([
-                    'success' => true,
-                    'data' => [],
-                    'meta' => [
-                        'total' => 0,
-                        'source' => 'NASA FIRMS (Live)',
-                        'satellite' => 'VIIRS_NOAA21_NRT',
-                    ],
-                    'filters' => [
-                        'days' => $days,
-                        'region' => 'Bolivia',
-                    ],
-                    'timestamp' => now()->toIso8601String(),
-                ]);
+            $normalizedData = [];
+
+            // Ensure we have data lines (header + at least one row)
+            if (count($lines) > 1) {
+                $headers = str_getcsv($lines[0]);
+                
+                // Process each line
+                for ($i = 1; $i < count($lines); $i++) {
+                    if (empty(trim($lines[$i]))) continue;
+
+                    $values = str_getcsv($lines[$i]);
+                    
+                    // Skip if column count mismatch
+                    if (count($values) !== count($headers)) continue;
+
+                    $row = array_combine($headers, $values);
+
+                    // Normalize and Structure the Data
+                    $normalizedData[] = [
+                        'latitude' => (float) $row['latitude'],
+                        'longitude' => (float) $row['longitude'],
+                        'brightness' => isset($row['bright_ti4']) ? (float) $row['bright_ti4'] : null, // Temperature in Kelvin
+                        'confidence' => $row['confidence'] ?? 'n', // n: nominal, h: high, l: low
+                        'date' => \Carbon\Carbon::parse($row['acq_date'])->format('d/m/Y'), // dd/mm/yyyy
+                        'time' => $row['acq_time'], // HHMM (UTC)
+                        'satellite' => $row['satellite'] ?? 'VIIRS',
+                        'frp' => isset($row['frp']) ? (float) $row['frp'] : null, // Fire Radiative Power (MW)
+                        'source' => 'NASA FIRMS',
+                        'type' => 'hotspot'
+                    ];
+                }
             }
 
-            // Parse CSV
-            $headers = str_getcsv($lines[0]);
-            $hotspots = [];
-
-            for ($i = 1; $i < count($lines); $i++) {
-                if (empty(trim($lines[$i]))) continue;
-
-                $values = str_getcsv($lines[$i]);
-                if (count($values) < count($headers)) continue;
-
-                $fire = array_combine($headers, $values);
-
-                $hotspots[] = [
-                    'latitude' => (float) $fire['latitude'],
-                    'longitude' => (float) $fire['longitude'],
-                    'confidence' => $fire['confidence'] ?? null,
-                    'acq_date' => $fire['acq_date'],
-                    'acq_time' => $fire['acq_time'],
-                    'bright_ti4' => isset($fire['bright_ti4']) ? (float) $fire['bright_ti4'] : null,
-                    'bright_ti5' => isset($fire['bright_ti5']) ? (float) $fire['bright_ti5'] : null,
-                    'frp' => isset($fire['frp']) ? (float) $fire['frp'] : null,
-                    'satellite' => $fire['satellite'] ?? 'VIIRS_NOAA21',
-                ];
-            }
-
-            if ($format === 'geojson') {
-                return response()->json([
-                    'type' => 'FeatureCollection',
-                    'features' => array_map(function ($hotspot) {
-                        return [
-                            'type' => 'Feature',
-                            'geometry' => [
-                                'type' => 'Point',
-                                'coordinates' => [$hotspot['longitude'], $hotspot['latitude']],
-                            ],
-                            'properties' => [
-                                'confidence' => $hotspot['confidence'],
-                                'acq_date' => $hotspot['acq_date'],
-                                'acq_time' => $hotspot['acq_time'],
-                                'bright_ti4' => $hotspot['bright_ti4'],
-                                'bright_ti5' => $hotspot['bright_ti5'],
-                                'frp' => $hotspot['frp'],
-                                'satellite' => $hotspot['satellite'],
-                            ],
-                        ];
-                    }, $hotspots),
-                    'meta' => [
-                        'total' => count($hotspots),
-                        'source' => 'NASA FIRMS (Live)',
-                        'satellite' => 'VIIRS_NOAA21_NRT',
-                    ],
-                    'timestamp' => now()->toIso8601String(),
-                ]);
-            }
-
-            // JSON format
+            // Return clean JSON response
             return response()->json([
                 'success' => true,
-                'data' => $hotspots,
+                'data' => $normalizedData,
                 'meta' => [
-                    'total' => count($hotspots),
-                    'source' => 'NASA FIRMS (Live)',
-                    'satellite' => 'VIIRS_NOAA21_NRT',
-                ],
-                'filters' => [
+                    'count' => count($normalizedData),
                     'days' => $days,
                     'region' => 'Bolivia',
-                ],
-                'timestamp' => now()->toIso8601String(),
+                    'timestamp' => now()->toIso8601String()
+                ]
             ]);
+
         } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error('Exception in FIRMS API: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
-                'error' => 'Error fetching NASA FIRMS data: ' . $e->getMessage(),
+                'error' => 'Internal Server Error while processing hotspot data',
             ], 500);
         }
     }

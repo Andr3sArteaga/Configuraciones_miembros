@@ -21,6 +21,11 @@ return new class extends Migration
             // Relación opcional al reporte
             $table->uuid('reporte_id')->nullable()->index('idx_equipos_reporte_id');
             $table->foreign('reporte_id', 'fk_equipos_reporte')->references('id')->on('reportes')->onDelete('set null');
+
+            // Ubicación PostGIS
+            $table->geography('ubicacion', 'point')->nullable();
+            $table->spatialIndex('ubicacion'); // Índice espacial para consultas rápidas
+
             $table->timestamp('creado')->nullable()->useCurrent();
             $table->timestamp('actualizado')->nullable()->useCurrent();
 

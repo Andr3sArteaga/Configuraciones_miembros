@@ -12,8 +12,9 @@ class KardexController extends Controller
      */
     public function index()
     {
+        /** @var \App\Models\Usuario $usuario */
         $usuario = Auth::user();
-        
+
         // Cargar todas las relaciones necesarias
         $usuario->load([
             'genero',
@@ -23,21 +24,21 @@ class KardexController extends Controller
             'estados_sistema',
             'miembros_equipos.equipo'
         ]);
-        
+
         // Obtener información de equipos
         $equipos = $usuario->miembros_equipos->map(function ($miembro) {
             return $miembro->equipo;
         })->filter()->unique('id');
-        
+
         // Obtener reportes de incendio creados
         $reportes = $usuario->reportes_incendios()->latest('fecha_creacion')->get();
-        
+
         // Obtener cursos asignados al usuario específicamente
         $cursos = \App\Models\CursoAsignado::where('entidad_id', $usuario->id)
             ->where('entidad_tipo', 'usuario')
             ->with('curso')
             ->get();
-        
+
         // Calcular estadísticas
         $estadisticas = [
             'total_reportes' => $reportes->count(),
@@ -46,7 +47,7 @@ class KardexController extends Controller
             'total_equipos' => $equipos->count(),
             'total_cursos' => $cursos->count(),
         ];
-        
+
         return view('kardex.index', compact('usuario', 'equipos', 'reportes', 'cursos', 'estadisticas'));
     }
 
@@ -55,8 +56,9 @@ class KardexController extends Controller
      */
     public function descargarPdf()
     {
+        /** @var \App\Models\Usuario $usuario */
         $usuario = Auth::user();
-        
+
         // Cargar todas las relaciones necesarias
         $usuario->load([
             'genero',
@@ -66,21 +68,21 @@ class KardexController extends Controller
             'estados_sistema',
             'miembros_equipos.equipo'
         ]);
-        
+
         // Obtener información de equipos
         $equipos = $usuario->miembros_equipos->map(function ($miembro) {
             return $miembro->equipo;
         })->filter()->unique('id');
-        
+
         // Obtener reportes de incendio creados
         $reportes = $usuario->reportes_incendios()->latest('fecha_creacion')->get();
-        
+
         // Obtener cursos asignados al usuario específicamente
         $cursos = \App\Models\CursoAsignado::where('entidad_id', $usuario->id)
             ->where('entidad_tipo', 'usuario')
             ->with('curso')
             ->get();
-        
+
         // Calcular estadísticas
         $estadisticas = [
             'total_reportes' => $reportes->count(),
@@ -89,11 +91,11 @@ class KardexController extends Controller
             'total_equipos' => $equipos->count(),
             'total_cursos' => $cursos->count(),
         ];
-        
-        $pdf = \PDF::loadView('kardex.pdf', compact('usuario', 'equipos', 'reportes', 'cursos', 'estadisticas'));
-        
+
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('kardex.pdf', compact('usuario', 'equipos', 'reportes', 'cursos', 'estadisticas'));
+
         $nombreArchivo = 'kardex_' . $usuario->nombre . '_' . $usuario->apellido . '_' . date('Y-m-d') . '.pdf';
-        
+
         return $pdf->download($nombreArchivo);
     }
 }

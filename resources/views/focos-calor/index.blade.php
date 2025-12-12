@@ -291,25 +291,90 @@
                     // Actualizar contador
                     document.getElementById('equipos-count').textContent = data.length;
 
+                    // Agrupar equipos por ubicación para evitar sobreposición
+                    const equiposAgrupados = {};
                     data.forEach(equipo => {
                         if (equipo.ubicacion && equipo.ubicacion.coordinates) {
                             const [lng, lat] = equipo.ubicacion.coordinates;
+                            // Crear clave única para agrupar por ubicación (redondeado a 6 decimales)
+                            const key = `${lat.toFixed(6)},${lng.toFixed(6)}`;
+                            if (!equiposAgrupados[key]) {
+                                equiposAgrupados[key] = [];
+                            }
+                            equiposAgrupados[key].push(equipo);
+                        }
+                    });
+
+                    // Agregar marcadores con desplazamiento circular si hay múltiples equipos en la misma ubicación
+                    Object.keys(equiposAgrupados).forEach(key => {
+                        const equiposEnUbicacion = equiposAgrupados[key];
+                        const total = equiposEnUbicacion.length;
+                        const [latBase, lngBase] = key.split(',').map(parseFloat);
+
+                        // Si hay múltiples equipos, crear marcador central con resumen
+                        if (total > 1) {
+                            // Crear icono especial para el marcador central con número
+                            const centroIcon = L.divIcon({
+                                html: `<div style="background-color: #28a745; color: white; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 3px solid white; box-shadow: 0 2px 8px rgba(0,0,0,0.4); font-weight: bold; font-size: 16px;">${total}</div>`,
+                                className: 'equipo-centro-marker',
+                                iconSize: [40, 40]
+                            });
+                            
+                            // Crear popup con lista de todos los equipos
+                            let popupContent = `<div class="equipo-popup"><strong><i class="fas fa-users"></i> ${total} Equipos en esta ubicación</strong><hr style="margin: 8px 0;">`;
+                            equiposEnUbicacion.forEach((equipo, idx) => {
+                                popupContent += `<div style="margin-bottom: 8px; padding: 8px; background-color: #f8f9fa; border-radius: 4px;">
+                                    <strong>${equipo.nombre_equipo}</strong><br/>
+                                    <small>Integrantes: ${equipo.cantidad_integrantes}</small><br/>
+                                    <small>Estado: <span class="badge badge-success">${equipo.estado?.nombre || 'Activo'}</span></small><br/>
+                                    <a href="/equipos/${equipo.id}" target="_blank" class="btn btn-sm btn-primary mt-1" style="font-size: 11px;">
+                                        <i class="fas fa-eye"></i> Ver Detalles
+                                    </a>
+                                </div>`;
+                            });
+                            popupContent += `</div>`;
+                            
+                            const centroMarker = L.marker([latBase, lngBase], {
+                                icon: centroIcon,
+                                zIndexOffset: 1000
+                            }).bindPopup(popupContent, {
+                                maxWidth: 300
+                            });
+                            equiposLayer.addLayer(centroMarker);
+                        }
+
+                        // Crear marcadores individuales desplazados
+                        equiposEnUbicacion.forEach((equipo, index) => {
+                            // Calcular desplazamiento circular si hay múltiples equipos (200m para mejor separación)
+                            let offsetLat = 0;
+                            let offsetLng = 0;
+                            if (total > 1) {
+                                const angulo = (2 * Math.PI * index) / total;
+                                const radioMetros = 200; // Radio aumentado a 200 metros
+                                const radioGrados = radioMetros / 111000;
+                                offsetLat = radioGrados * Math.cos(angulo);
+                                offsetLng = radioGrados * Math.sin(angulo);
+                            }
+
+                            const lat = latBase + offsetLat;
+                            const lng = lngBase + offsetLng;
 
                             // Crear icono de equipo
                             const equipoIcon = L.divIcon({
-                                html: '<div style="background-color: #007bff; color: white; width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 3px solid white; box-shadow: 0 0 6px rgba(0,0,0,0.5);"><i class="fas fa-users" style="font-size: 14px;"></i></div>',
+                                html: '<div style="background-color: #007bff; color: white; width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 3px solid white; box-shadow: 0 2px 6px rgba(0,0,0,0.4);"><i class="fas fa-users" style="font-size: 14px;"></i></div>',
                                 className: 'equipo-marker',
-                                iconSize: [30, 30]
+                                iconSize: [36, 36]
                             });
 
                             const marker = L.marker([lat, lng], {
                                 icon: equipoIcon
                             });
 
-                            // Crear popup
+                            // Crear popup individual
+                            const equipoInfo = total > 1 ? ` (Equipo ${index + 1} de ${total})` : '';
                             const popupContent = `
                                 <div class="equipo-popup">
-                                    <h6><i class="fas fa-users"></i> ${equipo.nombre_equipo}</h6>
+                                    <h6><i class="fas fa-users"></i> ${equipo.nombre_equipo}${equipoInfo}</h6>
                                     <div class="popup-info">
                                         <p><strong>Integrantes:</strong> ${equipo.cantidad_integrantes}</p>
                                         <p><strong>Estado:</strong> <span class="badge badge-success">${equipo.estado?.nombre || 'Activo'}</span></p>
@@ -323,9 +388,11 @@
                                 </div>
                             `;
 
-                            marker.bindPopup(popupContent);
+                            marker.bindPopup(popupContent, {
+                                maxWidth: 250
+                            });
                             equiposLayer.addLayer(marker);
-                        }
+                        });
                     });
 
                     // Ajustar vista del mapa si hay datos
@@ -361,7 +428,7 @@
                     const gravedadBadge = reporte.niveles_gravedad ?
                         `<span class="badge badge-danger">${reporte.niveles_gravedad.nombre}</span>` : '';
                     const estadoBadge = reporte.estados_sistema ?
-                        `<span class="badge" style="background-color: ${reporte.estados_sistema.color || '#6c757d'}">${reporte.estados_sistema.nombre}</span>` :
+                        `<span class="badge" style="background-color: ${reporte.estados_sistema.color || '#6c757d'}; color: white;">${reporte.estados_sistema.nombre}</span>` :
                         '';
 
                     const popupContent = `

@@ -85,7 +85,7 @@ class ReporteController extends Controller
             $ubicacion = "POINT({$request->longitud} {$request->latitud})";
         }
 
-        Reporte::create([
+        $reporte = Reporte::create([
             'nombre_reportante' => $request->nombre_reportante,
             'telefono_contacto' => $request->telefono_contacto,
             'fecha_hora' => $request->fecha_hora,
@@ -101,6 +101,14 @@ class ReporteController extends Controller
             'estado_id' => $estadoPendiente->id ?? null,
         ]);
 
+        if ($request->wantsJson() || $request->ajax()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Reporte creado exitosamente.',
+                'id' => $reporte->id, // Send ID back for 2nd step
+            ], 201);
+        }
+
         return redirect()->route('reportes.index')
             ->with('success', 'Reporte creado exitosamente.');
     }
@@ -110,7 +118,7 @@ class ReporteController extends Controller
      */
     public function show(string $id)
     {
-        $reporte = Reporte::findOrFail($id);
+        $reporte = Reporte::with('animal_report')->findOrFail($id);
 
         // Cargar relaciones manualmente para evitar problema de UUID con whereIn
         $tiposIncidente = TiposIncidente::all()->keyBy('id');
@@ -127,7 +135,19 @@ class ReporteController extends Controller
             $reporte->setRelation('estados_sistema', $estadosSistema[$reporte->estado_id]);
         }
 
-        return view('reportes.show', compact('reporte'));
+        $condicionesAnimales = [
+            1 => 'Herido leve',
+            2 => 'Herido grave',
+            3 => 'Inconsciente',
+            4 => 'Deshidratado',
+            5 => 'Quemaduras',
+            6 => 'Desorientado / shock',
+            7 => 'Atascado / atrapado',
+            8 => 'Difícil acceso',
+            9 => 'Desconocido'
+        ];
+
+        return view('reportes.show', compact('reporte', 'condicionesAnimales'));
     }
 
     /**
@@ -135,7 +155,7 @@ class ReporteController extends Controller
      */
     public function edit(string $id)
     {
-        $reporte = Reporte::findOrFail($id);
+        $reporte = Reporte::with('animal_report')->findOrFail($id);
         $tiposIncidente = TiposIncidente::where('activo', true)->orderBy('nombre')->get();
         $nivelesGravedad = NivelesGravedad::where('activo', true)->orderBy('orden')->get();
         $estados = EstadosSistema::where('tabla', 'reportes')
@@ -143,7 +163,20 @@ class ReporteController extends Controller
             ->orderBy('orden')
             ->get();
 
-        return view('reportes.edit', compact('reporte', 'tiposIncidente', 'nivelesGravedad', 'estados'));
+        // Add condition mapping for animal reports
+        $condicionesAnimales = [
+            1 => 'Herido leve',
+            2 => 'Herido grave',
+            3 => 'Inconsciente',
+            4 => 'Deshidratado',
+            5 => 'Quemaduras',
+            6 => 'Desorientado / shock',
+            7 => 'Atascado / atrapado',
+            8 => 'Difícil acceso',
+            9 => 'Desconocido'
+        ];
+
+        return view('reportes.edit', compact('reporte', 'tiposIncidente', 'nivelesGravedad', 'estados', 'condicionesAnimales'));
     }
 
     /**
@@ -257,7 +290,7 @@ class ReporteController extends Controller
         // Construir el punto geográfico
         $ubicacion = "POINT({$request->longitud} {$request->latitud})";
 
-        Reporte::create([
+        $reporte = Reporte::create([
             'nombre_reportante' => $request->nombre_reportante,
             'telefono_contacto' => $request->telefono_contacto,
             'fecha_hora' => now(),
@@ -272,6 +305,14 @@ class ReporteController extends Controller
             'cant_autoridades' => 0,
             'estado_id' => $estadoPendiente->id ?? null,
         ]);
+
+        if ($request->wantsJson() || $request->ajax()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Reporte enviado exitosamente.',
+                'id' => $reporte->id,
+            ], 201);
+        }
 
         return redirect()->route('focos-calor.index')
             ->with('success', 'Reporte enviado exitosamente. Gracias por su colaboración.');

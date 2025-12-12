@@ -415,6 +415,13 @@ return [
             'icon_color' => 'white',
             'can' => 'admin-only',
         ],
+        [
+            'text' => 'Comunarios de Apoyo',
+            'url' => 'comunarios',
+            'icon' => 'fas fa-fw fa-hands-helping',
+            'icon_color' => 'white',
+            'can' => 'admin-only',
+        ],
 
         // Mi Equipo (for regular authenticated users)
         [

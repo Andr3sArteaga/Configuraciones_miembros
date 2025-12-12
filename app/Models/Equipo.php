@@ -47,9 +47,11 @@ class Equipo extends Model
 
     protected $fillable = [
         'nombre_equipo',
+        'codigo_seguimiento',
         'reporte_id',
         'cantidad_integrantes',
         'estado_id',
+        'ubicacion',
         'creado',
         'actualizado'
     ];
@@ -90,15 +92,45 @@ class Equipo extends Model
     /**
      * Get latitud from PostGIS geometry
      */
+    /**
+     * Accessor/Mutator para la columna PostGIS 'ubicacion'.
+     */
+    protected function ubicacion(): \Illuminate\Database\Eloquent\Casts\Attribute
+    {
+        return \Illuminate\Database\Eloquent\Casts\Attribute::make(
+            get: function ($value) {
+                if ($value === null) return null;
+                try {
+                    $result = DB::selectOne("SELECT ST_AsGeoJSON(?) AS geojson", [$value]);
+                    return $result ? json_decode($result->geojson, true) : null;
+                } catch (\Exception $e) { return null; }
+            },
+            set: function ($value) {
+                if ($value === null) return null;
+                if ($value instanceof \Illuminate\Contracts\Database\Query\Expression) return $value;
+                if (!is_array($value) || !isset($value['lat'], $value['lng'])) return null;
+                $lat = (float) $value['lat'];
+                $lng = (float) $value['lng'];
+                return DB::raw("ST_SetSRID(ST_MakePoint({$lng}, {$lat}), 4326)");
+            }
+        );
+    }
+
+    /**
+     * Get latitud from PostGIS geometry
+     */
     public function getLatitudAttribute()
     {
-        // Preferir ubicacion propia, si existe; sino usar ubicacion del reporte asociado
-        // Si existe reporte relacionado, usar su ubicación
+        // Try local ubicacion first
+        if ($this->ubicacion && isset($this->ubicacion['coordinates'])) {
+             return $this->ubicacion['coordinates'][1];
+        }
+
+        // Fallback to reporte ubicacion
         try {
             if ($this->reporte && isset($this->reporte->ubicacion['coordinates'])) {
                 return $this->reporte->ubicacion['coordinates'][1];
             }
-
             return null;
         } catch (\Exception $e) {
             return null;
@@ -110,11 +142,15 @@ class Equipo extends Model
      */
     public function getLongitudAttribute()
     {
+        // Try local ubicacion first
+        if ($this->ubicacion && isset($this->ubicacion['coordinates'])) {
+             return $this->ubicacion['coordinates'][0];
+        }
+
         try {
             if ($this->reporte && isset($this->reporte->ubicacion['coordinates'])) {
                 return $this->reporte->ubicacion['coordinates'][0];
             }
-
             return null;
         } catch (\Exception $e) {
             return null;

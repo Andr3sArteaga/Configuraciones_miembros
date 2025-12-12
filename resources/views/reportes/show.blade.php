@@ -187,6 +187,78 @@
                         </div>
                     </div>
                 </div>
+
+                <!-- Lesiones de Animales -->
+                @if($reporte->animal_report)
+                <div class="card card-info card-outline">
+                    <div class="card-header">
+                        <h3 class="card-title">
+                            <i class="fas fa-paw"></i> Detalles de Lesión Animal
+                        </h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <dl class="row">
+                                    <dt class="col-sm-5">Tipo de Animal:</dt>
+                                    <dd class="col-sm-7">{{ $reporte->animal_report->tipo_animal }}</dd>
+
+                                    <dt class="col-sm-5">Tamaño:</dt>
+                                    <dd class="col-sm-7">{{ $tamanos_animal[$reporte->animal_report->tamano] ?? $reporte->animal_report->tamano }}</dd>
+
+                                    <dt class="col-sm-5">Condición:</dt>
+                                    <dd class="col-sm-7">{{ $condiciones_animal[$reporte->animal_report->condicion] ?? $reporte->animal_report->condicion }}</dd>
+
+                                    <dt class="col-sm-5">Puede Moverse:</dt>
+                                    <dd class="col-sm-7">
+                                        <span class="badge {{ $reporte->animal_report->puede_moverse ? 'badge-success' : 'badge-danger' }}">
+                                            {{ $reporte->animal_report->puede_moverse ? 'Sí' : 'No' }}
+                                        </span>
+                                    </dd>
+                                </dl>
+                            </div>
+
+                            <div class="col-md-6">
+                                <dl class="row">
+                                    <dt class="col-sm-5">Traslado Inmediato:</dt>
+                                    <dd class="col-sm-7">
+                                        <span class="badge {{ $reporte->animal_report->traslado_inmediato ? 'badge-warning' : 'badge-secondary' }}">
+                                            {{ $reporte->animal_report->traslado_inmediato ? 'Sí' : 'No' }}
+                                        </span>
+                                    </dd>
+
+                                    @if($reporte->animal_report->centro_id)
+                                    <dt class="col-sm-5">Centro de Rescate:</dt>
+                                    <dd class="col-sm-7">{{ $reporte->animal_report->centro->nombre ?? 'Centro no especificado' }}</dd>
+                                    @endif
+
+                                    @if($reporte->animal_report->descripcion_lesiones)
+                                    <dt class="col-sm-5">Descripción Lesiones:</dt>
+                                    <dd class="col-sm-7">{{ $reporte->animal_report->descripcion_lesiones }}</dd>
+                                    @endif
+                                </dl>
+                            </div>
+                        </div>
+
+                        @if($reporte->animal_report->imagen_path)
+                        <hr>
+                        <div class="row">
+                            <div class="col-12">
+                                <h5><i class="fas fa-camera"></i> Imagen del Animal:</h5>
+                                <div class="text-center">
+                                    <img src="{{ asset('storage/' . $reporte->animal_report->imagen_path) }}" 
+                                         alt="Imagen del animal lesionado" 
+                                         class="img-fluid rounded" 
+                                         style="max-height: 300px; cursor: pointer;"
+                                         data-toggle="modal" 
+                                         data-target="#imageModal">
+                                </div>
+                            </div>
+                        </div>
+                        @endif
+                    </div>
+                </div>
+                @endif
             </div>
 
             <!-- Mapa de Ubicación -->
@@ -224,6 +296,27 @@
             </div>
         </div>
     </div>
+
+    <!-- Modal para ver imagen completa -->
+    @if($reporte->animal_report && $reporte->animal_report->imagen_path)
+    <div class="modal fade" id="imageModal" tabindex="-1" role="dialog" aria-labelledby="imageModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="imageModalLabel">Imagen del Animal Lesionado</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body text-center">
+                    <img src="{{ asset('storage/' . $reporte->animal_report->imagen_path) }}" 
+                         alt="Imagen del animal lesionado" 
+                         class="img-fluid rounded">
+                </div>
+            </div>
+        </div>
+    </div>
+    @endif
 @stop
 
 @section('css')

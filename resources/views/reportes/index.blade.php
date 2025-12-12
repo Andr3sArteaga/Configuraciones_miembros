@@ -84,7 +84,13 @@
                     </thead>
                     <tbody>
                         @foreach ($reportes as $reporte)
-                            <tr>
+                            @php
+                                $estado = strtolower(trim($reporte->estados_sistema->nombre ?? $reporte->estado ?? ''));
+                                $falsoPositivo = in_array($estado, [
+                                    'falso positivo', 'falsopositivo', 'falso_positivo', 'false positive', 'falsepositive', 'false_positive'
+                                ]);
+                            @endphp
+                            <tr @if($falsoPositivo) style="background-color: rgba(255, 0, 0, 0.40);" @endif>
                                 <td>{{ $reporte->fecha_hora->format('d/m/Y H:i') }}</td>
                                 <td>
                                     <strong>{{ $reporte->nombre_reportante }}</strong><br>
@@ -94,7 +100,7 @@
                                 <td>
                                     @if ($reporte->tipos_incidente)
                                         <span class="badge"
-                                            style="background-color: {{ $reporte->tipos_incidente->color ?? '#6c757d' }}">
+                                            style="background-color: {{ $reporte->tipos_incidente->color ?? '#6c757d' }}; color: white;">
                                             @if ($reporte->tipos_incidente->icono)
                                                 <i class="fas fa-{{ $reporte->tipos_incidente->icono }}"></i>
                                             @endif
@@ -107,7 +113,7 @@
                                 <td>
                                     @if ($reporte->niveles_gravedad)
                                         <span class="badge"
-                                            style="background-color: {{ $reporte->niveles_gravedad->color ?? '#ffc107' }}">
+                                            style="background-color: {{ $reporte->niveles_gravedad->color ?? '#ffc107' }}; color: white;">
                                             {{ $reporte->niveles_gravedad->nombre }}
                                         </span>
                                     @else
@@ -117,7 +123,7 @@
                                 <td>
                                     @if ($reporte->estados_sistema)
                                         <span class="badge"
-                                            style="background-color: {{ $reporte->estados_sistema->color ?? '#6c757d' }}">
+                                            style="background-color: {{ $reporte->estados_sistema->color ?? '#6c757d' }}; color: white;">
                                             {{ $reporte->estados_sistema->nombre }}
                                         </span>
                                     @else

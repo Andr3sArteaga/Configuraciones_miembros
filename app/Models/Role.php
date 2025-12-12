@@ -28,7 +28,7 @@ use Illuminate\Database\Eloquent\Model;
  */
 class Role extends Model
 {
-	protected $table = 'roles';
+	protected $table = 'legacy_roles';
 	public $incrementing = false;
 	protected $keyType = 'string';
 	public $timestamps = false;
