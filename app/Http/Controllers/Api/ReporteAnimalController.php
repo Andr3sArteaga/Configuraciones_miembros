@@ -17,7 +17,7 @@ class ReporteAnimalController extends Controller
         
         // Validation
         $validated = $request->validate([
-            'incendio_id' => 'required|string', // UUID string
+            'incendio_id' => 'required|string',
             'latitud' => 'required|numeric',
             'longitud' => 'required|numeric',
             'direccion' => 'nullable|string',

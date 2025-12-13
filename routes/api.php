@@ -61,6 +61,10 @@ Route::prefix('v1')->group(function () {
     Route::post('/reportes', [ReporteController::class, 'storePublico'])
         ->name('api.reportes.store');
 
+    // Reportes for classmate (specific format)
+    Route::get('/reportes-rescate-animales', [ReporteController::class, 'apiReportesRescateAnimales'])
+        ->name('api.reportes.rescate-animales');
+
     Route::get('/cursos', [CursoController::class, 'api'])
         ->name('api.cursos.api');
 

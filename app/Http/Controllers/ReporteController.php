@@ -319,6 +319,65 @@ class ReporteController extends Controller
     }
 
     /**
+     * API endpoint para Rescate de animales
+     */
+    public function apiReportesRescateAnimales(Request $request)
+    {
+        try {
+            // Load all severity levels for reference
+            $nivelesGravedad = NivelesGravedad::all()->keyBy('id');
+
+            $query = Reporte::query();
+
+            // Order by fecha_hora descending (most recent first)
+            $query->orderBy('fecha_hora', 'desc');
+
+            // Get all reportes
+            $reportes = $query->get();
+
+            // Transform the data to match classmate's format
+            $data = $reportes->map(function ($reporte) use ($nivelesGravedad) {
+                // Extract latitude and longitude from ubicacion (PostGIS point)
+                $latitud = null;
+                $longitud = null;
+                
+                if ($reporte->ubicacion && isset($reporte->ubicacion['coordinates'])) {
+                    // GeoJSON format: [longitude, latitude]
+                    $longitud = $reporte->ubicacion['coordinates'][0];
+                    $latitud = $reporte->ubicacion['coordinates'][1];
+                }
+
+                // Get severity level name
+                $nivelGravedad = null;
+                if ($reporte->gravedad_id && isset($nivelesGravedad[$reporte->gravedad_id])) {
+                    $nivelGravedad = $nivelesGravedad[$reporte->gravedad_id]->nombre;
+                }
+
+                return [
+                    'id' => $reporte->id,
+                    'nombre_reportante' => $reporte->nombre_reportante,
+                    'telefono_contacto' => $reporte->telefono_contacto,
+                    'fecha_hora' => $reporte->fecha_hora ? $reporte->fecha_hora->toIso8601String() : null,
+                    'nombre_lugar' => $reporte->nombre_lugar,
+                    'latitud' => $latitud,
+                    'longitud' => $longitud,
+                    'comentario_adicional' => $reporte->comentario_adicional,
+                    'nivel_gravedad' => $nivelGravedad,
+                    'creado' => $reporte->creado ? $reporte->creado->toIso8601String() : null,
+                ];
+            });
+
+            return response()->json($data);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al obtener los reportes',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
      * API endpoint for mobile app - Get all reportes with filters
      */
     public function api(Request $request)

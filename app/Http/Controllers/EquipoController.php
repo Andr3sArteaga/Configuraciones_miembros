@@ -2,13 +2,16 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\ComunarioApoyo;
 use App\Models\Equipo;
-use App\Models\Usuario;
 use App\Models\EstadosSistema;
 use App\Models\Reporte;
+use App\Models\Usuario;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 
 
 class EquipoController extends Controller
@@ -165,6 +168,27 @@ class EquipoController extends Controller
                             'creado' => now(),
                         ]);
                     }
+                }
+            }
+
+            // Save backpack products to recursos table and send to external API
+            if ($request->filled('insumos_necesarios')) {
+                $insumos = json_decode($request->insumos_necesarios, true);
+                if (is_array($insumos) && count($insumos) > 0) {
+                    // Save to recursos table
+                    foreach ($insumos as $insumo) {
+                        DB::table('recursos')->insert([
+                            'id' => \Ramsey\Uuid\Uuid::uuid4()->toString(),
+                            'codigo' => $validated['codigo_seguimiento'],
+                            'descripcion' => $insumo['nombre'],
+                            'cantidad' => $insumo['cantidad'],
+                            'equipoid' => $equipoId,
+                            'creado' => now(),
+                        ]);
+                    }
+                    
+                    // Send backpack request to external microservice
+                    $this->sendBackpackRequest($equipoId, $validated, $insumos);
                 }
             }
 
@@ -716,7 +740,107 @@ class EquipoController extends Controller
      */
     public function count()
     {
-        $count = Equipo::count();
-        return response()->json(['count' => $count]);
+        return response()->json(['count' => Equipo::count()]);
+    }
+
+    /**
+     * Send backpack request to external microservice
+     * 
+     * @param string $equipoId
+     * @param array $validated
+     * @param array $insumos
+     * @return void
+     */
+    private function sendBackpackRequest($equipoId, $validated, $insumos)
+    {
+        try {
+            // Load team with relationships
+            $equipo = Equipo::with(['reporte', 'miembros'])->find($equipoId);
+            
+            if (!$equipo) {
+                Log::warning('Team not found for backpack request', ['equipo_id' => $equipoId]);
+                return;
+            }
+            
+            // Get leader (MUST exist)
+            $lider = $equipo->miembros->firstWhere('pivot.es_lider', true);
+            if (!$lider) {
+                Log::warning('No leader found for backpack request', ['equipo_id' => $equipoId]);
+                return;
+            }
+            
+            // Get coordinates
+            $latitud = $equipo->latitud;
+            $longitud = $equipo->longitud;
+            
+            // Auto-detect provincia from coordinates
+            $provincia = \App\Services\ProvinciaDetectionService::detectFromCoordinates($latitud, $longitud);
+            
+            // Format insumos as string: "Botas x25, Guantes x56, Bebidas isotónicas x56"
+            $insumosString = collect($insumos)->map(function($item) {
+                $cantidad = $item['cantidad'] ?? 0;
+                $nombre = $item['nombre'] ?? 'Producto';
+                return "{$nombre} x{$cantidad}";
+            })->join(', ');
+            
+            // Build payload (EXACT DAS API format)
+            $payload = [
+                'nombre' => $lider->nombre,
+                'apellido' => $lider->apellido,
+                'carnet_identidad' => $lider->ci,
+                'correo_electronico' => $lider->email,
+                'nro_celular' => $lider->telefono,
+                'comunidad_solicitante' => $equipo->nombre_equipo,
+                'provincia' => $provincia,
+                'ubicacion' => $equipo->reporte->nombre_lugar ?? 'Ubicación del equipo',
+                'latitud' => (float)$latitud,
+                'longitud' => (float)$longitud,
+                'cantidad_personas' => (int)$equipo->cantidad_integrantes,
+                'fecha_inicio' => now()->format('Y-m-d'),
+                'celular_referencia' => (int)$lider->telefono,
+                'nombre_referencia' => $lider->nombre . ' ' . $lider->apellido,
+                'fecha_necesidad' => now()->addDays(3)->format('Y-m-d'),
+                'insumos_necesarios' => $insumosString,
+                'codigo_seguimiento' => $validated['codigo_seguimiento'],
+                'estado' => 'aprobado',
+                'fecha_solicitud' => now()->format('Y-m-d'),
+                'aprobada' => true,
+                'apoyoaceptado' => false,
+                'justificacion' => null,
+                'id_tipoemergencia' => 2,
+                'ci_voluntario' => null
+            ];
+            
+            // Log payload for debugging
+            Log::info('Sending backpack request', [
+                'url' => config('services.microservices.das.base_url') . '/api/solicitud-publica',
+                'payload' => $payload
+            ]);
+            
+            // Send to external API
+            $response = Http::timeout(10)->post(
+                config('services.microservices.das.base_url') . '/api/solicitud-publica',
+                $payload
+            );
+            
+            if ($response->successful()) {
+                Log::info('Backpack request sent successfully', [
+                    'codigo' => $validated['codigo_seguimiento'],
+                    'equipo_id' => $equipoId,
+                    'response' => $response->json()
+                ]);
+            } else {
+                Log::error('Backpack request failed', [
+                    'codigo' => $validated['codigo_seguimiento'],
+                    'status' => $response->status(),
+                    'response' => $response->body()
+                ]);
+            }
+        } catch (\Exception $e) {
+            Log::error('Backpack request exception', [
+                'equipo_id' => $equipoId,
+                'error' => $e->getMessage()
+            ]);
+        }
     }
 }

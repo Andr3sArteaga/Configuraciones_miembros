@@ -497,6 +497,30 @@
                                             </div>
                                         </div>
                                     </div>
+
+                                    <!-- Selected Products Summary -->
+                                    <div class="row mt-3" id="selected-summary-{{ $modalId }}" style="display: none;">
+                                        <div class="col-12">
+                                            <div class="card card-info">
+                                                <div class="card-header">
+                                                    <h3 class="card-title"><i class="fas fa-shopping-cart mr-2"></i>Productos Seleccionados</h3>
+                                                </div>
+                                                <div class="card-body p-0">
+                                                    <table class="table table-sm mb-0">
+                                                        <thead>
+                                                            <tr>
+                                                                <th>Producto</th>
+                                                                <th class="text-center">Cantidad</th>
+                                                                <th class="text-center">Unidad</th>
+                                                            </tr>
+                                                        </thead>
+                                                        <tbody id="selected-list-{{ $modalId }}"></tbody>
+                                                    </table>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
                                     <input type="hidden" name="insumos_necesarios"
                                         id="insumos-necesarios-{{ $modalId }}">
                                 </div>
@@ -813,37 +837,64 @@
             let productsLoadingState = 'initial'; // 'initial', 'loading', 'loaded', 'failed'
             let productsLoadNote = '';
 
-            // Fallback products when API fails
+            // Fallback products when API fails (Emergency supplies)
             const fallbackProducts = [{
                     id_producto: 999,
-                    nombre: 'Agua',
-                    descripcion: 'Agua potable',
+                    nombre: 'Agua Potable',
+                    descripcion: 'Agua potable de emergencia',
                     unidad_medida: 'L',
-                    stock_total: 0,
+                    stock_total: 100,
                     quantity: 0,
-                    suggested: 0
+                    suggested: 5
                 },
                 {
                     id_producto: 998,
-                    nombre: 'Extintores',
-                    descripcion: 'Extintores adicionales',
+                    nombre: 'Extintores Portátiles',
+                    descripcion: 'Extintores adicionales de emergencia',
                     unidad_medida: 'unidad',
-                    stock_total: 0,
+                    stock_total: 25,
                     quantity: 0,
-                    suggested: 0
+                    suggested: 2
                 },
                 {
                     id_producto: 997,
-                    nombre: 'Botiquines',
-                    descripcion: 'Botiquines médicos',
+                    nombre: 'Botiquines de Primeros Auxilios',
+                    descripcion: 'Botiquines médicos de emergencia',
                     unidad_medida: 'unidad',
-                    stock_total: 0,
+                    stock_total: 15,
                     quantity: 0,
-                    suggested: 0
+                    suggested: 1
+                },
+                {
+                    id_producto: 996,
+                    nombre: 'Linternas',
+                    descripcion: 'Linternas de emergencia',
+                    unidad_medida: 'unidad',
+                    stock_total: 30,
+                    quantity: 0,
+                    suggested: 3
+                },
+                {
+                    id_producto: 995,
+                    nombre: 'Mantas Térmicas',
+                    descripcion: 'Mantas térmicas de emergencia',
+                    unidad_medida: 'unidad',
+                    stock_total: 20,
+                    quantity: 0,
+                    suggested: 2
+                },
+                {
+                    id_producto: 994,
+                    nombre: 'Cuerdas de Rescate',
+                    descripcion: 'Cuerdas para operaciones de rescate',
+                    unidad_medida: 'm',
+                    stock_total: 50,
+                    quantity: 0,
+                    suggested: 10
                 }
             ];
 
-            // --- PRODUCT API INTEGRATION ---
+            // --- PRODUCT API INTEGRATION WITH 7-SECOND TIMEOUT ---
             async function loadProductsFromAPI() {
                 if (productsLoadingState !== 'initial') {
                     return; // Already loaded or loading
@@ -853,14 +904,20 @@
                 console.log('Loading products from inventory API...');
 
                 try {
+                    // Create AbortController for proper timeout handling
+                    const controller = new AbortController();
+                    const timeoutId = setTimeout(() => controller.abort(), 7000); // 7 second timeout
+
                     const response = await fetch('{{ config('services.microservices.inventory.base_url') }}/api/inventario/por-producto', {
                         method: 'GET',
                         headers: {
                             'Accept': 'application/json',
                             'Content-Type': 'application/json'
                         },
-                        timeout: 5000 // 5 second timeout
+                        signal: controller.signal
                     });
+
+                    clearTimeout(timeoutId); // Clear timeout if request succeeds
 
                     if (!response.ok) {
                         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
@@ -883,19 +940,23 @@
 
                         productsLoadingState = 'loaded';
                         productsLoadNote = '';
-                        console.log(`Loaded ${products.length} products from API`);
+                        console.log(`✅ Loaded ${products.length} products from Inventory API`);
                     } else {
                         throw new Error('API returned empty or invalid data');
                     }
 
                 } catch (error) {
-                    console.warn('Failed to load products from API:', error.message);
+                    if (error.name === 'AbortError') {
+                        console.warn('⏱️ Inventory API timeout after 7 seconds - Using emergency supplies');
+                    } else {
+                        console.warn('❌ Failed to load products from API:', error.message);
+                    }
 
-                    // Use fallback products
+                    // Use fallback products (Emergency supplies)
                     products = [...fallbackProducts];
                     productsLoadingState = 'failed';
                     productsLoadNote =
-                        'Nota: No se obtuvieron productos del inventario, mostrando productos de reserva.';
+                        ' Servicio de inventario no disponible. Mostrando suministros de emergencia.';
                 }
 
                 // Re-render the table with new products
@@ -1187,52 +1248,27 @@
 
             // --- MOCHILA & PRODUCTS LOGIC ---
 
-            // Render main table (merges donations + selected products)
+            // Render main table (ONLY products from API or emergency fallback)
             function renderMochilaTable() {
                 const tbody = document.getElementById('mochila-tbody-' + modalId);
                 tbody.innerHTML = '';
 
-                // 1. Render Donations (Insumos Base)
-                donations.forEach(item => {
-                    const row = document.createElement('tr');
-                    row.innerHTML = `
-                        <td><i class="fas ${item.icon} text-primary mr-2"></i> ${item.name}</td>
-                        <td class="text-center"><span class="badge badge-info">${item.stock}</span></td>
-                        <td class="text-center">
-                             <div class="input-group input-group-sm" style="width: 120px; margin: 0 auto;">
-                                <div class="input-group-prepend">
-                                    <button class="btn btn-outline-secondary btn-dec-mochila" type="button" data-type="donation" data-id="${item.id}">-</button>
-                                </div>
-                                <input type="text" class="form-control text-center" value="${item.quantity}" readonly>
-                                <div class="input-group-append">
-                                    <button class="btn btn-outline-secondary btn-inc-mochila" type="button" data-type="donation" data-id="${item.id}">+</button>
-                                </div>
-                            </div>
-                        </td>
-                        <td class="text-center">
-                            <span class="badge badge-success">En lista</span>
-                        </td>
-                    `;
-                    tbody.appendChild(row);
-                });
-
-                // 2. Render Products Section
+                // Show loading, products, or empty state
                 if (productsLoadingState === 'loading') {
                     // Show loading state
-                    const divider = document.createElement('tr');
-                    divider.innerHTML =
-                        '<td colspan="4" class="bg-light font-weight-bold pl-3"><i class="fas fa-spinner fa-spin mr-2"></i>Cargando productos del inventario...</td>';
-                    tbody.appendChild(divider);
+                    const loadingRow = document.createElement('tr');
+                    loadingRow.innerHTML =
+                        '<td colspan="4" class="text-center py-4"><i class="fas fa-spinner fa-spin mr-2"></i>Cargando productos del inventario...</td>';
+                    tbody.appendChild(loadingRow);
                 } else if (products.length > 0) {
-                    // Show divider with note if applicable
-                    const divider = document.createElement('tr');
-                    let dividerText = 'Productos del Inventario';
+                    // Show warning header if using emergency supplies
                     if (productsLoadNote) {
-                        dividerText += ` <small class="text-muted">(${productsLoadNote})</small>`;
+                        const noteRow = document.createElement('tr');
+                        noteRow.innerHTML = `<td colspan="4" class="bg-warning text-dark font-weight-bold pl-3 py-2"><i class="fas fa-exclamation-triangle mr-2"></i>${productsLoadNote}</td>`;
+                        tbody.appendChild(noteRow);
                     }
-                    divider.innerHTML = `<td colspan="4" class="bg-light font-weight-bold pl-3">${dividerText}</td>`;
-                    tbody.appendChild(divider);
 
+                    // Render products
                     products.forEach(prod => {
                         const row = document.createElement('tr');
                         const stockBadgeClass = prod.stock_total > 0 ? 'badge-success' : 'badge-warning';
@@ -1258,16 +1294,42 @@
                                     </div>
                                 </div>
                             </td>
-                             <td class="text-center">
+                            <td class="text-center">
                                 <span class="badge ${statusBadgeClass}">${statusText}</span>
                             </td>
                         `;
                         tbody.appendChild(row);
                     });
+                } else {
+                    // Empty state
+                    const emptyRow = document.createElement('tr');
+                    emptyRow.innerHTML =
+                        '<td colspan="4" class="text-center text-muted py-4">No hay productos disponibles</td>';
+                    tbody.appendChild(emptyRow);
                 }
 
                 // Attach events for main table counters
                 attachMochilaEvents();
+            }
+
+            // Update selected products summary
+            function updateSelectedProductsSummary() {
+                const selected = products.filter(p => p.quantity > 0);
+                const card = document.getElementById('selected-summary-' + modalId);
+                const list = document.getElementById('selected-list-' + modalId);
+                
+                if (selected.length > 0) {
+                    card.style.display = 'block';
+                    list.innerHTML = selected.map(p => `
+                        <tr>
+                            <td>${p.nombre}</td>
+                            <td class="text-center"><strong>${p.quantity}</strong></td>
+                            <td class="text-center">${p.unidad_medida}</td>
+                        </tr>
+                    `).join('');
+                } else {
+                    card.style.display = 'none';
+                }
             }
 
             // Remove unused Modal logic/rendering functions...
@@ -1284,11 +1346,12 @@
                                 item.quantity--;
                                 renderMochilaTable();
                             }
-                        } else {
+                        } else if (type === 'product') {
                             const item = products.find(p => p.id_producto === id);
                             if (item && item.quantity > 0) {
                                 item.quantity--;
                                 renderMochilaTable();
+                                updateSelectedProductsSummary();
                             }
                         }
                     });
@@ -1301,16 +1364,16 @@
                         const id = parseInt(this.getAttribute('data-id'));
                         if (type === 'donation') {
                             const item = donations.find(d => d.id === id);
-                            if (item) {
+                            if (item && item.quantity < item.stock) {
                                 item.quantity++;
                                 renderMochilaTable();
                             }
-                        } else {
+                        } else if (type === 'product') {
                             const item = products.find(p => p.id_producto === id);
-                            if (item && item.quantity < item
-                                .stock_total) { // Don't exceed available stock
+                            if (item && item.quantity < item.stock_total) {
                                 item.quantity++;
                                 renderMochilaTable();
+                                updateSelectedProductsSummary();
                             }
                         }
                     });

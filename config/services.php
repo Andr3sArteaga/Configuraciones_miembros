@@ -52,6 +52,9 @@ return [
         'inventory' => [
             'base_url' => env('INVENTORY_API_URL', 'http://10.26.5.25:8000'),
         ],
+        'das' => [
+            'base_url' => env('DAS_API_URL', 'http://localhost:8000'),
+        ],
     ],
 
 ];
