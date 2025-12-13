@@ -7,12 +7,23 @@ services:
     volumes:
       - .:/var/www
     environment:
+      # Database
       DB_CONNECTION: pgsql
       DB_HOST: db       # Nombre del servicio del contenedor de postgres
       DB_PORT: 5432
       DB_DATABASE: brigadas_db
       DB_USERNAME: admin
       DB_PASSWORD: admin123
+      
+      # Session Configuration (FIX for 419 error)
+      SESSION_DRIVER: database
+      SESSION_LIFETIME: 120
+      SESSION_DOMAIN: .dasalas.shop
+      SESSION_SECURE_COOKIE: "false"
+      
+      # App Configuration
+      APP_URL: http://brigadas.dasalas.shop
+      APP_ENV: production
     depends_on:
       - db
     networks:
