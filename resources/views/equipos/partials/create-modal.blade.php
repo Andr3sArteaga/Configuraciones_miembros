@@ -908,7 +908,7 @@
                     const controller = new AbortController();
                     const timeoutId = setTimeout(() => controller.abort(), 7000); // 7 second timeout
 
-                    const response = await fetch('{{ config('services.microservices.inventory.base_url') }}/api/inventario/por-producto', {
+                    const response = await fetch('{{ config('services.microservices.inventory.base_url') }}api/inventario/por-producto', {
                         method: 'GET',
                         headers: {
                             'Accept': 'application/json',
