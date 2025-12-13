@@ -80,6 +80,7 @@ class Usuario extends Authenticatable
 	];
 
 	protected $fillable = [
+		'id',
 		'nombre',
 		'apellido',
 		'ci',
@@ -212,5 +213,25 @@ class Usuario extends Authenticatable
 	public function adminlte_profile_url()
 	{
 		return 'perfil';
+	}
+
+	/**
+	 * Get the name of the unique identifier for the user.
+	 *
+	 * @return string
+	 */
+	public function getAuthIdentifierName()
+	{
+		return 'id';
+	}
+
+	/**
+	 * Get the unique identifier for the user.
+	 *
+	 * @return mixed
+	 */
+	public function getAuthIdentifier()
+	{
+		return $this->getKey();
 	}
 }

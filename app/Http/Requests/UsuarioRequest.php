@@ -29,7 +29,7 @@ class UsuarioRequest extends FormRequest
             'tipo_sangre_id' => ['nullable', 'uuid', 'exists:tipos_sangre,id'],
             'nivel_entrenamiento_id' => ['nullable', 'uuid', 'exists:niveles_entrenamiento,id'],
             'entidad_perteneciente' => ['nullable', 'string', 'max:200'],
-            'rol_id' => ['nullable', 'uuid', 'exists:roles,id'],
+            'rol_id' => ['nullable', 'uuid', 'exists:legacy_roles,id'],
             'debe_cambiar_password' => ['nullable', 'bool'],
             'reset_token' => ['nullable', 'string', 'max:255'],
             'reset_token_expires' => ['nullable', 'date_format:Y-m-d\TH:i:s'],

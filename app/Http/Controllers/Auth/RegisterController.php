@@ -8,6 +8,8 @@ use App\Models\Usuario;
 use Illuminate\Foundation\Auth\RegistersUsers;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Http\Request;
+use Illuminate\Auth\Events\Registered;
 
 class RegisterController extends Controller
 {
@@ -54,12 +56,12 @@ class RegisterController extends Controller
             'apellido' => ['required', 'string', 'max:100'],
             'ci' => ['required', 'string', 'max:20', 'unique:usuarios,ci'],
             'fecha_nacimiento' => ['required', 'date', 'before:today'],
-            'genero_id' => ['required', 'string', 'exists:generos,id'],
-            'tipo_sangre_id' => ['required', 'string', 'exists:tipos_sangre,id'],
+            'genero_id' => ['required', 'uuid', 'exists:generos,id'],
+            'tipo_sangre_id' => ['required', 'uuid', 'exists:tipos_sangre,id'],
             'rol_id' => [
-                'required', 
-                'string', 
-                'exists:roles,id',
+                'required',
+                'uuid',
+                'exists:legacy_roles,id',
                 function ($attribute, $value, $fail) {
                     $role = \App\Models\Role::find($value);
                     if (!$role || !in_array($role->codigo, ['BOMBERO', 'PARAMEDICO', 'VETERINARIO'])) {
@@ -95,5 +97,37 @@ class RegisterController extends Controller
             'password' => Hash::make($data['password']),
             'debe_cambiar_password' => true,
         ]);
+    }
+
+    public function register(Request $request)
+    {
+        $this->validator($request->all())->validate();
+
+        event(new Registered($user = $this->create($request->all())));
+
+        $this->guard()->login($user);
+
+        $request->session()->regenerate();
+        $request->session()->save();
+
+        if ($response = $this->registered($request, $user)) {
+            return $response;
+        }
+
+        return redirect($this->redirectPath());
+    }
+
+    /**
+     * The user has been registered.
+     * Regenerate session to ensure user stays logged in.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @param  mixed  $user
+     * @return mixed
+     */
+    protected function registered(Request $request, $user)
+    {
+        $request->session()->regenerate();
+        $request->session()->save();
     }
 }
