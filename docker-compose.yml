@@ -16,14 +16,14 @@ services:
       DB_PASSWORD: admin123
       
       # Session Configuration (FIX for 419 error)
-      SESSION_DRIVER: database
-      SESSION_LIFETIME: 120
-      SESSION_DOMAIN: .dasalas.shop
-      SESSION_SECURE_COOKIE: "false"
+      # SESSION_DRIVER: database
+      # SESSION_LIFETIME: 120
+      # SESSION_DOMAIN: .dasalas.shop
+      # SESSION_SECURE_COOKIE: "false"
       
       # App Configuration
-      APP_URL: http://brigadas.dasalas.shop
-      APP_ENV: production
+      # APP_URL: http://brigadas.dasalas.shop
+      # APP_ENV: production
       
       # Microservices
       ANIMAL_REPORTS_API_URL: http://rescate.dasalas.shop/
