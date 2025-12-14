@@ -16,7 +16,7 @@ services:
       DB_PASSWORD: admin123
       APP_URL: http://brigadas.dasalas.shop
       SESSION_DRIVER: file
-      SESSION_DOMAIN: brigadas.dasalas.shop
+      SESSION_DOMAIN: null
       SESSION_SECURE_COOKIE: false
       # Session Configuration (FIX for 419 error)
       # SESSION_DRIVER: database
