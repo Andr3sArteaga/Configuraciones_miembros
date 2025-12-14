@@ -6,6 +6,8 @@ services:
     container_name: brigadas-laravel
     volumes:
       - .:/var/www
+    env_file:
+      - .env
     environment:
       # Database
       DB_CONNECTION: pgsql
@@ -26,9 +28,9 @@ services:
       APP_ENV: production
       
       # Microservices
-      ANIMAL_REPORTS_API_URL: http://rescate.dasalas.shop/
-      INVENTORY_API_URL: http://donaciones.dasalas.shop/
-      DAS_API_URL: http://gatealas.dasalas.shop/api/gateway/logistica/paquetes/solicitud-publica
+      # ANIMAL_REPORTS_API_URL: http://rescate.dasalas.shop/
+      # INVENTORY_API_URL: http://donaciones.dasalas.shop/
+      # DAS_API_URL: http://gatealas.dasalas.shop/api/gateway/logistica/paquetes/solicitud-publica
     depends_on:
       - db
     networks:
