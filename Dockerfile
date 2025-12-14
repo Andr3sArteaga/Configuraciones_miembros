@@ -20,6 +20,12 @@ WORKDIR /var/www
 
 COPY . .
 
+# Create required Laravel directories before composer install
+RUN mkdir -p storage/framework/{sessions,views,cache} \
+    && mkdir -p storage/logs \
+    && mkdir -p bootstrap/cache \
+    && chmod -R 777 storage bootstrap/cache
+
 # Install dependencies and build assets
 RUN composer install --no-interaction --prefer-dist --optimize-autoloader
 RUN npm install && npm run build
