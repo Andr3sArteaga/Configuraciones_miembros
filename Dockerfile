@@ -27,7 +27,7 @@ RUN mkdir -p storage/framework/{sessions,views,cache} \
     && chmod -R 777 storage bootstrap/cache
 
 # Install dependencies and build assets
-RUN composer install --no-interaction --prefer-dist --optimize-autoloader
+RUN composer install --no-interaction --no-scripts --prefer-dist --optimize-autoloader
 RUN npm install && npm run build
 
 # Copy entrypoint

@@ -14,6 +14,9 @@ fi
 echo "🔑 Generando APP_KEY (si no existe)..."
 php artisan key:generate --force || true
 
+echo "🔄 Regenerando autoload con scripts..."
+composer dump-autoload --optimize
+
 echo "⚙️ Aplicando permisos..."
 chmod -R 777 storage bootstrap/cache
 
