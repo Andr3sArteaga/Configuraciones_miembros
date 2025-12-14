@@ -183,3 +183,10 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
     Route::resource('condiciones-climaticas', CondicionClimaticaController::class);
     Route::resource('estados-sistema', EstadoSistemaController::class);
 });
+
+
+// ========== HELPDESK WIDGET ==========
+// Ruta generada por: php artisan helpdeskwidget:install
+Route::get('helpdesk', function () {
+    return view('helpdesk');
+})->name('helpdesk')->middleware('auth');

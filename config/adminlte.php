@@ -522,7 +522,12 @@ return [
                 ],
             ],
         ],
-
+        ['header' => 'SOPORTE'],
+        [
+            'text' => 'Centro de Soporte',
+            'url' => 'helpdesk',
+            'icon' => 'fas fa-fw fa-headset',
+        ],
         // Mi Cuenta (authenticated users only)
         [
             'header' => 'MI CUENTA',

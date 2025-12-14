@@ -14,6 +14,7 @@
         "laravel/sanctum": "^4.0",
         "laravel/tinker": "^2.10.1",
         "laravel/ui": "^4.6",
+        "lukehowland/helpdeskwidget": "^2.0",
         "reliese/laravel": "^1.4",
         "spatie/laravel-permission": "^6.23"
     },
