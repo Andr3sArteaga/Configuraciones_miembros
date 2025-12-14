@@ -28,7 +28,7 @@ services:
       # Microservices
       ANIMAL_REPORTS_API_URL: http://rescate.dasalas.shop/
       INVENTORY_API_URL: http://donaciones.dasalas.shop/
-      DAS_API_URL: http://das.dasalas.shop/
+      DAS_API_URL: http://gatealas.dasalas.shop/api/gateway/logistica/paquetes/solicitud-publica
     depends_on:
       - db
     networks:
