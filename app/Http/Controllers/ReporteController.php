@@ -464,4 +464,160 @@ class ReporteController extends Controller
             ], 500);
         }
     }
+
+    /**
+     * Export reportes as PDF
+     */
+    public function exportPdf()
+    {
+        // Get all reportes with relationships
+        $reportes = Reporte::orderBy('fecha_hora', 'desc')->get();
+        
+        // Load relationships manually
+        $tiposIncidente = TiposIncidente::all()->keyBy('id');
+        $nivelesGravedad = NivelesGravedad::all()->keyBy('id');
+        $estadosSistema = EstadosSistema::all()->keyBy('id');
+
+        // Associate relationships to each reporte
+        foreach ($reportes as $reporte) {
+            if ($reporte->tipo_incidente_id && isset($tiposIncidente[$reporte->tipo_incidente_id])) {
+                $reporte->setRelation('tipos_incidente', $tiposIncidente[$reporte->tipo_incidente_id]);
+            }
+            if ($reporte->gravedad_id && isset($nivelesGravedad[$reporte->gravedad_id])) {
+                $reporte->setRelation('niveles_gravedad', $nivelesGravedad[$reporte->gravedad_id]);
+            }
+            if ($reporte->estado_id && isset($estadosSistema[$reporte->estado_id])) {
+                $reporte->setRelation('estados_sistema', $estadosSistema[$reporte->estado_id]);
+            }
+        }
+
+        // Check if Dompdf is available
+        if (class_exists('\Barryvdh\DomPDF\Facade\Pdf')) {
+            $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('reportes.reportes-pdf', compact('reportes'));
+            return $pdf->download('reportes-rapidos-' . now()->format('Y-m-d') . '.pdf');
+        }
+
+        // Fallback: Return HTML view that can be printed to PDF
+        return view('reportes.reportes-pdf', compact('reportes'));
+    }
+
+    /**
+     * Export reportes as CSV
+     */
+    public function exportCsv()
+    {
+        // Get all reportes with relationships
+        $reportes = Reporte::orderBy('fecha_hora', 'desc')->get();
+        
+        // Load relationships manually
+        $tiposIncidente = TiposIncidente::all()->keyBy('id');
+        $nivelesGravedad = NivelesGravedad::all()->keyBy('id');
+        $estadosSistema = EstadosSistema::all()->keyBy('id');
+
+        // Associate relationships to each reporte
+        foreach ($reportes as $reporte) {
+            if ($reporte->tipo_incidente_id && isset($tiposIncidente[$reporte->tipo_incidente_id])) {
+                $reporte->setRelation('tipos_incidente', $tiposIncidente[$reporte->tipo_incidente_id]);
+            }
+            if ($reporte->gravedad_id && isset($nivelesGravedad[$reporte->gravedad_id])) {
+                $reporte->setRelation('niveles_gravedad', $nivelesGravedad[$reporte->gravedad_id]);
+            }
+            if ($reporte->estado_id && isset($estadosSistema[$reporte->estado_id])) {
+                $reporte->setRelation('estados_sistema', $estadosSistema[$reporte->estado_id]);
+            }
+        }
+
+        // Create CSV filename
+        $filename = 'reportes-rapidos-' . now()->format('Y-m-d-His') . '.csv';
+
+        // Set headers for CSV download
+        $headers = [
+            'Content-Type' => 'text/csv; charset=UTF-8',
+            'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+            'Pragma' => 'no-cache',
+            'Cache-Control' => 'must-revalidate, post-check=0, pre-check=0',
+            'Expires' => '0'
+        ];
+
+        // Create callback to generate CSV
+        $callback = function() use ($reportes) {
+            $file = fopen('php://output', 'w');
+            
+            // Don't use BOM - Excel on Windows handles Windows-1252 better
+            // We'll convert from UTF-8 to Windows-1252 for each field
+
+            // CSV Headers - using semicolon as delimiter for better Excel compatibility
+            $headers = [
+                'No.',
+                'Fecha/Hora',
+                'Reportante',
+                'Telefono',
+                'Lugar',
+                'Latitud',
+                'Longitud',
+                'Tipo de Incidente',
+                'Nivel de Gravedad',
+                'Estado',
+                'Cant. Bomberos',
+                'Cant. Paramedicos',
+                'Cant. Veterinarios',
+                'Cant. Autoridades',
+                'Comentario Adicional',
+                'Fecha Creacion'
+            ];
+            
+            // Convert headers to Windows-1252
+            $headers = array_map(function($header) {
+                return mb_convert_encoding($header, 'Windows-1252', 'UTF-8');
+            }, $headers);
+            
+            fputcsv($file, $headers, ';');
+
+            // Add data rows
+            $rowNumber = 1;
+            foreach ($reportes as $reporte) {
+                // Extract coordinates from ubicacion
+                $latitud = null;
+                $longitud = null;
+                if ($reporte->ubicacion && isset($reporte->ubicacion['coordinates'])) {
+                    $longitud = $reporte->ubicacion['coordinates'][0];
+                    $latitud = $reporte->ubicacion['coordinates'][1];
+                }
+
+                $row = [
+                    $rowNumber++, // Simple row number instead of UUID
+                    $reporte->fecha_hora ? $reporte->fecha_hora->format('d/m/Y H:i:s') : '',
+                    $reporte->nombre_reportante,
+                    $reporte->telefono_contacto ?? '',
+                    $reporte->nombre_lugar ?? '',
+                    $latitud ?? '',
+                    $longitud ?? '',
+                    $reporte->tipos_incidente->nombre ?? '',
+                    $reporte->niveles_gravedad->nombre ?? '',
+                    $reporte->estados_sistema->nombre ?? 'Sin estado',
+                    $reporte->cant_bomberos,
+                    $reporte->cant_paramedicos,
+                    $reporte->cant_veterinarios,
+                    $reporte->cant_autoridades,
+                    $reporte->comentario_adicional ?? '',
+                    $reporte->creado ? $reporte->creado->format('d/m/Y H:i:s') : ''
+                ];
+                
+                // Convert each field to Windows-1252 for proper accent display
+                $row = array_map(function($field) {
+                    if (is_string($field)) {
+                        return mb_convert_encoding($field, 'Windows-1252', 'UTF-8');
+                    }
+                    return $field;
+                }, $row);
+                
+                fputcsv($file, $row, ';');
+            }
+
+            fclose($file);
+        };
+
+        return response()->stream($callback, 200, $headers);
+    }
 }
+

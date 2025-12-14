@@ -78,9 +78,13 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/kardex', [KardexController::class, 'index'])->name('kardex.index');
     Route::get('/kardex/pdf', [KardexController::class, 'descargarPdf'])->name('kardex.pdf');
 
+
     // Reportes (Todos los usuarios autenticados pueden ver todos los reportes ciudadanos)
+    Route::get('reportes/export/pdf', [ReporteController::class, 'exportPdf'])->name('reportes.export.pdf');
+    Route::get('reportes/export/csv', [ReporteController::class, 'exportCsv'])->name('reportes.export.csv');
     Route::resource('reportes', ReporteController::class);
     Route::patch('reportes/{reporte}/estado', [ReporteController::class, 'cambiarEstado'])->name('reportes.estado');
+
 
     // Reportes de Incendio (Usuarios ven solo los suyos, Admin ve todos - lógica en controlador)
     Route::resource('reportes-incendio', ReporteIncendioController::class);
@@ -143,6 +147,8 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
     Route::get('noticias/{noticia}/edit', [NoticiaController::class, 'edit'])->name('noticias.edit');
     Route::put('noticias/{noticia}', [NoticiaController::class, 'update'])->name('noticias.update');
     Route::delete('noticias/{noticia}', [NoticiaController::class, 'destroy'])->name('noticias.destroy');
+    Route::post('noticias/scrape', [NoticiaController::class, 'scrapeNoticias'])->name('noticias.scrape');
+
 
     // Cursos - CRUD completo para Admin
     Route::post('cursos', [CursoController::class, 'store'])->name('cursos.store');

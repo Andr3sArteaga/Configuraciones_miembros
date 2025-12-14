@@ -9,6 +9,11 @@
                 <h1 class="m-0">Noticias</h1>
             </div>
             <div class="col-sm-6">
+                <div class="d-flex justify-content-end align-items-center mb-2">
+                    <button id="actualizarNoticias" class="btn" style="background-color: #007BFF; color: white;">
+                        <i class="fas fa-sync-alt"></i> Actualizar
+                    </button>
+                </div>
                 <ol class="breadcrumb float-sm-right">
                     <li class="breadcrumb-item"><a href="{{ route('home') }}">Inicio</a></li>
                     <li class="breadcrumb-item active">Noticias</li>
@@ -105,4 +110,53 @@
             color: #ff6200ff !important;
         }
     </style>
+@stop
+
+@section('js')
+    <script>
+        $(document).ready(function() {
+            $('#actualizarNoticias').click(function() {
+                const button = $(this);
+                const originalHtml = button.html();
+                
+                // Disable button and show loading state
+                button.prop('disabled', true);
+                button.html('<i class="fas fa-spinner fa-spin"></i> Actualizando...');
+                
+                // Make AJAX request
+                $.ajax({
+                    url: '{{ route("noticias.scrape") }}',
+                    method: 'POST',
+                    data: {
+                        _token: '{{ csrf_token() }}'
+                    },
+                    success: function(response) {
+                        // Show success message
+                        Swal.fire({
+                            icon: 'success',
+                            title: '¡Éxito!',
+                            text: response.message || 'Noticias actualizadas correctamente',
+                            timer: 2000,
+                            showConfirmButton: false
+                        }).then(() => {
+                            // Reload the page to show updated news
+                            location.reload();
+                        });
+                    },
+                    error: function(xhr) {
+                        // Re-enable button
+                        button.prop('disabled', false);
+                        button.html(originalHtml);
+                        
+                        // Show error message
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error',
+                            text: xhr.responseJSON?.message || 'Hubo un error al actualizar las noticias'
+                        });
+                    }
+                });
+            });
+        });
+    </script>
 @stop

@@ -63,6 +63,12 @@
             <div class="card-header">
                 <h3 class="card-title">Listado de Reportes</h3>
                 <div class="card-tools">
+                    <a href="{{ route('reportes.export.pdf') }}" class="btn btn-danger btn-sm" target="_blank" title="Exportar PDF">
+                        <i class="fas fa-file-pdf"></i> PDF
+                    </a>
+                    <a href="{{ route('reportes.export.csv') }}" class="btn btn-success btn-sm" title="Exportar CSV">
+                        <i class="fas fa-file-excel"></i> CSV
+                    </a>
                     <a href="{{ route('reportes.create') }}" class="btn btn-primary btn-sm">
                         <i class="fas fa-plus"></i> Nuevo Reporte
                     </a>

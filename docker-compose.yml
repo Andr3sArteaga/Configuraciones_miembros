@@ -18,7 +18,7 @@ services:
       # Session Configuration (FIX for 419 error)
       SESSION_DRIVER: database
       SESSION_LIFETIME: 120
-      SESSION_DOMAIN: .dasalas.shop
+      SESSION_DOMAIN: brigadas.dasalas.shop
       SESSION_SECURE_COOKIE: "false"
       
       # App Configuration

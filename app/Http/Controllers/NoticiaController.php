@@ -76,4 +76,25 @@ class NoticiaController extends Controller
     {
         //
     }
+
+    /**
+     * Trigger the news scraper command
+     */
+    public function scrapeNoticias()
+    {
+        try {
+            // Execute the artisan command
+            \Artisan::call('scrape:incendios-news');
+            
+            return response()->json([
+                'success' => true,
+                'message' => 'Las noticias se han actualizado correctamente'
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al actualizar las noticias: ' . $e->getMessage()
+            ], 500);
+        }
+    }
 }
