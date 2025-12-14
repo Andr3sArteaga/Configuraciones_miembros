@@ -14,7 +14,10 @@ services:
       DB_DATABASE: brigadas_db
       DB_USERNAME: admin
       DB_PASSWORD: admin123
-      
+      APP_URL: http://brigadas.dasalas.shop
+      SESSION_DRIVER: file
+      SESSION_DOMAIN: brigadas.dasalas.shop
+      SESSION_SECURE_COOKIE: false
       # Session Configuration (FIX for 419 error)
       # SESSION_DRIVER: database
       # SESSION_LIFETIME: 120
@@ -38,8 +41,8 @@ services:
     container_name: brigadas
     expose:
       - "80"
-    # ports:
-    #   - "8080:80" #---> despliegue local con puerto 8080
+    ports:
+      - "8080:80" #---> despliegue local con puerto 8080
     volumes:
       - .:/var/www
       - ./nginx.conf:/etc/nginx/conf.d/default.conf
