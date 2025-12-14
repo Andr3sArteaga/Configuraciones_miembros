@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Movimiento;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -39,6 +40,15 @@ class KardexController extends Controller
             ->with('curso')
             ->get();
 
+        // Obtener movimientos de auditoría del usuario
+        $movimientos = Movimiento::where('ci_usuario', $usuario->ci)
+            ->orderBy('created_at', 'desc')
+            ->limit(100) // Limitar a los últimos 100 movimientos en la vista
+            ->get();
+
+        // Agrupar movimientos por módulo para estadísticas
+        $movimientosPorModulo = $movimientos->groupBy('modulo');
+
         // Calcular estadísticas
         $estadisticas = [
             'total_reportes' => $reportes->count(),
@@ -46,9 +56,10 @@ class KardexController extends Controller
             'reportes_pendientes' => $reportes->where('controlado', false)->count(),
             'total_equipos' => $equipos->count(),
             'total_cursos' => $cursos->count(),
+            'total_movimientos' => $movimientos->count(),
         ];
 
-        return view('kardex.index', compact('usuario', 'equipos', 'reportes', 'cursos', 'estadisticas'));
+        return view('kardex.index', compact('usuario', 'equipos', 'reportes', 'cursos', 'movimientos', 'movimientosPorModulo', 'estadisticas'));
     }
 
     /**
@@ -83,6 +94,14 @@ class KardexController extends Controller
             ->with('curso')
             ->get();
 
+        // Obtener TODOS los movimientos de auditoría del usuario para el PDF
+        $movimientos = Movimiento::where('ci_usuario', $usuario->ci)
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        // Agrupar movimientos por módulo
+        $movimientosPorModulo = $movimientos->groupBy('modulo');
+
         // Calcular estadísticas
         $estadisticas = [
             'total_reportes' => $reportes->count(),
@@ -90,9 +109,10 @@ class KardexController extends Controller
             'reportes_pendientes' => $reportes->where('controlado', false)->count(),
             'total_equipos' => $equipos->count(),
             'total_cursos' => $cursos->count(),
+            'total_movimientos' => $movimientos->count(),
         ];
 
-        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('kardex.pdf', compact('usuario', 'equipos', 'reportes', 'cursos', 'estadisticas'));
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('kardex.pdf', compact('usuario', 'equipos', 'reportes', 'cursos', 'movimientos', 'movimientosPorModulo', 'estadisticas'));
 
         $nombreArchivo = 'kardex_' . $usuario->nombre . '_' . $usuario->apellido . '_' . date('Y-m-d') . '.pdf';
 

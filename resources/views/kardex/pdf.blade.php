@@ -221,6 +221,10 @@
                 <div class="number">{{ $estadisticas['total_cursos'] }}</div>
                 <div class="label">Cursos Asignados</div>
             </div>
+            <div class="stat-box">
+                <div class="number">{{ $estadisticas['total_movimientos'] ?? 0 }}</div>
+                <div class="label">Acciones Registradas</div>
+            </div>
         </div>
     </div>
 
@@ -240,7 +244,7 @@
                 <tbody>
                     @foreach ($equipos as $equipo)
                         <tr>
-                            <td>{{ $equipo->nombre }}</td>
+                            <td>{{ $equipo->nombre_equipo }}</td>
                             <td>{{ $equipo->especialidad ?? 'No especificada' }}</td>
                             <td>
                                 @if ($equipo->estado_id && $equipo->estados_sistema)
@@ -325,9 +329,54 @@
         @endif
     </div>
 
+    {{-- Historial de Movimientos (Auditoría) --}}
+    @if (isset($movimientos) && $movimientos->count() > 0)
+        <div class="section" style="page-break-before: always;">
+            <div class="section-title">HISTORIAL DE ACCIONES ({{ $movimientos->count() }} registros)</div>
+            
+            {{-- Resumen por módulo --}}
+            <div class="stats-container" style="margin-bottom: 15px;">
+                @foreach ($movimientosPorModulo as $modulo => $items)
+                    <div class="stat-box" style="width: auto; min-width: 80px;">
+                        <div class="number" style="font-size: 18px;">{{ $items->count() }}</div>
+                        <div class="label">{{ ucfirst($modulo) }}</div>
+                    </div>
+                @endforeach
+            </div>
+
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th style="width: 100px;">Fecha</th>
+                        <th style="width: 70px;">Acción</th>
+                        <th style="width: 80px;">Módulo</th>
+                        <th>Descripción</th>
+                        <th style="width: 50px;">Método</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach ($movimientos as $mov)
+                        <tr>
+                            <td style="font-size: 10px;">{{ $mov->created_at->format('d/m/Y H:i') }}</td>
+                            <td>
+                                <span class="badge badge-{{ $mov->accion == 'crear' ? 'success' : ($mov->accion == 'editar' ? 'info' : ($mov->accion == 'eliminar' ? 'warning' : 'secondary')) }}">
+                                    {{ ucfirst($mov->accion) }}
+                                </span>
+                            </td>
+                            <td>{{ ucfirst($mov->modulo) }}</td>
+                            <td style="font-size: 10px;">{{ \Str::limit($mov->descripcion, 50) }}</td>
+                            <td style="font-size: 9px;">{{ $mov->metodo_http }}</td>
+                        </tr>
+                    @endforeach
+                </tbody>
+            </table>
+        </div>
+    @endif
+
     <div class="footer">
         <p>Sistema de Gestión de Bomberos - Alas Chiquitanas | Documento generado automáticamente</p>
     </div>
 </body>
 
 </html>
+

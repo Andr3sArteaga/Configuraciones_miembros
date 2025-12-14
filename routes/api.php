@@ -1,9 +1,11 @@
 <?php
 
 use App\Http\Controllers\Api\LoginApiController;
+use App\Http\Controllers\Auth\RegistroSimpleController;
 use App\Http\Controllers\CursoController;
 use App\Http\Controllers\FocoCalorController;
 use App\Http\Controllers\ReporteController;
+use App\Http\Controllers\TrazabilidadController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\EquipoController;
 
@@ -80,4 +82,12 @@ Route::prefix('v1')->group(function () {
     Route::post('/reports', [\App\Http\Controllers\Api\ReporteAnimalController::class, 'store'])
         ->name('api.reports.animal');
 });
- 
+
+// ========================================
+// Endpoints para API Gateway Central
+// (sin autenticación - públicos)
+// ========================================
+Route::get('registro/ci/{ci}', [RegistroSimpleController::class, 'showByCi'])
+    ->name('api.registro.ci');
+Route::get('trazabilidad/{ci}', [TrazabilidadController::class, 'porVoluntario'])
+    ->name('api.trazabilidad');

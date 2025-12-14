@@ -3,7 +3,7 @@
 {{-- Customize layout sections --}}
 
 @section('subtitle', 'Bienvenido')
-@section('content_header_title', 'Dashboard')
+@section('content_header_title', 'Alas Chiquitanas')
 @section('content_header_subtitle', 'Centro de Control Ambiental')
 
 {{-- Content body: main page content --}}
