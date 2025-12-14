@@ -1803,15 +1803,31 @@
                     return;
                 }
 
-                // Construct Insumos String
-                const insumosParts = [];
+                // Construct Insumos JSON Array (for backend parsing)
+                const insumosArray = [];
+                
+                // Add donations with quantity > 0
                 donations.forEach(d => {
-                    if (d.quantity > 0) insumosParts.push(`${d.name}: ${d.quantity}`);
+                    if (d.quantity > 0) {
+                        insumosArray.push({
+                            nombre: d.name,
+                            cantidad: d.quantity
+                        });
+                    }
                 });
+                
+                // Add products with quantity > 0
                 products.forEach(p => {
-                    if (p.quantity > 0) insumosParts.push(`${p.nombre}: ${p.quantity} ${p.unidad_medida}`);
+                    if (p.quantity > 0) {
+                        insumosArray.push({
+                            nombre: p.nombre,
+                            cantidad: p.quantity
+                        });
+                    }
                 });
-                const insumosString = insumosParts.join(', ');
+                
+                // Convert to JSON string
+                const insumosJSON = JSON.stringify(insumosArray);
 
                 // Update the insumos field in the existing form
                 let insumosField = document.getElementById('insumos_necesarios-' + modalId);
@@ -1823,7 +1839,7 @@
                     insumosField.name = 'insumos_necesarios';
                     document.getElementById('team-form-' + modalId).appendChild(insumosField);
                 }
-                insumosField.value = insumosString;
+                insumosField.value = insumosJSON;
 
                 // Add selected members as hidden fields
                 const form = document.getElementById('team-form-' + modalId);

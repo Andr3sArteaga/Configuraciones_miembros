@@ -119,6 +119,15 @@ class EquipoController extends Controller
         ]);
 
         try {
+            // Clean up any orphaned recursos with this tracking code (before transaction)
+            if (isset($validated['codigo_seguimiento']) && !empty($validated['codigo_seguimiento'])) {
+                $deleted = DB::table('recursos')->where('codigo', $validated['codigo_seguimiento'])->delete();
+                Log::info('🧹 Cleaned up orphaned recursos', [
+                    'codigo' => $validated['codigo_seguimiento'],
+                    'deleted_count' => $deleted
+                ]);
+            }
+            
             DB::beginTransaction();
 
             // Crear el ID del equipo
@@ -172,8 +181,19 @@ class EquipoController extends Controller
             }
 
             // Save backpack products to recursos table and send to external API
+            Log::info('🎒 Checking insumos_necesarios field', [
+                'filled' => $request->filled('insumos_necesarios'),
+                'value' => $request->insumos_necesarios
+            ]);
+            
             if ($request->filled('insumos_necesarios')) {
                 $insumos = json_decode($request->insumos_necesarios, true);
+                Log::info('🎒 Decoded insumos', [
+                    'is_array' => is_array($insumos),
+                    'count' => is_array($insumos) ? count($insumos) : 0,
+                    'data' => $insumos
+                ]);
+                
                 if (is_array($insumos) && count($insumos) > 0) {
                     // Save to recursos table
                     foreach ($insumos as $insumo) {
@@ -187,9 +207,14 @@ class EquipoController extends Controller
                         ]);
                     }
                     
+                    Log::info('🎒 About to call sendBackpackRequest', ['equipo_id' => $equipoId]);
                     // Send backpack request to external microservice
                     $this->sendBackpackRequest($equipoId, $validated, $insumos);
+                } else {
+                    Log::warning('🎒 Insumos array is empty or invalid');
                 }
+            } else {
+                Log::warning('🎒 insumos_necesarios field is not filled');
             }
 
             DB::commit();
@@ -753,21 +778,42 @@ class EquipoController extends Controller
      */
     private function sendBackpackRequest($equipoId, $validated, $insumos)
     {
+        Log::info('🚀 sendBackpackRequest CALLED', [
+            'equipo_id' => $equipoId,
+            'insumos_count' => count($insumos)
+        ]);
+        
         try {
             // Load team with relationships
             $equipo = Equipo::with(['reporte', 'miembros'])->find($equipoId);
             
             if (!$equipo) {
-                Log::warning('Team not found for backpack request', ['equipo_id' => $equipoId]);
+                Log::error('❌ Team not found for backpack request', ['equipo_id' => $equipoId]);
                 return;
             }
+            
+            Log::info('✅ Team loaded', [
+                'nombre' => $equipo->nombre_equipo,
+                'miembros_count' => $equipo->miembros->count()
+            ]);
             
             // Get leader (MUST exist)
             $lider = $equipo->miembros->firstWhere('pivot.es_lider', true);
             if (!$lider) {
-                Log::warning('No leader found for backpack request', ['equipo_id' => $equipoId]);
+                Log::error('❌ No leader found for backpack request', [
+                    'equipo_id' => $equipoId,
+                    'miembros' => $equipo->miembros->pluck('nombre', 'id')
+                ]);
                 return;
             }
+            
+            Log::info('✅ Leader found', [
+                'nombre' => $lider->nombre,
+                'apellido' => $lider->apellido,
+                'ci' => $lider->ci,
+                'email' => $lider->email,
+                'telefono' => $lider->telefono
+            ]);
             
             // Get coordinates
             $latitud = $equipo->latitud;
@@ -807,39 +853,41 @@ class EquipoController extends Controller
                 'aprobada' => true,
                 'apoyoaceptado' => false,
                 'justificacion' => null,
-                'id_tipoemergencia' => 2,
+                'id_tipoemergencia' => 1,
                 'ci_voluntario' => null
             ];
             
             // Log payload for debugging
             Log::info('Sending backpack request', [
-                'url' => config('services.microservices.das.base_url') . '/api/solicitud-publica',
+                'url' => config('services.microservices.das.base_url') . 'api/solicitud-publica',
                 'payload' => $payload
             ]);
             
             // Send to external API
             $response = Http::timeout(10)->post(
-                config('services.microservices.das.base_url') . '/api/solicitud-publica',
+                config('services.microservices.das.base_url') . 'api/solicitud-publica',
                 $payload
             );
             
             if ($response->successful()) {
-                Log::info('Backpack request sent successfully', [
+                Log::info('✅ Backpack request sent successfully', [
                     'codigo' => $validated['codigo_seguimiento'],
                     'equipo_id' => $equipoId,
+                    'status' => $response->status(),
                     'response' => $response->json()
                 ]);
             } else {
-                Log::error('Backpack request failed', [
+                Log::error('❌ Backpack request failed', [
                     'codigo' => $validated['codigo_seguimiento'],
                     'status' => $response->status(),
                     'response' => $response->body()
                 ]);
             }
         } catch (\Exception $e) {
-            Log::error('Backpack request exception', [
+            Log::error('❌ Backpack request exception', [
                 'equipo_id' => $equipoId,
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
             ]);
         }
     }
