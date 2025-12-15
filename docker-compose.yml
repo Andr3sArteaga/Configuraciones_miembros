@@ -22,6 +22,7 @@ services:
       SESSION_LIFETIME: 120
       SESSION_DOMAIN: null
       SESSION_SECURE_COOKIE: "false"
+      SESSION_SAME_SITE: lax
       
       # App Configuration
       APP_URL: http://brigadas.dasalas.shop
