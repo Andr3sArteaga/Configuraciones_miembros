@@ -11,6 +11,15 @@
     <div class="sidebar">
 
         {{-- Sidebar user panel --}}
+        @php
+            // Diagnostic logging for session debugging
+            \Log::info('Sidebar rendering', [
+                'auth_check' => Auth::check(),
+                'session_id' => session()->getId(),
+                'user_id' => Auth::check() ? Auth::id() : null,
+                'url' => request()->url(),
+            ]);
+        @endphp
         @if (Auth::check())
             <div class="user-panel mt-2 pb-1 mb-1 d-flex">
                 <div class="d-flex align-items-center justify-content-center"

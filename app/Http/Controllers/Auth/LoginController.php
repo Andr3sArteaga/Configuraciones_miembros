@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Auth;
 use App\Http\Controllers\Controller;
 use Illuminate\Foundation\Auth\AuthenticatesUsers;
 use Illuminate\Support\Facades\Session;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Http\Request;
 use App\Models\Usuario;
 use Illuminate\Support\Facades\Hash;
@@ -26,9 +27,49 @@ class LoginController extends Controller
     */
 
 
+    /**
+     * Get the login username to be used by the controller.
+     *
+     * @return string
+     */
+    public function username()
+    {
+        return 'email';
+    }
+
     protected function redirectTo()
     {
-        return '/welcome';
+        return '/welcome';  // Ruta pública que funciona para auth y guest
+    }
+
+    /**
+     * Attempt to log the user into the application.
+     * Agregado logging para debugging en producción.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return bool
+     */
+    protected function attemptLogin(Request $request)
+    {
+        Log::info('Login attempt', [
+            'email' => $request->email,
+            'has_password' => !empty($request->password),
+            'session_id' => session()->getId(),
+            'ip' => $request->ip(),
+        ]);
+
+        $result = $this->guard()->attempt(
+            $this->credentials($request), 
+            $request->filled('remember')
+        );
+
+        if ($result) {
+            Log::info('Login successful', ['email' => $request->email]);
+        } else {
+            Log::warning('Login failed', ['email' => $request->email]);
+        }
+
+        return $result;
     }
 
     /**
@@ -42,6 +83,11 @@ class LoginController extends Controller
     {
         $request->session()->regenerate();
         $this->clearLoginAttempts($request);
+
+        Log::info('Login response sent', [
+            'email' => $request->email,
+            'redirect_to' => $this->redirectPath(),
+        ]);
 
         // 👇 Forzar que siempre se use redirectTo(), ignorando intended()
         return redirect($this->redirectPath());

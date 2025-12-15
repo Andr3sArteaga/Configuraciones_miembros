@@ -234,4 +234,14 @@ class Usuario extends Authenticatable
 	{
 		return $this->getKey();
 	}
+
+	/**
+	 * Get the password for the user.
+	 *
+	 * @return string
+	 */
+	public function getAuthPassword()
+	{
+		return $this->password;
+	}
 }

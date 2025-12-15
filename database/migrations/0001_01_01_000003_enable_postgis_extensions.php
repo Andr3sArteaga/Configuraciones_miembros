@@ -2,6 +2,7 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 return new class extends Migration
 {
@@ -10,11 +11,23 @@ return new class extends Migration
      */
     public function up(): void
     {
-        // Enable PostGIS extension for geospatial data
-        DB::statement('CREATE EXTENSION IF NOT EXISTS postgis');
+        try {
+            // Enable PostGIS extension for geospatial data
+            DB::statement('CREATE EXTENSION IF NOT EXISTS postgis');
+            \Log::info('PostGIS extension enabled successfully');
+        } catch (\Exception $e) {
+            \Log::error('Failed to enable PostGIS extension: ' . $e->getMessage());
+            // Don't throw - allow migration to continue
+        }
 
-        // Enable UUID extension for UUID generation
-        DB::statement('CREATE EXTENSION IF NOT EXISTS "uuid-ossp"');
+        try {
+            // Enable UUID extension for UUID generation
+            DB::statement('CREATE EXTENSION IF NOT EXISTS "uuid-ossp"');
+            \Log::info('UUID-OSSP extension enabled successfully');
+        } catch (\Exception $e) {
+            \Log::error('Failed to enable UUID-OSSP extension: ' . $e->getMessage());
+            throw $e; // This one is critical, so we throw
+        }
     }
 
     /**

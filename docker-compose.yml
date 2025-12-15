@@ -15,16 +15,21 @@ services:
       DB_USERNAME: admin
       DB_PASSWORD: admin123
       
-      # Session Configuration (FIX for 419 error)
+      # Session Configuration (FIX for session persistence)
       SESSION_DRIVER: database
       SESSION_LIFETIME: 120
-      SESSION_DOMAIN: null
-      SESSION_SECURE_COOKIE: "false"
-      SESSION_SAME_SITE: lax
+      SESSION_DOMAIN: .dasalas.shop  # Con punto inicial para permitir subdominios
+      SESSION_SECURE_COOKIE: "false"  # false porque usamos HTTP (no HTTPS)
+      SESSION_SAME_SITE: lax  # lax para HTTP, none requiere HTTPS
+      SESSION_ENCRYPT: "false"
+      SESSION_COOKIE: brigadas_session  # Nombre específico de la cookie
       
       # App Configuration
+      APP_KEY: base64:2HDou67pKgo0aCQb0GqoiLxtCATbQ0AkVNQggKa/wK4=
       APP_URL: http://brigadas.dasalas.shop
       APP_ENV: production
+      APP_DEBUG: "false"
+      LOG_CHANNEL: stack
       
       # Microservices
       ANIMAL_REPORTS_API_URL: http://rescate.dasalas.shop/
