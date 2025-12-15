@@ -20,14 +20,33 @@
 
 @section('content')
     <div class="container-fluid">
+        @if (!$apiAvailable && $errorMessage)
+            <div class="alert alert-warning alert-dismissible fade show" role="alert">
+                <i class="fas fa-exclamation-triangle mr-2"></i>
+                <strong>Servicio de inventario no disponible:</strong> {{ $errorMessage }}. Mostrando suministros de emergencia.
+                <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+        @endif
+
         <div class="row">
             <div class="col-md-12">
                 <div class="card">
                     <div class="card-header">
                         <h3 class="card-title">
                             <i class="fas fa-toolbox mr-1"></i>
-                            Listado de Recursos
+                            Listado de Recursos del Inventario
                         </h3>
+                        @if ($apiAvailable)
+                            <span class="badge badge-success float-right">
+                                <i class="fas fa-check-circle"></i> API Conectada
+                            </span>
+                        @else
+                            <span class="badge badge-warning float-right">
+                                <i class="fas fa-exclamation-triangle"></i> Modo Emergencia
+                            </span>
+                        @endif
                     </div>
                     <div class="card-body p-0">
                         <div class="table-responsive">
@@ -35,41 +54,61 @@
                                 <thead>
                                     <tr>
                                         <th>Nombre</th>
-                                        <th>Tipo</th>
+                                        <th>Descripción</th>
+                                        <th>Stock Disponible</th>
+                                        <th>Unidad de Medida</th>
                                         <th>Estado</th>
-                                        <th>Cantidad</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     @forelse($recursos as $recurso)
                                         <tr>
                                             <td>
-                                                <strong>{{ $recurso->descripcion }}</strong>
+                                                <strong>{{ $recurso['nombre'] }}</strong>
                                             </td>
                                             <td>
-                                                @if ($recurso->tipos_recurso)
-                                                    <span
-                                                        class="badge badge-info">{{ $recurso->tipos_recurso->nombre }}</span>
+                                                @if (!empty($recurso['descripcion']))
+                                                    <small class="text-muted">{{ $recurso['descripcion'] }}</small>
                                                 @else
-                                                    <span class="text-muted">N/A</span>
+                                                    <span class="text-muted">-</span>
                                                 @endif
                                             </td>
                                             <td>
-                                                @if ($recurso->estados_sistema)
-                                                    <span class="badge"
-                                                        style="background-color: {{ $recurso->estados_sistema->color ?? '#6c757d' }}; color: white;">
-                                                        {{ $recurso->estados_sistema->nombre }}
+                                                @if ($recurso['stock_total'] > 0)
+                                                    <span class="badge badge-success">
+                                                        {{ $recurso['stock_total'] }}
                                                     </span>
                                                 @else
-                                                    <span class="text-muted">N/A</span>
+                                                    <span class="badge badge-warning">
+                                                        Sin stock
+                                                    </span>
                                                 @endif
                                             </td>
-                                            <td>{{ $recurso->cantidad ?? 0 }}</td>
+                                            <td>
+                                                <span class="badge badge-info">
+                                                    {{ $recurso['unidad_medida'] }}
+                                                </span>
+                                            </td>
+                                            <td>
+                                                @if ($recurso['stock_total'] > 10)
+                                                    <span class="badge badge-success">
+                                                        <i class="fas fa-check"></i> Disponible
+                                                    </span>
+                                                @elseif ($recurso['stock_total'] > 0)
+                                                    <span class="badge badge-warning">
+                                                        <i class="fas fa-exclamation"></i> Stock Bajo
+                                                    </span>
+                                                @else
+                                                    <span class="badge badge-danger">
+                                                        <i class="fas fa-times"></i> Agotado
+                                                    </span>
+                                                @endif
+                                            </td>
                                         </tr>
                                     @empty
                                         <tr>
                                             <td colspan="5" class="text-center text-muted py-3">
-                                                No hay recursos registrados
+                                                <i class="fas fa-inbox"></i> No hay recursos disponibles
                                             </td>
                                         </tr>
                                     @endforelse
@@ -77,16 +116,16 @@
                             </table>
                         </div>
                     </div>
+                    @if (count($recursos) > 0)
+                        <div class="card-footer">
+                            <small class="text-muted">
+                                <i class="fas fa-info-circle"></i>
+                                Mostrando {{ count($recursos) }} producto(s) del inventario
+                            </small>
+                        </div>
+                    @endif
                 </div>
             </div>
         </div>
-
-        @if ($recursos->hasPages())
-            <div class="row mt-3">
-                <div class="col-md-12">
-                    {{ $recursos->links() }}
-                </div>
-            </div>
-        @endif
     </div>
 @stop

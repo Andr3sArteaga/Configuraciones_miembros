@@ -12,24 +12,16 @@ class RecursoController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(\App\Services\InventoryService $inventoryService)
     {
-        $recursos = Recurso::orderBy('creado', 'desc')->paginate(20);
-
-        // Cargar relaciones manualmente para evitar problema de UUID
-        $tiposRecurso = TiposRecurso::all()->keyBy('id');
-        $estadosSistema = EstadosSistema::all()->keyBy('id');
-
-        foreach ($recursos as $recurso) {
-            if ($recurso->tipo_recurso_id && isset($tiposRecurso[$recurso->tipo_recurso_id])) {
-                $recurso->setRelation('tipos_recurso', $tiposRecurso[$recurso->tipo_recurso_id]);
-            }
-            if ($recurso->estado_id && isset($estadosSistema[$recurso->estado_id])) {
-                $recurso->setRelation('estados_sistema', $estadosSistema[$recurso->estado_id]);
-            }
-        }
-
-        return view('recursos.index', compact('recursos'));
+        // Obtener recursos desde la API de inventario
+        $result = $inventoryService->getProductsInventory();
+        
+        $recursos = $result['data'];
+        $apiAvailable = $result['success'];
+        $errorMessage = $result['message'];
+        
+        return view('recursos.index', compact('recursos', 'apiAvailable', 'errorMessage'));
     }
 
     /**
