@@ -18,7 +18,7 @@ services:
       DB_PASSWORD: admin123
       
       # Session Configuration (FIX for 419 error)
-      SESSION_DRIVER: database
+      SESSION_DRIVER: file
       SESSION_LIFETIME: 120
       SESSION_DOMAIN: null
       SESSION_SECURE_COOKIE: "false"
