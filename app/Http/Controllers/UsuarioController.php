@@ -255,4 +255,26 @@ class UsuarioController extends Controller
             ->back()
             ->with('success', "Contraseña reseteada. Nueva contraseña temporal: {$passwordTemporal}");
     }
+
+    /**
+     * Get list of all user CIs for API Gateway
+     * 
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function getCiList()
+    {
+        try {
+            $cis = Usuario::pluck('ci')->toArray();
+            
+            return response()->json([
+                'lista_ci' => $cis,
+                'total' => count($cis)
+            ], 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                'error' => 'Error al obtener la lista de CIs',
+                'message' => $e->getMessage()
+            ], 500);
+        }
+    }
 }

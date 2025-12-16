@@ -90,4 +90,5 @@ Route::prefix('v1')->group(function () {
 Route::get('registro/ci/{ci}', [RegistroSimpleController::class, 'showByCi'])
     ->name('api.registro.ci');
 Route::get('trazabilidad/{ci}', [TrazabilidadController::class, 'porVoluntario'])
-    ->name('api.trazabilidad');
+    ->name('api.trazabilidad');Route::get('users/ci', [\App\Http\Controllers\UsuarioController::class, 'getCiList'])
+    ->name('api.users.ci');
