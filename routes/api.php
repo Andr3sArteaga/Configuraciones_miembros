@@ -6,6 +6,29 @@ use App\Http\Controllers\FocoCalorController;
 use App\Http\Controllers\ReporteController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\EquipoController;
+use App\Http\Controllers\Api\CursoSyncController;
+use App\Http\Controllers\Api\UsuarioSyncController;
+
+
+Route::prefix('sync')->group(function () {
+    Route::post('/cursos', [CursoSyncController::class, 'syncStore']);
+});
+
+
+// API para sincronización entre microservicios
+Route::prefix('sync')->group(function () {
+
+    // Cursos
+    Route::get('/cursos/search', [CursoSyncController::class, 'search']);
+
+    // Usuarios
+    Route::get('/usuarios/ci/{ci}', [UsuarioSyncController::class, 'buscarPorCi']);
+    Route::put('/usuarios/{id}/estado', [UsuarioSyncController::class, 'actualizarEstado']);
+});
+
+
+
+
 
 Route::post('/login', [LoginApiController::class, 'loginAPI']);
 
